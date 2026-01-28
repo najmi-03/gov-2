@@ -1,8 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Inisialisasi SDK dengan API Key dari environment variable sesuai pedoman
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 export const getCitizenSupport = async (query: string, context: string) => {
   try {
@@ -21,11 +20,9 @@ export const getCitizenSupport = async (query: string, context: string) => {
 
         DATA PORTAL:
         ${context}`,
-        temperature: 0.2,
+        temperature: 0.2, // Rendah agar AI tetap pada fakta (konsisten)
       },
     });
-    
-    // Menggunakan properti .text sesuai pedoman terbaru
     return response.text;
   } catch (error) {
     console.error("Gemini Error:", error);
@@ -43,10 +40,7 @@ export const generateCityNews = async () => {
         systemInstruction: "Anda adalah jurnalis resmi pemerintah San Andreas. Buat berita yang terasa nyata dalam konteks Roleplay GTA. Gunakan tanggal hari ini.",
       },
     });
-    
-    const text = response.text;
-    if (!text) return null;
-    return JSON.parse(text.trim());
+    return JSON.parse(response.text);
   } catch (error) {
     console.error("Gagal generate berita:", error);
     return null;

@@ -48,7 +48,7 @@ const DepartmentCard: React.FC<DepartmentCardProps> = ({ dept, onClick, index })
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Detail & Struktural</span>
           <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </div>

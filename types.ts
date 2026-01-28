@@ -9,8 +9,24 @@ export enum Department {
 }
 
 export type PawnCategory = 'PERTANIAN' | 'PERTAMBANGAN' | 'PERHIASAN' | 'ALKOHOL' | 'HUNTING' | 'RONGSOK';
-
 export type PawnStatus = 'BLUE' | 'GREEN' | 'YELLOW' | 'RED' | 'BLACK';
+
+export interface FormField {
+  id: string;
+  label: string;
+  placeholder: string;
+  type: 'text' | 'textarea' | 'number';
+  required: boolean;
+}
+
+export interface FormConfig {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  fields: FormField[];
+  webhookKey: string;
+}
 
 export interface PawnItem {
   id: string;

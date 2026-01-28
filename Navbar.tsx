@@ -11,7 +11,7 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
   const menuItems = [
     { label: 'Departemen', id: 'departments' },
     { label: 'Struktural', id: 'structural' },
-    { label: 'Formulir Digital', id: 'citizen-form' }, 
+    { label: 'Layanan Form', id: 'citizen-form' }, 
     { label: 'Informasi', id: 'information' },
     { label: 'Rekrutmen', id: 'recruitment' },
     { label: 'Asisten AI', id: 'assistant' }
@@ -34,7 +34,7 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
               alt="Logo SA" 
               className="h-10 sm:h-12 md:h-14 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(245,158,11,0.4)] transition-transform hover:scale-105"
             />
-            <span className="text-xs sm:text-sm md:text-lg font-serif font-bold italic tracking-[0.2em] text-amber-500 hidden xs:block border-l border-white/10 pl-3 sm:pl-4 py-1">
+            <span className="text-sm sm:text-base md:text-xl font-serif font-bold tracking-tighter text-amber-500 hidden xs:block border-l border-white/10 pl-3 sm:pl-4 py-1">
               PORTAL <span className="text-white">PEMERINTAH</span>
             </span>
           </div>

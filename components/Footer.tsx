@@ -37,8 +37,7 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
                 alt="Logo SA" 
                 className="h-12 w-auto object-contain"
               />
-              <div className="h-8 w-px bg-white/10 hidden md:block"></div>
-              <span className="text-lg font-serif font-bold text-white">
+              <span className="text-sm md:text-lg font-serif font-bold italic text-white tracking-[0.2em] uppercase">
                 PEMERINTAH <span className="text-amber-500">SAN ANDREAS</span>
               </span>
             </div>

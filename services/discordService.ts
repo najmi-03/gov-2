@@ -18,6 +18,24 @@ export const sendToDiscord = async (webhookUrl: string, content: any) => {
   }
 };
 
+export const sendFileToDiscord = async (webhookUrl: string, formData: FormData) => {
+  if (!webhookUrl) {
+    console.warn("Discord Webhook URL tidak dikonfigurasi.");
+    return;
+  }
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      body: formData, // Browser otomatis mengatur Content-Type: multipart/form-data
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Gagal mengirim file ke Discord:", error);
+    return false;
+  }
+};
+
 export const formatSalarySlipEmbed = (salary: any) => {
   const penaltyMap: any = { 'NONE': '0%', 'SP1': '50%', 'SP2': '75%', 'SP3': '100%' };
   const statusIcons: any = { 'NONE': '✅', 'SP1': '⚠️', 'SP2': '🟠', 'SP3': '🚫' };

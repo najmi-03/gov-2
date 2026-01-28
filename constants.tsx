@@ -1,14 +1,225 @@
 
-import { Department, DeptInfo, NewsItem, PawnItem, PawnStatus, PawnCategory } from './types';
+import { Department, DeptInfo, NewsItem, PawnItem, PawnStatus, PawnCategory, FormConfig } from './types';
+
+export const DEFAULT_FORMS: FormConfig[] = [
+  {
+    id: 'identitas',
+    title: 'Kartu Identitas (KTP)',
+    description: 'Pendaftaran biodata resmi warga negara San Andreas.',
+    icon: '🪪',
+    webhookKey: 'ls_gov_webhook_ktp',
+    fields: [
+      { id: 'f1', label: 'Nama Lengkap (IC)', placeholder: 'Contoh: Marcus Vane', type: 'text', required: true },
+      { id: 'f2', label: 'Citizen ID (CID)', placeholder: 'ABC12345', type: 'text', required: true },
+      { id: 'f3', label: 'No. Telepon', placeholder: '555-xxxx', type: 'text', required: true },
+      { id: 'f4', label: 'Pekerjaan', placeholder: 'Pedagang, Supir, dll', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'identitas_hilang',
+    title: 'Cetak Ulang ID Card (Hilang)',
+    description: 'Permohonan cetak ulang kartu identitas yang hilang.',
+    icon: '🆔',
+    webhookKey: 'ls_gov_webhook_ktp_ulang',
+    fields: [
+      { id: 'f1', label: 'Nama Lengkap', placeholder: 'Sesuai database', type: 'text', required: true },
+      { id: 'f2', label: 'CID', placeholder: 'Nomor Identitas', type: 'text', required: true },
+      { id: 'f3', label: 'Kronologi Kehilangan', placeholder: 'Jelaskan singkat...', type: 'textarea', required: true }
+    ]
+  },
+  {
+    id: 'doj_pengantar',
+    title: 'Surat Pengantar ke DOJ',
+    description: 'Surat rujukan ke Department of Justice karena kehilangan ID.',
+    icon: '⚖️',
+    webhookKey: 'ls_gov_webhook_doj',
+    fields: [
+      { id: 'f1', label: 'Nama Lengkap', placeholder: 'Nama pelapor', type: 'text', required: true },
+      { id: 'f2', label: 'CID', placeholder: 'Nomor Identitas', type: 'text', required: true },
+      { id: 'f3', label: 'Alasan Ke DOJ', placeholder: 'Keperluan administrasi hukum...', type: 'textarea', required: true }
+    ]
+  },
+  {
+    id: 'id_update_foto',
+    title: 'Pembaruan Foto ID Card',
+    description: 'Pembaruan foto identitas pasca operasi plastik / ganti penampilan.',
+    icon: '📸',
+    webhookKey: 'ls_gov_webhook_ktp_foto',
+    fields: [
+      { id: 'f1', label: 'Nama Lengkap', placeholder: 'Nama sesuai KTP', type: 'text', required: true },
+      { id: 'f2', label: 'CID', placeholder: 'Nomor Identitas', type: 'text', required: true },
+      { id: 'f3', label: 'Alasan Perubahan', placeholder: 'Oplas / Perubahan Gaya Rambut dll', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'id_ganti_data',
+    title: 'Penggantian Data ID Card',
+    description: 'Perubahan data nama atau informasi biodata lainnya.',
+    icon: '📝',
+    webhookKey: 'ls_gov_webhook_ktp_data',
+    fields: [
+      { id: 'f1', label: 'Nama Lama', placeholder: 'Sesuai KTP sebelumnya', type: 'text', required: true },
+      { id: 'f2', label: 'Nama Baru (Jika Ganti Nama)', placeholder: 'Biarkan kosong jika tidak ganti nama', type: 'text', required: false },
+      { id: 'f3', label: 'Data Lain yang Diubah', placeholder: 'Pekerjaan / Alamat / dll', type: 'textarea', required: true }
+    ]
+  },
+  {
+    id: 'sim_ulang',
+    title: 'Cetak Ulang SIM',
+    description: 'Cetak ulang Driving License karena ganti data / hilang / oplas.',
+    icon: '🚗',
+    webhookKey: 'ls_gov_webhook_sim',
+    fields: [
+      { id: 'f1', label: 'Nama Lengkap', placeholder: 'Sesuai KTP', type: 'text', required: true },
+      { id: 'f2', label: 'Jenis SIM', placeholder: 'Driver / Trucker / Pilot', type: 'text', required: true },
+      { id: 'f3', label: 'Alasan Cetak Ulang', placeholder: 'Hilang / Oplas / Ganti Data', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'lisensi_ulang',
+    title: 'Cetak Ulang Lisensi Umum',
+    description: 'Cetak ulang lisensi lain (Berburu/Senjata) karena ganti data/hilang.',
+    icon: '📜',
+    webhookKey: 'ls_gov_webhook_lisensi_gen',
+    fields: [
+      { id: 'f1', label: 'Nama Lengkap', placeholder: 'Sesuai KTP', type: 'text', required: true },
+      { id: 'f2', label: 'Jenis Lisensi', placeholder: 'Hunting / Weapon / dll', type: 'text', required: true },
+      { id: 'f3', label: 'Alasan Cetak Ulang', placeholder: 'Jelaskan alasan...', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'marriage_license',
+    title: 'Marriage License',
+    description: 'Permohonan izin untuk melaksanakan pernikahan resmi.',
+    icon: '💍',
+    webhookKey: 'ls_gov_webhook_marriage',
+    fields: [
+      { id: 'f1', label: 'Nama Calon Suami', placeholder: 'Nama Lengkap & CID', type: 'text', required: true },
+      { id: 'f2', label: 'Nama Calon Istri', placeholder: 'Nama Lengkap & CID', type: 'text', required: true },
+      { id: 'f3', label: 'Saksi Pernikahan', placeholder: 'Nama minimal 1 saksi', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'marriage_cert',
+    title: 'Marriage Certificate',
+    description: 'Penerbitan akta nikah resmi setelah prosesi pernikahan.',
+    icon: '💒',
+    webhookKey: 'ls_gov_webhook_marriage',
+    fields: [
+      { id: 'f1', label: 'Nama Suami', placeholder: 'Sesuai KTP', type: 'text', required: true },
+      { id: 'f2', label: 'Nama Istri', placeholder: 'Sesuai KTP', type: 'text', required: true },
+      { id: 'f3', label: 'Tanggal Pernikahan', placeholder: 'DD/MM/YYYY', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'izin_usaha',
+    title: 'Surat Izin Usaha',
+    description: 'Pendaftaran izin operasional bisnis/toko baru.',
+    icon: '🏢',
+    webhookKey: 'ls_gov_webhook_bisnis',
+    fields: [
+      { id: 'f1', label: 'Nama Pemilik Usaha', placeholder: 'Nama Lengkap', type: 'text', required: true },
+      { id: 'f2', label: 'Nama Bisnis', placeholder: 'Contoh: Vane Coffee Shop', type: 'text', required: true },
+      { id: 'f3', label: 'Jenis Usaha', placeholder: 'Restoran / Mekanik / dll', type: 'text', required: true },
+      { id: 'f4', label: 'Lokasi Usaha', placeholder: 'Area / Alamat GPS', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'izin_usaha_update',
+    title: 'Pembaruan Izin Usaha',
+    description: 'Pembaruan masa berlaku atau perubahan data bisnis.',
+    icon: '🔄',
+    webhookKey: 'ls_gov_webhook_bisnis',
+    fields: [
+      { id: 'f1', label: 'Nama Bisnis', placeholder: 'Sesuai Izin Lama', type: 'text', required: true },
+      { id: 'f2', label: 'ID Bisnis (Jika Ada)', placeholder: 'Nomor Izin', type: 'text', required: true },
+      { id: 'f3', label: 'Perubahan Data', placeholder: 'Jelaskan bagian yang diubah...', type: 'textarea', required: true }
+    ]
+  },
+  {
+    id: 'izin_pers',
+    title: 'Surat Izin Pers',
+    description: 'Izin resmi untuk peliputan berita dan aktivitas jurnalistik.',
+    icon: '📽️',
+    webhookKey: 'ls_gov_webhook_pers',
+    fields: [
+      { id: 'f1', label: 'Nama Lengkap', placeholder: 'Nama Jurnalis', type: 'text', required: true },
+      { id: 'f2', label: 'Perusahaan Media', placeholder: 'Weazel News / dll', type: 'text', required: true },
+      { id: 'f3', label: 'Jabatan', placeholder: 'Reporter / Kameramen / Editor', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'izin_pers_update',
+    title: 'Pembaruan Izin Pers',
+    description: 'Pembaruan masa berlaku kartu pers atau ganti perusahaan media.',
+    icon: '📰',
+    webhookKey: 'ls_gov_webhook_pers',
+    fields: [
+      { id: 'f1', label: 'Nama Lengkap', placeholder: 'Nama Jurnalis', type: 'text', required: true },
+      { id: 'f2', label: 'Nomor Kartu Pers Lama', placeholder: 'Biarkan kosong jika hilang', type: 'text', required: false },
+      { id: 'f3', label: 'Alasan Pembaruan', placeholder: 'Ganti Perusahaan / Habis Masa Berlaku', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'kk_baru',
+    title: 'Kartu Keluarga ($40.000)',
+    description: 'Pendaftaran Kartu Keluarga baru (Maksimal 5 Anggota).',
+    icon: '👨‍👩-👧‍👦',
+    webhookKey: 'ls_gov_webhook_kk',
+    fields: [
+      { id: 'f1', label: 'Nama Kepala Keluarga', placeholder: 'Nama & CID', type: 'text', required: true },
+      { id: 'f2', label: 'Nama Anggota 2', placeholder: 'Nama & CID', type: 'text', required: true },
+      { id: 'f3', label: 'Nama Anggota 3', placeholder: 'Nama & CID', type: 'text', required: true },
+      { id: 'f4', label: 'Nama Anggota 4', placeholder: 'Nama & CID', type: 'text', required: true },
+      { id: 'f5', label: 'Nama Anggota 5', placeholder: 'Nama & CID', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'kk_tambah',
+    title: 'Penambahan Anggota KK',
+    description: 'Menambahkan anggota baru ke dalam Kartu Keluarga yang ada.',
+    icon: '➕',
+    webhookKey: 'ls_gov_webhook_kk',
+    fields: [
+      { id: 'f1', label: 'Nomor KK / Nama KK', placeholder: 'ID Kartu Keluarga', type: 'text', required: true },
+      { id: 'f2', label: 'Nama Anggota Baru', placeholder: 'Nama Lengkap & CID', type: 'text', required: true },
+      { id: 'f3', label: 'Hubungan Keluarga', placeholder: 'Anak / Saudara / dll', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'kk_kurang',
+    title: 'Pengurangan Anggota KK',
+    description: 'Menghapus anggota dari Kartu Keluarga (Pindah/Meninggal).',
+    icon: '➖',
+    webhookKey: 'ls_gov_webhook_kk',
+    fields: [
+      { id: 'f1', label: 'Nomor KK / Nama KK', placeholder: 'ID Kartu Keluarga', type: 'text', required: true },
+      { id: 'f2', label: 'Nama Anggota yang Dihapus', placeholder: 'Nama Lengkap', type: 'text', required: true },
+      { id: 'f3', label: 'Alasan Pengurangan', placeholder: 'Pindah Domisili / Keluar Keluarga', type: 'text', required: true }
+    ]
+  },
+  {
+    id: 'kk_ubah',
+    title: 'Perubahan Data Anggota KK',
+    description: 'Update informasi biodata salah satu anggota dalam KK.',
+    icon: '🔄',
+    webhookKey: 'ls_gov_webhook_kk',
+    fields: [
+      { id: 'f1', label: 'Nomor KK / Nama KK', placeholder: 'ID Kartu Keluarga', type: 'text', required: true },
+      { id: 'f2', label: 'Nama Anggota', placeholder: 'Nama yang datanya diubah', type: 'text', required: true },
+      { id: 'f3', label: 'Data yang Diperbarui', placeholder: 'Pekerjaan / Status / dll', type: 'textarea', required: true }
+    ]
+  }
+];
 
 export const DEPARTMENTS: DeptInfo[] = [
   {
     id: 'ha',
     name: Department.HOME_AFFAIRS,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEgqXo8LtommikmxINNui4ohO9aEFE3T2yQXFIsu4xf1PfdPj_pZn0fmpo3jxfIZH8BJ_NQe8RhZR5itW7t2DlZyd7Gz7JIX5ZBGK1f5zw_cSjszCzQ315irJctxxYrnhRBqA_EkZwhECpUiHgzXbdy0ochLzsOwTFTvzx_520qPrhUfJWbn09Q89oC60Xy0',
-    shortDescription: 'Mengelola catatan kota, perizinan, dan perencanaan tata ruang San Andreas.',
-    longDescription: 'Departemen Home Affairs bertanggung jawab atas integritas sipil negara bagian. Kami memastikan setiap warga memiliki identitas yang sah dan setiap bisnis beroperasi di bawah payung hukum yang tepat.',
-    vision: 'Mewujudkan tata kelola yang transparan dan administratif yang efisien di San Andreas.',
+    shortDescription: 'Mengelola catatan kota, perizinan, and perencanaan tata ruang San Andreas.',
+    longDescription: 'Departemen Home Affairs bertanggung jawab atas integritas sipil negara bagian. Kami memastikan setiap warga memiliki identitas yang sah and setiap bisnis beroperasi di bawah payung hukum yang tepat.',
+    vision: 'Mewujudkan tata kelola yang transparan and administratif yang efisien di San Andreas.',
     responsibilities: ['Manajemen Basis Data Warga', 'Sertifikasi Properti', 'Izin Usaha', 'Tata Ruang'],
     requirements: ['Paham Prosedur Hukum', 'Kemampuan Administratif', 'Min. Usia 21 Tahun'],
     imageUrl: 'https://blogger.googleusercontent.com/img/a/AVvXsEjI0eG7lqgBCrlf22LB_3rdnaKmd9wzSNPNDHx0jniTUVB_7eTAN3BTjwIuxDSQDvN8Jjie3NNsf-96XFaAgYLQQh5lVuXfiKmKgGBG2fzBUVVVndsNt2knSa--p76Gw85UYY7oQMbjIxqvmtGlNKgXmObAvFNXkXqAivxGlE1IO-GsOAvtAtFoqY9YQUXP',
@@ -23,7 +234,7 @@ export const DEPARTMENTS: DeptInfo[] = [
     id: 'hd',
     name: Department.HOMELAND_DEFENSE,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEjitrq1I2eFRXT-N9Lomt94YLx081ed5G0kqpaS2gqQ9nJWlGMNWunEwDu3GCWDFZ5RJMPVlh39XTyCgmBJ176ErW9U2_ucU3K_475xWG2VLvj1pmdftXvl3KMPXwyvrP5InIThF3MPFP2XxeAESwRVMYSUeerLzNZ2zDPlnzrI4n3UOBPcC3m5UIa1sPzq',
-    shortDescription: 'Menjamin keamanan dan koordinasi penegakan hukum di seluruh wilayah metropolis San Andreas.',
+    shortDescription: 'Menjamin keamanan and koordinasi penegakan hukum di seluruh wilayah metropolis San Andreas.',
     longDescription: 'Sebagai garda terdepan keamanan, Homeland & Defense mengkoordinasikan unit-unit taktis untuk menghadapi ancaman keamanan skala tinggi di San Andreas.',
     vision: 'Menjadikan San Andreas sebagai wilayah teraman bagi setiap penduduk.',
     responsibilities: ['Analisis Ancaman', 'Koordinasi Anti-Teror', 'Manajemen Krisis'],
@@ -40,8 +251,8 @@ export const DEPARTMENTS: DeptInfo[] = [
     id: 'health',
     name: Department.HEALTH,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEjOdSGD7WFVoUXVcZLQfDhntyjDWN-bbRLZvVe_Qkl6SbZwZSxoYLd0VAmIk15Fk9qvbHoFcjMSjnpIyxpRN_7H-7v6Yg8G0dQzZJYc_9JiZfNoJJuKYk5PUtipbV88w3ComP3PqGdLnUjqlIOpIvyd2pCkxAIAjUS_WH4bofRJqLl4LPtiNS_dRk97ZdCV', 
-    shortDescription: 'Otoritas medis tertinggi yang menjamin standar kesehatan dan layanan darurat publik San Andreas.',
-    longDescription: 'Health Services mengatur seluruh operasional medis di San Andreas, mulai dari audit rumah sakit hingga penanganan krisis kesehatan publik. Kami berdedikasi pada inovasi medis dan keselamatan nyawa warga.',
+    shortDescription: 'Otoritas medis tertinggi yang menjamin standar kesehatan and layanan darurat publik San Andreas.',
+    longDescription: 'Health Services mengatur seluruh operasional medis di San Andreas, mulai dari audit rumah sakit hingga penanganan krisis kesehatan publik. Kami berdedikasi pada inovasi medis and keselamatan nyawa warga.',
     vision: 'Menjamin akses kesehatan berkualitas tinggi bagi setiap jiwa di San Andreas.',
     responsibilities: ['Audit Fasilitas Medis', 'Manajemen EMS & Paramedis', 'Penelitian Epidemiologi', 'Izin Praktik Medis'],
     requirements: ['Gelar Kedokteran/Kesehatan', 'Pengalaman Klinis Teruji', 'Etika Medis Tinggi', 'Sertifikasi ACLS'],
@@ -57,7 +268,7 @@ export const DEPARTMENTS: DeptInfo[] = [
     id: 'sa',
     name: Department.SOCIAL_AFFAIRS,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEgIGurQI1uxBkygOBWtTDHRQBFssOiQhafX9Kp1S2Vodf-MnncDmLIf3f6uEOw1LA1-hwbUAEr-fHLISRQap5gYB91W2ROcJM0fms1v_gGRMsQ4Aor-yUOGH8YhYmDjkRIIGO9hSue_mnlatJD0Q5HVtUcUeUxwMjF0Uu2dLhG1zswAnfvXH8k9VO40OyCE',
-    shortDescription: 'Berfokus pada kesejahteraan, pemberdayaan komunitas, dan inklusivitas sosial di San Andreas.',
+    shortDescription: 'Berfokus pada kesejahteraan, pemberdayaan komunitas, and inklusivitas sosial di San Andreas.',
     longDescription: 'Social Affairs adalah jantung dari kemanusiaan di San Andreas. Kami percaya bahwa wilayah yang kuat dimulai dari komunitas yang harmonis and terlindungi.',
     vision: 'Membangun masyarakat San Andreas yang harmonis and berdaya saing.',
     responsibilities: ['Bantuan Sosial', 'Manajemen Panti & Rumah Singgah', 'Beasiswa Pendidikan', 'Perlindungan Anak'],
@@ -74,9 +285,9 @@ export const DEPARTMENTS: DeptInfo[] = [
     id: 'te',
     name: Department.TREASURY_ECONOMIC,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEhBc8I7KEY9lABvx_6pAp7j-uc8_tmUy9GfRHtlqYKFWmYwnq857BVOFH5Yspv2pjQImVpNEx-VCyUxkKNXLFXN2I4dJhj4f5SskOPp21feNNnC-hJjEYsTyZ9Eqn-X8vrO0i7hV8QlkBwZ0QArBIX2H-NYyeitOHPjD6F8PelAob6k8yk-esfmXm6m04Hm',
-    shortDescription: 'Mengelola anggaran, perpajakan, dan pertumbuhan ekonomi San Andreas.',
+    shortDescription: 'Mengelola anggaran, perpajakan, and pertumbuhan ekonomi San Andreas.',
     longDescription: 'Keberlangsungan infrastruktur San Andreas bergantung pada efisiensi Treasury & Economic dalam mengelola sumber daya fiskal secara bijaksana.',
-    vision: 'Stabilitas ekonomi dan kemandirian fiskal berkelanjutan bagi San Andreas.',
+    vision: 'Stabilitas ekonomi and kemandirian fiskal berkelanjutan bagi San Andreas.',
     responsibilities: ['Audit Keuangan', 'Penagihan Pajak', 'Investasi Publik'],
     requirements: ['Gelar Akuntansi/Ekonomi', 'Etika Kerja Ketat', 'Analis Ekonomi'],
     imageUrl: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=800',
@@ -91,7 +302,7 @@ export const DEPARTMENTS: DeptInfo[] = [
     id: 'hr',
     name: Department.HUMAN_RESOURCE,
     icon: '👥',
-    shortDescription: 'Manajemen talenta, rekrutmen, dan pengembangan karir aparatur sipil San Andreas.',
+    shortDescription: 'Manajemen talenta, rekrutmen, and pengembangan karir aparatur sipil San Andreas.',
     longDescription: 'SDM adalah aset paling berharga. Departemen HR memastikan posisi pemerintahan San Andreas diisi oleh individu terbaik melalui proses seleksi yang ketat.',
     vision: 'Menciptakan birokrasi profesional yang melayani di seluruh San Andreas.',
     responsibilities: ['Seleksi Pegawai', 'Evaluasi Kinerja', 'Pelatihan Kepemimpinan'],

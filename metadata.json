@@ -2,7 +2,6 @@
   "name": "San Andreas Government Portal",
   "description": "A high-end, authoritative landing page for a GTA RP Government Department, featuring department showcases, public information, and an AI-powered citizen assistant.",
   "requestFramePermissions": [
-    "camera",
-    "microphone"
+    "camera"
   ]
 }

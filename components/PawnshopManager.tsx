@@ -21,6 +21,12 @@ const PawnshopManager: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
+    loadLocalData();
+    const savedUrl = localStorage.getItem('ls_discord_webhook');
+    if (savedUrl) setWebhookUrl(savedUrl);
+  }, []);
+
+  const loadLocalData = () => {
     const savedCommon = localStorage.getItem('ls_gov_inv_common');
     const savedBlack = localStorage.getItem('ls_gov_inv_black');
     const savedPawn = localStorage.getItem('ls_gov_pawn_market');
@@ -33,10 +39,7 @@ const PawnshopManager: React.FC = () => {
     } else {
       setPawnItems(INITIAL_PAWN_DATA);
     }
-
-    const savedUrl = localStorage.getItem('ls_discord_webhook');
-    if (savedUrl) setWebhookUrl(savedUrl);
-  }, []);
+  };
 
   const saveCommon = (items: SimpleItem[]) => {
     setCommonItems(items);
@@ -78,12 +81,12 @@ const PawnshopManager: React.FC = () => {
     BLACK: { label: 'STOP', multiplier: 0, icon: '❌', color: 'text-slate-500', desc: 'Penuh' },
   };
 
-  const handleSync = async () => {
+  const handleSyncDiscord = async () => {
     if (!webhookUrl) return alert("Masukan Webhook!");
     setIsSyncing(true);
     let data = activeTab === 'UMUM' ? commonItems : activeTab === 'HITAM' ? blackItems : pawnItems;
     const success = await sendToDiscord(webhookUrl, formatInventoryEmbed(activeTab, data));
-    if (success) alert(`Sync ${activeTab} Berhasil!`);
+    if (success) alert(`Laporan ${activeTab} Terkirim ke Discord!`);
     setIsSyncing(false);
   };
 
@@ -91,22 +94,24 @@ const PawnshopManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex bg-slate-950 p-1 rounded-xl border border-white/5 overflow-x-auto scrollbar-hide">
-        {(['UMUM', 'HITAM', 'PAWNSHOP'] as const).map(tab => (
-          <button 
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 px-4 min-w-[100px] text-[9px] font-black tracking-widest rounded-lg transition-all ${
-              activeTab === tab 
-              ? (tab === 'UMUM' ? 'bg-blue-600' : tab === 'HITAM' ? 'bg-red-600' : 'bg-amber-600') + ' text-white' 
-              : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="flex justify-between items-center bg-slate-950 p-1 rounded-xl border border-white/5">
+        <div className="flex overflow-x-auto scrollbar-hide flex-1">
+          {(['UMUM', 'HITAM', 'PAWNSHOP'] as const).map(tab => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3 px-4 min-w-[100px] text-[9px] font-black tracking-widest rounded-lg transition-all ${
+                activeTab === tab 
+                ? (tab === 'UMUM' ? 'bg-blue-600' : tab === 'HITAM' ? 'bg-red-600' : 'bg-amber-600') + ' text-white' 
+                : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
-
+      
       {activeTab === 'PAWNSHOP' ? (
         <div className="space-y-6">
           <div className="bg-slate-950 border border-white/10 p-5 rounded-2xl">
@@ -128,11 +133,13 @@ const PawnshopManager: React.FC = () => {
                   <span className="text-red-400 font-bold uppercase">BERLEBIH</span>
                 </div>
                 <div className="bg-slate-500/10 p-2 rounded border border-white/10 text-[8px] flex justify-between items-center sm:col-span-2">
-                  <span>❌ &gt; 500K(0%)</span>
+                  <span>❌ &gt; 500K (0%)</span>
                   <span className="text-slate-400 font-bold uppercase">PENERIMAAN DITUTUP</span>
                 </div>
              </div>
-             <button onClick={handleSync} disabled={isSyncing} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Sync Discord</button>
+             <button onClick={handleSyncDiscord} disabled={isSyncing} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20">
+                {isSyncing ? 'MENGIRIM LAPORAN...' : '📢 KIRIM LAPORAN HARGA KE DISCORD'}
+             </button>
           </div>
           {categories.map(cat => (
             <div key={cat} className="bg-slate-950 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
@@ -180,7 +187,7 @@ const PawnshopManager: React.FC = () => {
         <div className="space-y-4">
            <div className="flex justify-between items-center p-4 bg-slate-950 rounded-2xl border border-white/5">
              <h3 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">LOKER {activeTab}</h3>
-             <button onClick={handleSync} className="text-[9px] font-black bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-all">SYNC</button>
+             <button onClick={handleSyncDiscord} className="text-[9px] font-black bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-all">SYNC DISCORD</button>
            </div>
            <div className="bg-slate-950 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
              <table className="w-full text-left text-xs">
@@ -215,7 +222,7 @@ const PawnshopManager: React.FC = () => {
         </div>
       )}
       <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5">
-        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block px-1">Webhook URL</label>
+        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block px-1">Webhook URL (Untuk Laporan)</label>
         <input type="text" value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} placeholder="Discord Webhook..." className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-[10px] text-white outline-none focus:border-amber-500/50" />
       </div>
     </div>

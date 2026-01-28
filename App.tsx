@@ -10,6 +10,7 @@ import AIAssistant from './components/AIAssistant';
 import PublicInfo from './components/PublicInfo';
 import PawnshopMarket from './components/PawnshopMarket';
 import StructuralChart from './components/StructuralChart';
+import CitizenIdentityForm from './components/CitizenIdentityForm'; 
 import Footer from './components/Footer';
 import NewsAdmin from './components/NewsAdmin';
 import NewsDetail from './components/NewsDetail';
@@ -170,7 +171,10 @@ const App: React.FC = () => {
       <Navbar onNavClick={scrollToSection} />
       
       <main>
-        <Hero onApplyClick={() => scrollToSection('recruitment')} />
+        <Hero 
+          onApplyClick={() => scrollToSection('recruitment')} 
+          onFormClick={() => scrollToSection('citizen-form')}
+        />
         
         <CityCarousel />
         
@@ -218,6 +222,8 @@ const App: React.FC = () => {
         <div className="relative">
           <PublicInfo newsData={news} docs={legislativeDocs} onNewsClick={setSelectedNews} />
         </div>
+
+        <CitizenIdentityForm /> 
         
         <AIAssistant />
         <RegistrationForm googleFormUrl={recruitmentLink} />

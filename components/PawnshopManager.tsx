@@ -128,7 +128,7 @@ const PawnshopManager: React.FC = () => {
                   <span className="text-red-400 font-bold uppercase">BERLEBIH</span>
                 </div>
                 <div className="bg-slate-500/10 p-2 rounded border border-white/10 text-[8px] flex justify-between items-center sm:col-span-2">
-                  <span>❌ > 500K (0%)</span>
+                  <span>❌ &gt; 500K (0%)</span>
                   <span className="text-slate-400 font-bold uppercase">PENERIMAAN DITUTUP</span>
                 </div>
              </div>

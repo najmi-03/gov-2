@@ -162,7 +162,7 @@ export const DEFAULT_FORMS: FormConfig[] = [
   },
   {
     id: 'kk_baru',
-    title: 'Kartu Keluarga ($40.000)',
+    title: 'Kartu Keluarga',
     description: 'Pendaftaran Kartu Keluarga baru (Maksimal 5 Anggota).',
     icon: '👨‍👩-👧‍👦',
     webhookKey: 'ls_gov_webhook_kk',

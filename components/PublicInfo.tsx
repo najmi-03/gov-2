@@ -1,21 +1,15 @@
 
 import React from 'react';
-import { NewsItem } from '../types';
+import { NewsItem, LegislativeDocument } from '../types';
 import NewsCard from './NewsCard';
 
 interface PublicInfoProps {
   newsData: NewsItem[];
+  docs: LegislativeDocument[];
   onNewsClick: (news: NewsItem) => void;
 }
 
-const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, onNewsClick }) => {
-  const legislativeHighlights = [
-    { title: 'Kode Etik Warga', icon: '📜', desc: 'Hukum dasar yang mengatur perilaku harian.' },
-    { title: 'Undang-Undang Bisnis', icon: '🏢', desc: 'Aturan untuk operasional komersial.' },
-    { title: 'Piagam Keamanan', icon: '👮', desc: 'Protokol tanggap darurat publik.' },
-    { title: 'Pedoman Perpajakan', icon: '📊', desc: 'Tarif saat ini dan tanggal pembayaran.' },
-  ];
-
+const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick }) => {
   return (
     <section id="information" className="py-24 px-4 bg-slate-950 relative">
       {/* Background Decor */}
@@ -49,17 +43,28 @@ const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, onNewsClick }) => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {legislativeHighlights.map((law, i) => (
-              <div key={i} className="group p-8 bg-slate-900/30 border border-white/5 rounded-2xl hover:border-amber-500/30 hover:bg-slate-900/50 transition-all flex flex-col items-center text-center">
-                <span className="text-4xl mb-6 group-hover:scale-110 transition-transform">{law.icon}</span>
+            {docs.map((law, i) => (
+              <div key={law.id} className="group p-8 bg-slate-900/30 border border-white/5 rounded-2xl hover:border-amber-500/30 hover:bg-slate-900/50 transition-all flex flex-col items-center text-center">
+                <div className="text-4xl mb-6 group-hover:scale-110 transition-transform">
+                  {law.icon.startsWith('http') ? (
+                    <img src={law.icon} alt="icon" className="w-12 h-12 object-contain mx-auto" />
+                  ) : (
+                    <span>{law.icon}</span>
+                  )}
+                </div>
                 <h3 className="text-lg font-bold text-white mb-2">{law.title}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed mb-6">{law.desc}</p>
-                <button className="mt-auto text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
+                <a 
+                  href={law.link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="mt-auto text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all"
+                >
                   BACA DOKUMEN 
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </button>
+                </a>
               </div>
             ))}
           </div>

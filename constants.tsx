@@ -58,7 +58,7 @@ export const DEPARTMENTS: DeptInfo[] = [
     name: Department.SOCIAL_AFFAIRS,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEgIGurQI1uxBkygOBWtTDHRQBFssOiQhafX9Kp1S2Vodf-MnncDmLIf3f6uEOw1LA1-hwbUAEr-fHLISRQap5gYB91W2ROcJM0fms1v_gGRMsQ4Aor-yUOGH8YhYmDjkRIIGO9hSue_mnlatJD0Q5HVtUcUeUxwMjF0Uu2dLhG1zswAnfvXH8k9VO40OyCE',
     shortDescription: 'Berfokus pada kesejahteraan, pemberdayaan komunitas, dan inklusivitas sosial di San Andreas.',
-    longDescription: 'Social Affairs adalah jantung dari kemanusiaan di San Andreas. Kami percaya bahwa wilayah yang kuat dimulai dari komunitas yang harmonis dan terlindungi.',
+    longDescription: 'Social Affairs adalah jantung dari kemanusiaan di San Andreas. Kami percaya bahwa wilayah yang kuat dimulai dari komunitas yang harmonis and terlindungi.',
     vision: 'Membangun masyarakat San Andreas yang harmonis and berdaya saing.',
     responsibilities: ['Bantuan Sosial', 'Manajemen Panti & Rumah Singgah', 'Beasiswa Pendidikan', 'Perlindungan Anak'],
     requirements: ['Empati Tinggi', 'Komunikasi Massa', 'Latar Belakang Sosiologi'],
@@ -110,15 +110,15 @@ export const NEWS: NewsItem[] = [
   {
     id: 'n1',
     title: 'Kebijakan Ekonomi Baru San Andreas diumumkan',
-    date: '15 Mei 2024',
+    date: '15 Mei 2026',
     summary: 'Departemen Treasury meluncurkan insentif pajak baru bagi pemilik usaha kecil di area pusat kota San Andreas.',
     tag: 'Ekonomi',
     imageUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=800'
   },
   {
     id: 'n2',
-    title: 'Penerimaan Pegawai Negeri: Musim Gugur 2024',
-    date: '12 Mei 2024',
+    title: 'Penerimaan Pegawai Negeri: Musim Gugur 2026',
+    date: '12 Mei 2026',
     summary: 'Human Resources membuka pendaftaran untuk beberapa posisi kunci di lima departemen pemerintahan San Andreas.',
     tag: 'Rekrutmen',
     imageUrl: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80&w=800'
@@ -126,7 +126,7 @@ export const NEWS: NewsItem[] = [
   {
     id: 'n3',
     title: 'Pembaruan Kesehatan Masyarakat Wilayah',
-    date: '10 Mei 2024',
+    date: '10 Mei 2026',
     summary: 'Social Affairs meluncurkan kampanye kebugaran seluruh San Andreas untuk mendorong gaya hidup sehat.',
     tag: 'Kesehatan',
     imageUrl: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=800'

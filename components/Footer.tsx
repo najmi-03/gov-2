@@ -7,9 +7,10 @@ interface FooterProps {
   onLogout: () => void;
   auth: AuthState;
   onPrivacyClick: () => void;
+  onTermsClick: () => void;
 }
 
-const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick }) => {
+const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick, onTermsClick }) => {
   const [pin, setPin] = useState('');
   const [showLogin, setShowLogin] = useState(false);
 
@@ -41,7 +42,7 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
                 PEMERINTAH <span className="text-amber-500">SAN ANDREAS</span>
               </span>
             </div>
-            <p className="text-xs text-slate-500">© 2024 Cabang Eksekutif San Andreas. Seluruh hak cipta dilindungi melalui Protokol Otoritas Negara.</p>
+            <p className="text-xs text-slate-500">© 2026 Cabang Eksekutif San Andreas. Seluruh hak cipta dilindungi melalui Protokol Otoritas Negara.</p>
           </div>
           
           <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-slate-500">
@@ -51,7 +52,12 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
             >
               Kebijakan Privasi
             </button>
-            <a href="#" className="hover:text-amber-500 transition-colors">Syarat & Ketentuan</a>
+            <button 
+              onClick={(e) => { e.preventDefault(); onTermsClick(); }}
+              className="hover:text-amber-500 transition-colors uppercase"
+            >
+              Syarat & Ketentuan
+            </button>
             {!auth.isAdmin ? (
               <button 
                 onClick={() => setShowLogin(!showLogin)}

@@ -48,6 +48,14 @@ export interface DeptInfo {
   structuralStaff: StaffMember[];
 }
 
+export interface LegislativeDocument {
+  id: string;
+  title: string;
+  icon: string;
+  desc: string;
+  link: string;
+}
+
 export interface SalaryRecord {
   id: string;
   staffName: string;
@@ -68,7 +76,7 @@ export interface NewsItem {
   imageUrl?: string;
 }
 
-export type AdminRole = 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'NONE';
+export type AdminRole = 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'DHA_ADMIN' | 'NONE';
 
 export interface AuthState {
   isAdmin: boolean;

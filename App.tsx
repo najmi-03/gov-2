@@ -14,8 +14,9 @@ import Footer from './components/Footer';
 import NewsAdmin from './components/NewsAdmin';
 import NewsDetail from './components/NewsDetail';
 import PrivacyModal from './components/PrivacyModal';
+import TermsModal from './components/TermsModal';
 import { DEPARTMENTS as INITIAL_DEPARTMENTS, NEWS as INITIAL_NEWS } from './constants';
-import { DeptInfo, NewsItem, AuthState, AdminRole, LeadershipMember } from './types';
+import { DeptInfo, NewsItem, AuthState, AdminRole, LeadershipMember, LegislativeDocument } from './types';
 import { motion } from 'framer-motion';
 
 const INITIAL_LEADERSHIP: LeadershipMember[] = [
@@ -25,13 +26,25 @@ const INITIAL_LEADERSHIP: LeadershipMember[] = [
   { id: 'dsec', role: 'Deputy Secretary of State', name: 'Elara Vance', icon: '📝', color: 'border-blue-400' }
 ];
 
+const INITIAL_DOCS: LegislativeDocument[] = [
+  { id: 'doc1', title: 'Kode Etik Warga', icon: '📜', desc: 'Hukum dasar yang mengatur perilaku harian.', link: '#' },
+  { id: 'doc2', title: 'Undang-Undang Bisnis', icon: '🏢', desc: 'Aturan untuk operasional komersial.', link: '#' },
+  { id: 'doc3', title: 'Piagam Keamanan', icon: '👮', desc: 'Protokol tanggap darurat publik.', link: '#' },
+  { id: 'doc4', title: 'Pedoman Perpajakan', icon: '📊', desc: 'Tarif saat ini dan tanggal pembayaran.', link: '#' },
+];
+
+const DEFAULT_TERMS = `1. PENDAHULUAN\nSetiap warga yang berinteraksi dengan layanan pemerintah San Andreas wajib mematuhi seluruh protokol yang ditetapkan oleh Kantor Kepresidenan dan Departemen terkait.\n\n2. KODE ETIK\nWarga diharapkan menjaga integritas dan ketertiban umum. Segala bentuk pelanggaran hukum akan diproses melalui sistem peradilan San Andreas yang berlaku.\n\n3. HAK DAN KEWAJIBAN\nPemerintah berhak mengubah regulasi tanpa pemberitahuan sebelumnya demi kepentingan stabilitas ekonomi dan keamanan negara.\n\n4. KERAHASIAAN\nSeluruh data yang dikirimkan melalui portal rekrutmen akan dikelola secara rahasia oleh Departemen Human Resource.`;
+
 const App: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<DeptInfo | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [depts, setDepts] = useState<DeptInfo[]>(INITIAL_DEPARTMENTS);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [leadership, setLeadership] = useState<LeadershipMember[]>(INITIAL_LEADERSHIP);
+  const [legislativeDocs, setLegislativeDocs] = useState<LegislativeDocument[]>(INITIAL_DOCS);
+  const [termsContent, setTermsContent] = useState<string>(DEFAULT_TERMS);
   const [auth, setAuth] = useState<AuthState>({ isAdmin: false, staffName: null, role: 'NONE' });
 
   useEffect(() => {
@@ -43,7 +56,7 @@ const App: React.FC = () => {
       setNews(INITIAL_NEWS);
     }
 
-    // Load Departments (Structural changes)
+    // Load Departments
     const savedDepts = localStorage.getItem('ls_gov_depts');
     if (savedDepts) {
       setDepts(JSON.parse(savedDepts));
@@ -53,6 +66,18 @@ const App: React.FC = () => {
     const savedLeadership = localStorage.getItem('ls_gov_leadership');
     if (savedLeadership) {
       setLeadership(JSON.parse(savedLeadership));
+    }
+
+    // Load Legislative Docs
+    const savedDocs = localStorage.getItem('ls_gov_docs');
+    if (savedDocs) {
+      setLegislativeDocs(JSON.parse(savedDocs));
+    }
+
+    // Load Terms
+    const savedTerms = localStorage.getItem('ls_gov_terms');
+    if (savedTerms) {
+      setTermsContent(savedTerms);
     }
 
     // Check auth session
@@ -78,6 +103,16 @@ const App: React.FC = () => {
     localStorage.setItem('ls_gov_leadership', JSON.stringify(updatedLeadership));
   };
 
+  const updateDocs = (updatedDocs: LegislativeDocument[]) => {
+    setLegislativeDocs(updatedDocs);
+    localStorage.setItem('ls_gov_docs', JSON.stringify(updatedDocs));
+  };
+
+  const updateTerms = (content: string) => {
+    setTermsContent(content);
+    localStorage.setItem('ls_gov_terms', content);
+  };
+
   const handleLogin = (pin: string) => {
     let newAuth: AuthState | null = null;
 
@@ -89,6 +124,8 @@ const App: React.FC = () => {
       newAuth = { isAdmin: true, staffName: "Staff HR", role: 'HR_ADMIN' };
     } else if (pin === "CASH999") {
       newAuth = { isAdmin: true, staffName: "Bendahara Negara", role: 'TREASURY_ADMIN' };
+    } else if (pin === "DHA123") {
+      newAuth = { isAdmin: true, staffName: "Staff Home Affairs", role: 'DHA_ADMIN' };
     }
 
     if (newAuth) {
@@ -165,7 +202,7 @@ const App: React.FC = () => {
         <PawnshopMarket />
 
         <div className="relative">
-          <PublicInfo newsData={news} onNewsClick={setSelectedNews} />
+          <PublicInfo newsData={news} docs={legislativeDocs} onNewsClick={setSelectedNews} />
         </div>
         
         <AIAssistant />
@@ -177,6 +214,7 @@ const App: React.FC = () => {
         onLogout={handleLogout} 
         auth={auth} 
         onPrivacyClick={() => setShowPrivacy(true)}
+        onTermsClick={() => setShowTerms(true)}
       />
 
       {auth.isAdmin && (
@@ -188,6 +226,10 @@ const App: React.FC = () => {
           setDepts={updateDepts}
           leadership={leadership}
           setLeadership={updateLeadership}
+          docs={legislativeDocs}
+          setDocs={updateDocs}
+          termsContent={termsContent}
+          setTermsContent={updateTerms}
         />
       )}
 
@@ -205,6 +247,12 @@ const App: React.FC = () => {
       <PrivacyModal 
         isOpen={showPrivacy} 
         onClose={() => setShowPrivacy(false)} 
+      />
+
+      <TermsModal
+        isOpen={showTerms}
+        onClose={() => setShowTerms(false)}
+        content={termsContent}
       />
     </div>
   );

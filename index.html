@@ -3,7 +3,7 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
     <title>San Andreas Government Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -21,14 +21,28 @@
       }
       /* Custom scrollbar */
       ::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
+        height: 6px;
       }
       ::-webkit-scrollbar-track {
         background: #0f172a;
       }
       ::-webkit-scrollbar-thumb {
         background: #f59e0b;
-        border-radius: 4px;
+        border-radius: 10px;
+      }
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .scrollbar-hide {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+      }
+      .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #f59e0b #0f172a;
       }
     </style>
   <script type="importmap">
@@ -47,7 +61,6 @@
 </head>
   <body class="bg-slate-950 text-slate-100 selection:bg-amber-500/30 overflow-x-hidden">
     <div id="root"></div>
-    <!-- Penambahan script type module untuk menjalankan index.tsx -->
     <script type="module" src="index.tsx"></script>
   <script type="module" src="/index.tsx"></script>
 </body>

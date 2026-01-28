@@ -35,6 +35,8 @@ const INITIAL_DOCS: LegislativeDocument[] = [
 
 const DEFAULT_TERMS = `1. PENDAHULUAN\nSetiap warga yang berinteraksi dengan layanan pemerintah San Andreas wajib mematuhi seluruh protokol yang ditetapkan oleh Kantor Kepresidenan dan Departemen terkait.\n\n2. KODE ETIK\nWarga diharapkan menjaga integritas dan ketertiban umum. Segala bentuk pelanggaran hukum akan diproses melalui sistem peradilan San Andreas yang berlaku.\n\n3. HAK DAN KEWAJIBAN\nPemerintah berhak mengubah regulasi tanpa pemberitahuan sebelumnya demi kepentingan stabilitas ekonomi dan keamanan negara.\n\n4. KERAHASIAAN\nSeluruh data yang dikirimkan melalui portal rekrutmen akan dikelola secara rahasia oleh Departemen Human Resource.`;
 
+const DEFAULT_RECRUITMENT_LINK = "https://docs.google.com/forms/d/e/your-form-id/viewform";
+
 const App: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<DeptInfo | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
@@ -45,6 +47,7 @@ const App: React.FC = () => {
   const [leadership, setLeadership] = useState<LeadershipMember[]>(INITIAL_LEADERSHIP);
   const [legislativeDocs, setLegislativeDocs] = useState<LegislativeDocument[]>(INITIAL_DOCS);
   const [termsContent, setTermsContent] = useState<string>(DEFAULT_TERMS);
+  const [recruitmentLink, setRecruitmentLink] = useState<string>(DEFAULT_RECRUITMENT_LINK);
   const [auth, setAuth] = useState<AuthState>({ isAdmin: false, staffName: null, role: 'NONE' });
 
   useEffect(() => {
@@ -80,6 +83,12 @@ const App: React.FC = () => {
       setTermsContent(savedTerms);
     }
 
+    // Load Recruitment Link
+    const savedRecruitmentLink = localStorage.getItem('ls_gov_recruitment_link');
+    if (savedRecruitmentLink) {
+      setRecruitmentLink(savedRecruitmentLink);
+    }
+
     // Check auth session
     const savedAuth = sessionStorage.getItem('ls_gov_auth');
     if (savedAuth) {
@@ -111,6 +120,11 @@ const App: React.FC = () => {
   const updateTerms = (content: string) => {
     setTermsContent(content);
     localStorage.setItem('ls_gov_terms', content);
+  };
+
+  const updateRecruitmentLink = (link: string) => {
+    setRecruitmentLink(link);
+    localStorage.setItem('ls_gov_recruitment_link', link);
   };
 
   const handleLogin = (pin: string) => {
@@ -206,7 +220,7 @@ const App: React.FC = () => {
         </div>
         
         <AIAssistant />
-        <RegistrationForm />
+        <RegistrationForm googleFormUrl={recruitmentLink} />
       </main>
 
       <Footer 
@@ -230,6 +244,8 @@ const App: React.FC = () => {
           setDocs={updateDocs}
           termsContent={termsContent}
           setTermsContent={updateTerms}
+          recruitmentLink={recruitmentLink}
+          setRecruitmentLink={updateRecruitmentLink}
         />
       )}
 

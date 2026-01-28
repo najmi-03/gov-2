@@ -1,10 +1,13 @@
 
 import React from 'react';
 
-const RegistrationForm: React.FC = () => {
-  // Ganti URL ini dengan link Google Form yang asli
-  const googleFormUrl = "https://docs.google.com/forms/d/e/your-form-id/viewform";
+interface RegistrationFormProps {
+  googleFormUrl?: string;
+}
 
+const RegistrationForm: React.FC<RegistrationFormProps> = ({ 
+  googleFormUrl = "https://docs.google.com/forms/d/e/your-form-id/viewform" 
+}) => {
   const handleOpenForm = () => {
     window.open(googleFormUrl, '_blank', 'noopener,noreferrer');
   };

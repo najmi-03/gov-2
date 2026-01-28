@@ -19,10 +19,13 @@ interface NewsAdminProps {
   setDocs: (docs: LegislativeDocument[]) => void;
   termsContent: string;
   setTermsContent: (content: string) => void;
+  recruitmentLink?: string;
+  setRecruitmentLink?: (link: string) => void;
 }
 
 const NewsAdmin: React.FC<NewsAdminProps> = ({ 
-  news, setNews, userRole, depts, setDepts, leadership, setLeadership, docs, setDocs, termsContent, setTermsContent 
+  news, setNews, userRole, depts, setDepts, leadership, setLeadership, docs, setDocs, termsContent, setTermsContent,
+  recruitmentLink = "", setRecruitmentLink
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'news' | 'inventory' | 'structural' | 'salary' | 'legislative' | 'terms' | 'depts'>('news');
@@ -194,9 +197,9 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-amber-500 text-slate-950 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform group"
+        className="fixed bottom-6 left-6 z-50 w-12 h-12 md:w-14 md:h-14 bg-amber-500 text-slate-950 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform group"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
         </svg>
       </button>
@@ -214,12 +217,12 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              className="relative w-full max-w-2xl h-full bg-slate-900 border-l border-white/10 shadow-2xl p-8 overflow-y-auto custom-scrollbar"
+              className="relative w-full md:max-w-2xl lg:max-w-3xl h-full bg-slate-900 border-l border-white/10 shadow-2xl p-5 md:p-8 overflow-y-auto custom-scrollbar"
             >
-              <div className="flex justify-between items-center mb-8">
+              <div className="flex justify-between items-center mb-6 md:mb-8">
                 <div>
-                  <h2 className="text-2xl font-serif font-bold text-white">Panel Administrasi</h2>
-                  <p className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">
+                  <h2 className="text-xl md:text-2xl font-serif font-bold text-white">Panel Administrasi</h2>
+                  <p className="text-[9px] md:text-[10px] text-amber-500 font-bold uppercase tracking-widest">
                     Akses: {
                       userRole === 'NEWS_ADMIN' ? 'Staff Humas' : 
                       userRole === 'PAWN_ADMIN' ? 'Staff Logistik' : 
@@ -229,88 +232,88 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                     }
                   </p>
                 </div>
-                <button onClick={() => setIsOpen(false)} className="text-slate-500 hover:text-white">✕</button>
+                <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-slate-500 hover:text-white transition-colors">✕</button>
               </div>
 
-              <div className="flex border-b border-white/10 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
+              <div className="flex border-b border-white/10 mb-6 md:mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
                 {(userRole === 'NEWS_ADMIN') && (
-                  <button onClick={() => setActiveTab('news')} className={`flex-1 min-w-[120px] py-3 text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'news' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Berita</button>
+                  <button onClick={() => setActiveTab('news')} className={`flex-shrink-0 px-4 md:px-0 md:flex-1 py-3 text-[9px] md:text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'news' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Berita</button>
                 )}
                 {(userRole === 'PAWN_ADMIN') && (
-                  <button onClick={() => setActiveTab('inventory')} className={`flex-1 min-w-[120px] py-3 text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'inventory' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Stok Pawn</button>
+                  <button onClick={() => setActiveTab('inventory')} className={`flex-shrink-0 px-4 md:px-0 md:flex-1 py-3 text-[9px] md:text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'inventory' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Stok Pawn</button>
                 )}
                 {(userRole === 'HR_ADMIN') && (
                   <>
-                    <button onClick={() => setActiveTab('structural')} className={`flex-1 min-w-[120px] py-3 text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'structural' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Struktural</button>
-                    <button onClick={() => setActiveTab('depts')} className={`flex-1 min-w-[120px] py-3 text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'depts' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Departemen</button>
-                    <button onClick={() => setActiveTab('terms')} className={`flex-1 min-w-[120px] py-3 text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'terms' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Syarat & Ketentuan</button>
+                    <button onClick={() => setActiveTab('structural')} className={`flex-shrink-0 px-4 md:px-0 md:flex-1 py-3 text-[9px] md:text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'structural' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Struktural</button>
+                    <button onClick={() => setActiveTab('depts')} className={`flex-shrink-0 px-4 md:px-0 md:flex-1 py-3 text-[9px] md:text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'depts' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Departemen</button>
+                    <button onClick={() => setActiveTab('terms')} className={`flex-shrink-0 px-4 md:px-0 md:flex-1 py-3 text-[9px] md:text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'terms' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Terms</button>
                   </>
                 )}
                 {(userRole === 'TREASURY_ADMIN') && (
-                  <button onClick={() => setActiveTab('salary')} className={`flex-1 min-w-[120px] py-3 text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'salary' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Gaji</button>
+                  <button onClick={() => setActiveTab('salary')} className={`flex-shrink-0 px-4 md:px-0 md:flex-1 py-3 text-[9px] md:text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'salary' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Gaji</button>
                 )}
                 {(userRole === 'DHA_ADMIN') && (
-                  <button onClick={() => setActiveTab('legislative')} className={`flex-1 min-w-[120px] py-3 text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'legislative' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Legislatif</button>
+                  <button onClick={() => setActiveTab('legislative')} className={`flex-shrink-0 px-4 md:px-0 md:flex-1 py-3 text-[9px] md:text-[10px] font-bold tracking-widest uppercase transition-colors ${activeTab === 'legislative' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500'}`}>Legislatif</button>
                 )}
               </div>
 
               {activeTab === 'news' && userRole === 'NEWS_ADMIN' ? (
-                <div className="space-y-8 pb-20">
-                  <div className="bg-amber-500/5 border border-amber-500/20 p-6 rounded-2xl">
-                    <h3 className="text-sm font-bold text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <span>✨</span> Tulis Otomatis dengan Gemini AI
+                <div className="space-y-6 md:space-y-8 pb-20">
+                  <div className="bg-amber-500/5 border border-amber-500/20 p-5 md:p-6 rounded-2xl">
+                    <h3 className="text-xs md:text-sm font-bold text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <span>✨</span> Gemini AI Assistant
                     </h3>
-                    <button onClick={handleGenerateAI} disabled={isGenerating} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-lg hover:bg-amber-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                    <button onClick={handleGenerateAI} disabled={isGenerating} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-lg hover:bg-amber-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-[10px] tracking-widest uppercase">
                       {isGenerating ? 'MENGHUBUNGI GEMINI...' : 'BUAT BERITA DENGAN AI'}
                     </button>
                   </div>
 
-                  <form onSubmit={handleAddManual} className="space-y-6 bg-slate-950/50 p-6 rounded-2xl border border-white/5">
-                    <h3 className="text-sm font-bold text-white uppercase tracking-widest border-b border-white/10 pb-2">Input Berita Manual</h3>
+                  <form onSubmit={handleAddManual} className="space-y-4 md:space-y-6 bg-slate-950/50 p-5 md:p-6 rounded-2xl border border-white/5">
+                    <h3 className="text-xs md:text-sm font-bold text-white uppercase tracking-widest border-b border-white/10 pb-2">Input Berita Manual</h3>
                     <div className="space-y-4">
                       <div>
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Judul Berita</label>
-                        <input type="text" placeholder="Masukkan judul utama..." value={newNews.title} onChange={e => setNewNews({...newNews, title: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none" />
+                        <label className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Judul Berita</label>
+                        <input type="text" placeholder="Masukkan judul utama..." value={newNews.title} onChange={e => setNewNews({...newNews, title: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none text-white" />
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tag Kategori</label>
-                          <input type="text" placeholder="e.g. Ekonomi, Publik" value={newNews.tag} onChange={e => setNewNews({...newNews, tag: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none" />
+                          <label className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tag Kategori</label>
+                          <input type="text" placeholder="e.g. Ekonomi, Publik" value={newNews.tag} onChange={e => setNewNews({...newNews, tag: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none text-white" />
                         </div>
                         <div>
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tanggal Publikasi</label>
-                          <input type="text" placeholder="e.g. 1 Januari 2026" value={newNews.date} onChange={e => setNewNews({...newNews, date: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none" />
+                          <label className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Tanggal Publikasi</label>
+                          <input type="text" placeholder="e.g. 1 Januari 2026" value={newNews.date} onChange={e => setNewNews({...newNews, date: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none text-white" />
                         </div>
                       </div>
                       <div>
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">URL Gambar Utama</label>
-                        <input type="text" placeholder="https://..." value={newNews.imageUrl} onChange={e => setNewNews({...newNews, imageUrl: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none" />
+                        <label className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">URL Gambar Utama</label>
+                        <input type="text" placeholder="https://..." value={newNews.imageUrl} onChange={e => setNewNews({...newNews, imageUrl: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none text-white" />
                         {newNews.imageUrl && (
                           <div className="mt-3 p-2 bg-slate-900 rounded-xl border border-white/10">
                             <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-2">Preview Gambar:</p>
-                            <div className="w-full h-40 bg-slate-950 rounded-lg overflow-hidden border border-white/5">
+                            <div className="w-full h-32 md:h-40 bg-slate-950 rounded-lg overflow-hidden border border-white/5">
                               <img src={newNews.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           </div>
                         )}
                       </div>
                       <div>
-                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Isi / Deskripsi Berita</label>
-                        <textarea placeholder="Tuliskan isi berita secara lengkap di sini..." rows={10} value={newNews.summary} onChange={e => setNewNews({...newNews, summary: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none resize-none leading-relaxed" />
+                        <label className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Isi / Deskripsi Berita</label>
+                        <textarea placeholder="Tuliskan isi berita secara lengkap di sini..." rows={6} value={newNews.summary} onChange={e => setNewNews({...newNews, summary: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-amber-500/50 outline-none resize-none leading-relaxed text-white" />
                       </div>
                     </div>
-                    <button className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl transition-all uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-amber-500/10">PUBLIKASIKAN BERITA SEKARANG</button>
+                    <button className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl transition-all uppercase tracking-[0.2em] text-[9px] md:text-[10px] shadow-lg shadow-amber-500/10">PUBLIKASIKAN BERITA</button>
                   </form>
 
-                  <div className="space-y-3 pt-8 border-t border-white/5">
-                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">Daftar Berita Aktif</h3>
+                  <div className="space-y-3 pt-6 md:pt-8 border-t border-white/5">
+                    <h3 className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">Manajemen Berita</h3>
                     {news.map(n => (
-                      <div key={n.id} className="group flex items-center justify-between p-4 bg-slate-950 rounded-xl border border-white/5 hover:border-white/10 transition-all">
-                        <div className="flex items-center gap-4 max-w-[80%]">
-                          {n.imageUrl && <img src={n.imageUrl} className="w-12 h-12 object-cover rounded-lg border border-white/10" alt="thumb" />}
+                      <div key={n.id} className="group flex items-center justify-between p-3 md:p-4 bg-slate-950 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                        <div className="flex items-center gap-3 md:gap-4 max-w-[80%] overflow-hidden">
+                          {n.imageUrl && <img src={n.imageUrl} className="w-10 h-10 md:w-12 md:h-12 object-cover rounded-lg border border-white/10 flex-shrink-0" alt="thumb" />}
                           <div className="truncate">
                             <p className="text-white font-bold text-xs truncate group-hover:text-amber-500 transition-colors">{n.title}</p>
-                            <p className="text-[10px] text-slate-500">{n.date} • <span className="text-amber-500/80 font-bold">{n.tag}</span></p>
+                            <p className="text-[9px] md:text-[10px] text-slate-500">{n.date} • <span className="text-amber-500/80 font-bold">{n.tag}</span></p>
                           </div>
                         </div>
                         <button onClick={() => deleteNews(n.id)} className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/5 rounded-lg transition-all">✕</button>
@@ -319,56 +322,81 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                   </div>
                 </div>
               ) : activeTab === 'inventory' && userRole === 'PAWN_ADMIN' ? (
-                <PawnshopManager />
+                <div className="pb-20">
+                  <PawnshopManager />
+                </div>
               ) : activeTab === 'salary' && userRole === 'TREASURY_ADMIN' ? (
-                <SalaryManager leadership={leadership} depts={depts} />
+                <div className="pb-20">
+                  <SalaryManager leadership={leadership} depts={depts} />
+                </div>
               ) : activeTab === 'legislative' && userRole === 'DHA_ADMIN' ? (
-                <LegislativeManager docs={docs} setDocs={setDocs} />
+                <div className="pb-20">
+                  <LegislativeManager docs={docs} setDocs={setDocs} />
+                </div>
               ) : activeTab === 'terms' && userRole === 'HR_ADMIN' ? (
-                <div className="space-y-8 pb-20">
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-white/5 border-l-4 border-amber-500">
-                    <h3 className="text-sm font-black text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                      <span>📄</span> Manajemen Syarat & Ketentuan
+                <div className="space-y-6 md:space-y-8 pb-20">
+                  <div className="bg-slate-950 p-5 md:p-6 rounded-2xl border border-white/5 border-l-4 border-amber-500">
+                    <h3 className="text-xs md:text-sm font-black text-amber-500 uppercase tracking-[0.2em] mb-3 md:mb-4 flex items-center gap-2">
+                      <span>📄</span> Dokumen Syarat & Ketentuan
                     </h3>
-                    <p className="text-[10px] text-slate-500 leading-relaxed uppercase tracking-widest">
-                      Bagian ini mengontrol isi dari dokumen "Syarat & Ketentuan" yang dapat dilihat oleh warga di bagian bawah portal. 
+                    <p className="text-[9px] md:text-[10px] text-slate-500 leading-relaxed uppercase tracking-widest">
+                      Edit isi dokumen hukum publik yang muncul di footer.
                     </p>
                   </div>
-                  <div className="bg-slate-950 border border-white/5 rounded-2xl p-6">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Konten Dokumen</label>
+                  <div className="bg-slate-950 border border-white/5 rounded-2xl p-5 md:p-6">
+                    <label className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Konten Dokumen (Full-Text)</label>
                     <textarea 
                       value={termsContent}
                       onChange={e => setTermsContent(e.target.value)}
-                      rows={20}
+                      rows={15}
                       placeholder="Masukkan Syarat & Ketentuan di sini..."
                       className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-sm text-slate-300 focus:border-amber-500/50 outline-none resize-none leading-relaxed"
                     />
                   </div>
                 </div>
               ) : activeTab === 'depts' && userRole === 'HR_ADMIN' ? (
-                <div className="space-y-8 pb-20">
-                   <div className="bg-slate-950 p-6 rounded-2xl border border-white/5 border-l-4 border-amber-500">
-                    <h3 className="text-sm font-black text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                      <span>🏢</span> Manajemen Kartu Departemen
+                <div className="space-y-6 md:space-y-8 pb-20">
+                   <div className="bg-slate-950 p-5 md:p-6 rounded-2xl border border-white/5 border-l-4 border-amber-500">
+                    <h3 className="text-xs md:text-sm font-black text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <span>🏢</span> Manajemen Konten Departemen
                     </h3>
-                    <p className="text-[10px] text-slate-500 leading-relaxed uppercase tracking-widest">
-                      Edit informasi yang muncul pada kartu-kartu departemen di halaman utama (gambar, deskripsi, visi, tanggung jawab, persyaratan).
+                    <p className="text-[9px] md:text-[10px] text-slate-500 leading-relaxed uppercase tracking-widest">
+                      Sesuaikan detail yang muncul pada kartu dan modal departemen di halaman utama.
                     </p>
                   </div>
 
+                  {/* New Feature: Recruitment Link Manager */}
+                  <div className="bg-slate-950 border border-white/5 rounded-2xl p-5 md:p-6 space-y-4">
+                    <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                      <span className="text-xl">📝</span>
+                      <h4 className="font-bold text-white text-xs md:text-sm uppercase tracking-widest">Link Rekrutmen Global</h4>
+                    </div>
+                    <div>
+                      <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Google Form URL</label>
+                      <input 
+                        type="text" 
+                        value={recruitmentLink}
+                        onChange={e => setRecruitmentLink && setRecruitmentLink(e.target.value)}
+                        className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-blue-400 outline-none focus:border-amber-500/30"
+                        placeholder="https://docs.google.com/forms/..."
+                      />
+                      <p className="mt-2 text-[8px] text-slate-500 italic uppercase">*Link ini akan digunakan pada tombol "BUKA FORMULIR PENDAFTARAN" di section Rekrutmen.</p>
+                    </div>
+                  </div>
+
                   {depts.map(dept => (
-                    <div key={dept.id} className="bg-slate-950 border border-white/5 rounded-2xl p-6 space-y-6">
+                    <div key={dept.id} className="bg-slate-950 border border-white/5 rounded-2xl p-5 md:p-6 space-y-6">
                       <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-                        <div className="w-8 h-8 flex items-center justify-center">
+                        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
                            {dept.icon.startsWith('http') ? <img src={dept.icon} className="w-full h-full object-contain" /> : <span className="text-xl">{dept.icon}</span>}
                         </div>
-                        <h4 className="font-bold text-white text-sm uppercase tracking-widest">{dept.name}</h4>
+                        <h4 className="font-bold text-white text-xs md:text-sm uppercase tracking-widest truncate">{dept.name}</h4>
                       </div>
 
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">URL Gambar Departemen</label>
+                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">URL Gambar Banner</label>
                             <input 
                               type="text" 
                               value={dept.imageUrl}
@@ -376,12 +404,12 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                               className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-amber-500/30"
                               placeholder="https://..."
                             />
-                            <div className="mt-2 h-24 w-full bg-slate-900 rounded-lg overflow-hidden border border-white/5">
+                            <div className="mt-2 h-20 md:h-24 w-full bg-slate-900 rounded-lg overflow-hidden border border-white/5">
                               <img src={dept.imageUrl} className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} />
                             </div>
                           </div>
                           <div>
-                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Visi Departemen</label>
+                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Visi Strategis</label>
                             <input 
                               type="text" 
                               value={dept.vision}
@@ -389,7 +417,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                               className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-amber-500 outline-none focus:border-amber-500/30"
                             />
                             <div className="mt-4">
-                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Deskripsi Singkat (Muncul di Kartu)</label>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Deskripsi Singkat (Kartu)</label>
                               <input 
                                 type="text" 
                                 value={dept.shortDescription}
@@ -401,23 +429,23 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                         </div>
 
                         <div>
-                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Deskripsi Lengkap (Muncul di Detail)</label>
+                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Deskripsi Panjang (Modal Detail)</label>
                           <textarea 
                             value={dept.longDescription}
                             onChange={e => updateDeptContent(dept.id, 'longDescription', e.target.value)}
-                            rows={4}
+                            rows={3}
                             className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-amber-500/30 resize-none"
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-white/5">
-                          {/* EDIT RESPONSIBILITIES */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                          {/* RESPONSIBILITIES */}
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <label className="text-[8px] font-bold text-amber-500 uppercase tracking-[0.2em] block">Tanggung Jawab Utama</label>
+                              <label className="text-[8px] font-bold text-amber-500 uppercase tracking-[0.2em] block">Tanggung Jawab</label>
                               <button 
                                 onClick={() => addDeptArrayItem(dept.id, 'responsibilities')}
-                                className="text-[8px] font-bold bg-amber-500/10 text-amber-500 px-2 py-1 rounded border border-amber-500/20"
+                                className="text-[7px] md:text-[8px] font-bold bg-amber-500/10 text-amber-500 px-2 py-1 rounded border border-amber-500/20 uppercase"
                               >
                                 + TAMBAH
                               </button>
@@ -431,19 +459,19 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                                     onChange={(e) => updateDeptArrayField(dept.id, 'responsibilities', idx, e.target.value)}
                                     className="flex-1 bg-slate-900 border border-white/5 rounded px-2 py-1.5 text-[10px] text-white outline-none focus:border-amber-500/30"
                                   />
-                                  <button onClick={() => removeDeptArrayItem(dept.id, 'responsibilities', idx)} className="text-slate-600 hover:text-red-500">✕</button>
+                                  <button onClick={() => removeDeptArrayItem(dept.id, 'responsibilities', idx)} className="text-slate-600 hover:text-red-500 p-1">✕</button>
                                 </div>
                               ))}
                             </div>
                           </div>
 
-                          {/* EDIT REQUIREMENTS */}
+                          {/* REQUIREMENTS */}
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <label className="text-[8px] font-bold text-blue-400 uppercase tracking-[0.2em] block">Persyaratan Bergabung</label>
+                              <label className="text-[8px] font-bold text-blue-400 uppercase tracking-[0.2em] block">Persyaratan</label>
                               <button 
                                 onClick={() => addDeptArrayItem(dept.id, 'requirements')}
-                                className="text-[8px] font-bold bg-blue-500/10 text-blue-400 px-2 py-1 rounded border border-blue-500/20"
+                                className="text-[7px] md:text-[8px] font-bold bg-blue-500/10 text-blue-400 px-2 py-1 rounded border border-blue-500/20 uppercase"
                               >
                                 + TAMBAH
                               </button>
@@ -457,7 +485,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                                     onChange={(e) => updateDeptArrayField(dept.id, 'requirements', idx, e.target.value)}
                                     className="flex-1 bg-slate-900 border border-white/5 rounded px-2 py-1.5 text-[10px] text-white outline-none focus:border-amber-500/30"
                                   />
-                                  <button onClick={() => removeDeptArrayItem(dept.id, 'requirements', idx)} className="text-slate-600 hover:text-red-500">✕</button>
+                                  <button onClick={() => removeDeptArrayItem(dept.id, 'requirements', idx)} className="text-slate-600 hover:text-red-500 p-1">✕</button>
                                 </div>
                               ))}
                             </div>
@@ -468,31 +496,30 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                   ))}
                 </div>
               ) : activeTab === 'structural' && userRole === 'HR_ADMIN' ? (
-                <div className="space-y-12 pb-20">
-                  {/* Restored Structural Editor UI */}
-                  <div className="bg-slate-950/50 rounded-3xl border border-white/5 p-6 border-l-4 border-amber-500">
-                    <h3 className="text-sm font-black text-amber-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                       <span>🏛️</span> Pimpinan Eksekutif San Andreas
+                <div className="space-y-8 md:space-y-12 pb-20">
+                  <div className="bg-slate-950/50 rounded-2xl border border-white/5 p-5 md:p-6 border-l-4 border-amber-500">
+                    <h3 className="text-xs md:text-sm font-black text-amber-500 uppercase tracking-[0.2em] mb-4 md:mb-6 flex items-center gap-2">
+                       <span>🏛️</span> Pimpinan Eksekutif
                     </h3>
-                    <div className="space-y-6">
+                    <div className="space-y-4 md:space-y-6">
                       {leadership.map((l) => (
-                        <div key={l.id} className="grid grid-cols-1 gap-4 p-4 bg-slate-900/50 rounded-xl border border-white/5">
+                        <div key={l.id} className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-900/50 rounded-xl border border-white/5">
                           <div className="flex flex-col gap-1">
-                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Gelar/Jabatan Resmi</label>
+                            <label className="text-[7px] md:text-[8px] font-bold text-slate-500 uppercase tracking-widest">Jabatan</label>
                             <input 
                               type="text" 
                               value={l.role}
                               onChange={(e) => updateLeadershipRole(l.id, e.target.value)}
-                              className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-xs text-white outline-none focus:border-amber-500/30"
+                              className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-[11px] text-white outline-none focus:border-amber-500/30"
                             />
                           </div>
                           <div className="flex flex-col gap-1">
-                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Nama Pejabat</label>
+                            <label className="text-[7px] md:text-[8px] font-bold text-slate-500 uppercase tracking-widest">Nama</label>
                             <input 
                               type="text" 
                               value={l.name}
                               onChange={(e) => updateLeadershipName(l.id, e.target.value)}
-                              className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-xs text-amber-500 font-bold outline-none focus:border-amber-500/30"
+                              className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-[11px] text-amber-500 font-bold outline-none focus:border-amber-500/30"
                             />
                           </div>
                         </div>
@@ -500,50 +527,48 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-8">
-                    <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] border-b border-white/10 pb-2">
+                  <div className="space-y-6 md:space-y-8">
+                    <h3 className="text-xs md:text-sm font-black text-white uppercase tracking-[0.2em] border-b border-white/10 pb-2">
                        Aparatur Sipil Departemen
                     </h3>
                     {depts.map(dept => (
                       <div key={dept.id} className="bg-slate-950 rounded-2xl border border-white/5 overflow-hidden">
-                        <div className="px-6 py-3 bg-white/5 border-b border-white/5 flex items-center justify-between">
-                           <div className="flex items-center gap-3">
-                             <h4 className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{dept.name}</h4>
-                           </div>
+                        <div className="px-5 py-3 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                           <h4 className="text-[8px] md:text-[10px] font-black text-slate-400 tracking-widest uppercase truncate max-w-[50%]">{dept.name}</h4>
                            <button 
                              onClick={() => addStaffRole(dept.id)}
-                             className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 text-[8px] font-bold rounded uppercase border border-amber-500/20"
+                             className="px-2 md:px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 text-[7px] md:text-[8px] font-bold rounded uppercase border border-amber-500/20 whitespace-nowrap"
                            >
-                             + JABATAN BARU
+                             + JABATAN
                            </button>
                         </div>
                         <div className="p-4 space-y-4">
                           {dept.structuralStaff.map((staff, idx) => (
-                            <div key={idx} className="flex items-start gap-4 p-4 bg-slate-900/30 rounded-xl border border-white/5 group relative">
-                              <div className="flex-1 space-y-3">
+                            <div key={idx} className="flex items-start gap-3 p-3 md:p-4 bg-slate-900/30 rounded-xl border border-white/5 relative">
+                              <div className="flex-1 space-y-2">
                                 <div className="flex flex-col gap-1">
-                                  <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Jabatan</label>
+                                  <label className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">Jabatan</label>
                                   <input 
                                     type="text" 
                                     value={staff.role}
                                     onChange={(e) => updateStaffRole(dept.id, idx, e.target.value)}
-                                    className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-[10px] text-slate-200 outline-none"
+                                    className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1.5 text-[10px] text-slate-200 outline-none"
                                   />
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                  <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Nama</label>
+                                  <label className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">Nama</label>
                                   <input 
                                     type="text" 
                                     value={staff.name}
                                     onChange={(e) => updateStaffName(dept.id, idx, e.target.value)}
-                                    className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-[11px] text-white font-medium outline-none"
+                                    className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white font-medium outline-none"
                                   />
                                 </div>
                               </div>
                               {staff.level !== 1 && (
                                 <button 
                                   onClick={() => deleteStaffRole(dept.id, idx)}
-                                  className="p-2 text-slate-600 hover:text-red-500 transition-colors"
+                                  className="text-slate-600 hover:text-red-500 transition-colors p-1"
                                 >
                                   ✕
                                 </button>
@@ -557,8 +582,8 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10">🔒</div>
-                  <p className="text-slate-500 text-sm">Anda tidak memiliki izin untuk mengakses bagian ini.</p>
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10 text-xl">🔒</div>
+                  <p className="text-slate-500 text-sm">Akses Terbatas</p>
                 </div>
               )}
             </motion.div>

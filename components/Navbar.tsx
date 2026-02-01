@@ -11,7 +11,7 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
   const menuItems = [
     { label: 'Departemen', id: 'departments' },
     { label: 'Struktural', id: 'structural' },
-    { label: 'Formulir Digital', id: 'citizen-form' }, 
+    { label: 'Layanan Form', id: 'citizen-form' }, 
     { label: 'Informasi', id: 'information' },
     { label: 'Rekrutmen', id: 'recruitment' },
     { label: 'Asisten AI', id: 'assistant' }
@@ -34,7 +34,8 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
               alt="Logo SA" 
               className="h-10 sm:h-12 md:h-14 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(245,158,11,0.4)] transition-transform hover:scale-105"
             />
-            <span className="text-xs sm:text-sm md:text-lg font-serif font-bold italic tracking-[0.2em] text-amber-500 hidden xs:block border-l border-white/10 pl-3 sm:pl-4 py-1">
+            {/* Responsif text logo: hidden di HP sangat kecil, muncul di HP modern */}
+            <span className="text-sm sm:text-base md:text-xl font-serif font-bold tracking-tighter text-amber-500 hidden min-[360px]:block border-l border-white/10 pl-3 sm:pl-4 py-1">
               PORTAL <span className="text-white">PEMERINTAH</span>
             </span>
           </div>
@@ -64,11 +65,11 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
               aria-label="Toggle menu"
             >
               {isMenuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
                 </svg>
               )}
@@ -77,21 +78,21 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
-      <div className={`md:hidden absolute top-full left-0 right-0 glass-effect border-b border-white/10 transition-all duration-300 overflow-hidden ${isMenuOpen ? 'max-h-[500px] py-6 opacity-100' : 'max-h-0 py-0 opacity-0 pointer-events-none'}`}>
-        <div className="px-6 space-y-4">
+      {/* Mobile Menu Dropdown - Ukuran tombol diperbesar untuk kemudahan akses di HP */}
+      <div className={`md:hidden absolute top-full left-0 right-0 glass-effect border-b border-white/10 transition-all duration-300 overflow-hidden ${isMenuOpen ? 'max-h-[600px] py-4 opacity-100 shadow-2xl' : 'max-h-0 py-0 opacity-0 pointer-events-none'}`}>
+        <div className="px-4 space-y-2">
           {menuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleMobileNav(item.id)}
-              className="block w-full text-left text-xs font-bold text-slate-300 hover:text-amber-500 transition-colors uppercase tracking-widest py-3 border-b border-white/5"
+              className="block w-full text-left text-sm font-bold text-slate-200 hover:text-amber-500 hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest py-4 px-4 border-b border-white/5"
             >
               {item.label}
             </button>
           ))}
           <button
             onClick={() => handleMobileNav('recruitment')}
-            className="w-full mt-4 py-4 bg-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 uppercase tracking-widest rounded-xl"
+            className="w-full mt-4 py-4 bg-amber-500 text-slate-950 text-sm font-black shadow-lg shadow-amber-500/20 uppercase tracking-widest rounded-xl active:scale-95 transition-transform"
           >
             DAFTAR SEKARANG
           </button>

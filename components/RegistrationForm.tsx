@@ -1,57 +1,161 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { RecruitmentConfig } from '../types';
+import { DEFAULT_RECRUITMENT_CONFIG } from '../constants';
 
 interface RegistrationFormProps {
-  googleFormUrl?: string;
+  googleFormUrl?: string; 
 }
 
-const RegistrationForm: React.FC<RegistrationFormProps> = ({ 
-  googleFormUrl = "https://docs.google.com/forms/d/e/your-form-id/viewform" 
-}) => {
-  const handleOpenForm = () => {
-    window.open(googleFormUrl, '_blank', 'noopener,noreferrer');
+const RegistrationForm: React.FC<RegistrationFormProps> = () => {
+  const [config, setConfig] = useState<RecruitmentConfig>(DEFAULT_RECRUITMENT_CONFIG);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadConfig = () => {
+      const saved = localStorage.getItem('ls_gov_recruitment_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.scriptUrl) {
+            parsed.scriptUrl = DEFAULT_RECRUITMENT_CONFIG.scriptUrl;
+        }
+        setConfig(parsed);
+      } else {
+        setConfig(DEFAULT_RECRUITMENT_CONFIG);
+      }
+    };
+    loadConfig();
+    window.addEventListener('recruitment_update', loadConfig);
+    return () => window.removeEventListener('recruitment_update', loadConfig);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!config.scriptUrl) {
+      alert("Sistem Rekrutmen Sedang Offline (Admin belum mengatur Script URL).");
+      return;
+    }
+    
+    setIsSubmitting(true);
+
+    try {
+        // Persiapkan Data Payload Dinamis
+        // Kunci object adalah LABEL PERTANYAAN
+        const dynamicData: Record<string, string> = {};
+        
+        // Tambahkan Timestamp Manual
+        dynamicData["Waktu Submit"] = new Date().toLocaleString('id-ID');
+
+        for (const q of config.questions) {
+            // Ambil jawaban teks
+            dynamicData[q.label] = answers[q.id] || "";
+        }
+
+        const payload = {
+            sheetName: config.targetSheetName || "Rekrutmen_Batch_1",
+            data: dynamicData
+        };
+
+        await fetch(config.scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+
+        alert("✅ Pendaftaran Berhasil! Data Anda telah dikirim ke database.");
+        setAnswers({});
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+        console.error("Script Error", error);
+        alert("❌ Gagal mengirim data. Pastikan koneksi internet stabil.");
+    }
+    
+    setIsSubmitting(false);
   };
 
   return (
     <section id="recruitment" className="py-24 px-4 bg-slate-950">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row gap-12 items-center bg-slate-900/40 p-8 md:p-12 rounded-3xl border border-white/5 shadow-2xl">
-          <div className="md:w-1/2">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">
-              Bangun <br/> <span className="text-amber-500">Warisan Publik</span>
+      <div className="max-w-4xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-12 items-start bg-slate-900/40 p-6 md:p-12 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+          
+          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+
+          <div className="md:w-1/3 relative z-10">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-6">
+              Karir <br/> <span className="text-amber-500">Pemerintahan</span>
             </h2>
-            <p className="text-slate-400 mb-8 text-lg leading-relaxed font-light">
-              Melayani kota membutuhkan dedikasi, disiplin, dan visi untuk masa depan. 
-              Klik tombol di samping untuk mengisi formulir pendaftaran resmi kami melalui portal eksternal.
-            </p>
-            <div className="p-4 bg-white/5 border-l-4 border-amber-500 rounded-r-lg">
+            <div className="p-4 bg-white/5 border-l-4 border-amber-500 rounded-r-lg mb-6">
               <p className="text-sm text-slate-300 italic font-medium">
-                "Jangan tanyakan apa yang kota berikan padamu, tapi tanyakan apa yang bisa kau berikan pada kotamu."
+                "{config.title}"
               </p>
             </div>
+            <p className="text-slate-400 text-sm leading-relaxed mb-4">
+              Silakan lengkapi formulir di samping dengan data yang jujur dan valid. Data Anda akan masuk ke database <b>{config.targetSheetName.replace(/_/g, ' ')}</b>.
+            </p>
           </div>
           
-          <div className="md:w-1/2 w-full flex flex-col items-center justify-center p-8 bg-slate-950/50 rounded-2xl border border-amber-500/10">
-            <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mb-6 border border-amber-500/20">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2 text-center">Portal Rekrutmen</h3>
-            <p className="text-slate-500 text-sm text-center mb-8">
-              Anda akan diarahkan ke formulir pendaftaran digital resmi kami.
-            </p>
-            <button 
-              onClick={handleOpenForm}
-              className="group relative w-full py-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-xl shadow-amber-500/20 transition-all uppercase tracking-[0.15em] flex items-center justify-center gap-3 overflow-hidden"
-            >
-              <span className="relative z-10">BUKA FORMULIR PENDAFTARAN</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-            </button>
-            <p className="mt-6 text-[10px] text-slate-600 uppercase font-bold tracking-widest">Powered by Google Forms</p>
+          <div className="md:w-2/3 w-full bg-slate-950 border border-white/10 rounded-2xl p-6 relative z-10">
+            <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-6 border-b border-white/10 pb-4">
+              Formulir Pendaftaran Digital
+            </h3>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+                {config.questions.map((q) => (
+                    <div key={q.id} className="space-y-2">
+                        <label className={`text-xs uppercase tracking-wide block ${q.isBold ? 'font-bold text-white' : 'font-medium text-slate-400'}`}>
+                            {q.label} {q.required && <span className="text-red-500">*</span>}
+                        </label>
+                        
+                        {q.type === 'SHORT' && (
+                            <input 
+                                type="text" 
+                                required={q.required}
+                                placeholder={q.placeholder}
+                                value={answers[q.id] || ''}
+                                onChange={e => setAnswers({...answers, [q.id]: e.target.value})}
+                                className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none placeholder:text-slate-700"
+                            />
+                        )}
+
+                        {q.type === 'PARAGRAPH' && (
+                            <textarea 
+                                required={q.required}
+                                rows={4}
+                                placeholder={q.placeholder}
+                                value={answers[q.id] || ''}
+                                onChange={e => setAnswers({...answers, [q.id]: e.target.value})}
+                                className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none placeholder:text-slate-700"
+                            />
+                        )}
+
+                        {q.type === 'CHOICE' && (
+                            <div className="relative">
+                                <select 
+                                    required={q.required}
+                                    value={answers[q.id] || ''}
+                                    onChange={e => setAnswers({...answers, [q.id]: e.target.value})}
+                                    className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none appearance-none"
+                                >
+                                    <option value="">-- Pilih Opsi --</option>
+                                    {q.options?.map((opt, i) => (
+                                        <option key={i} value={opt}>{opt}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
+                            </div>
+                        )}
+                    </div>
+                ))}
+
+                <button 
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl shadow-xl shadow-amber-500/20 hover:bg-amber-400 transition-all uppercase tracking-widest text-xs disabled:opacity-50 mt-8 active:scale-95"
+                >
+                    {isSubmitting ? 'MENGIRIM DATA...' : 'KIRIM LAMARAN'}
+                </button>
+            </form>
           </div>
         </div>
       </div>

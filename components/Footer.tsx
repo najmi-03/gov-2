@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { AuthState } from '../types';
 
 interface FooterProps {
-  onLogin: (pin: string) => boolean;
+  onLogin: (pin: string) => Promise<boolean>;
   onLogout: () => void;
   auth: AuthState;
   onPrivacyClick: () => void;
@@ -13,16 +13,21 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick, onTermsClick }) => {
   const [pin, setPin] = useState('');
   const [showLogin, setShowLogin] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
+  
   const logoUrl = "https://blogger.googleusercontent.com/img/a/AVvXsEhzvSdkUPwo4gRLcVNJ96dqOYMJK2KndlS1XjV2ZOkV_F5x3H5yFZl8TQKJKSuGGODEyt676kxH6AsjMdXrxAfDEyFYPHqOWlPfh91-yfw0BpF5G2BFiL7yxvic4RwwQryScLaaTAr7fDBrsYK-gPYRpCStWd5gWsQLdV1hXuYXbDcxHbcUpRJhm4899joR";
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onLogin(pin)) {
+    setIsLoading(true);
+    const success = await onLogin(pin);
+    setIsLoading(false);
+
+    if (success) {
       setPin('');
       setShowLogin(false);
     } else {
-      alert("PIN Salah! Akses ditolak.");
+      alert("PIN Salah atau Data Tidak Ditemukan!");
     }
   };
 
@@ -44,47 +49,42 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
             <p className="text-xs text-slate-500">© 2026 Cabang Eksekutif San Andreas. Seluruh hak cipta dilindungi melalui Protokol Otoritas Negara.</p>
           </div>
           
-          <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            <button 
-              onClick={(e) => { e.preventDefault(); onPrivacyClick(); }}
-              className="hover:text-amber-500 transition-colors uppercase"
-            >
-              Kebijakan Privasi
-            </button>
-            <button 
-              onClick={(e) => { e.preventDefault(); onTermsClick(); }}
-              className="hover:text-amber-500 transition-colors uppercase"
-            >
-              Syarat & Ketentuan
-            </button>
-            {!auth.isAdmin ? (
+          <div className="flex flex-col items-center md:items-end gap-2">
+            <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-slate-500">
               <button 
-                onClick={() => setShowLogin(!showLogin)}
-                className="hover:text-amber-500 transition-colors"
+                onClick={(e) => { e.preventDefault(); onPrivacyClick(); }}
+                className="hover:text-amber-500 transition-colors uppercase"
               >
-                Staff Access
+                Kebijakan Privasi
               </button>
-            ) : (
               <button 
-                onClick={onLogout}
-                className="text-amber-500 hover:text-amber-400 font-bold"
+                onClick={(e) => { e.preventDefault(); onTermsClick(); }}
+                className="hover:text-amber-500 transition-colors uppercase"
               >
-                Logout ({auth.staffName})
+                Syarat & Ketentuan
               </button>
-            )}
-          </div>
-          
-          <div className="flex gap-4">
-            {['🐦', '📘', '📸', '📺'].map((icon, i) => (
-              <div key={i} className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:border-amber-500 hover:bg-amber-500/10 transition-all cursor-pointer">
-                {icon}
-              </div>
-            ))}
+              {!auth.isAdmin ? (
+                <button 
+                  onClick={() => setShowLogin(!showLogin)}
+                  className="hover:text-amber-500 transition-colors"
+                >
+                  Staff Access
+                </button>
+              ) : (
+                <button 
+                  onClick={onLogout}
+                  className="text-amber-500 hover:text-amber-400 font-bold"
+                >
+                  Logout ({auth.staffName})
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Login Form */}
         {showLogin && !auth.isAdmin && (
-          <div className="max-w-xs mx-auto md:mx-0 p-4 bg-slate-900 rounded-xl border border-white/10">
+          <div className="max-w-xs mx-auto md:mx-0 p-4 bg-slate-900 rounded-xl border border-white/10 mb-4">
             <h4 className="text-[10px] font-bold text-white uppercase tracking-[0.2em] mb-3">Portal Login Staff</h4>
             <form onSubmit={handleLoginSubmit} className="flex gap-2">
               <input 
@@ -92,11 +92,16 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
                 placeholder="PIN Portal" 
                 value={pin}
                 onChange={e => setPin(e.target.value)}
-                className="flex-1 bg-slate-950 border border-white/5 rounded px-3 py-1.5 text-xs outline-none focus:border-amber-500/50"
+                disabled={isLoading}
+                className="flex-1 bg-slate-950 border border-white/5 rounded px-3 py-1.5 text-xs outline-none focus:border-amber-500/50 disabled:opacity-50"
               />
-              <button className="bg-amber-500 text-slate-950 text-[10px] font-bold px-3 py-1 rounded">MASUK</button>
+              <button 
+                disabled={isLoading}
+                className="bg-amber-500 text-slate-950 text-[10px] font-bold px-3 py-1 rounded disabled:bg-slate-700 disabled:text-slate-400"
+              >
+                {isLoading ? '...' : 'MASUK'}
+              </button>
             </form>
-            <p className="mt-2 text-[8px] text-slate-500">Akses terbatas hanya untuk pejabat pemerintahan.</p>
           </div>
         )}
       </div>

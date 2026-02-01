@@ -69,20 +69,24 @@ const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick }) 
             ))}
           </div>
           
-          <div className="mt-12 p-8 md:p-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl text-slate-950 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-amber-500/20">
+          <div className="mt-12 p-6 md:p-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl text-slate-950 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-amber-500/20">
             <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-slate-950/10 rounded-2xl flex items-center justify-center text-4xl">📞</div>
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-slate-950/10 rounded-2xl flex items-center justify-center text-3xl md:text-4xl shrink-0">📞</div>
               <div>
-                <h4 className="font-black text-2xl uppercase tracking-tight">Saluran Bantuan Warga</h4>
-                <p className="text-sm font-bold opacity-80 uppercase tracking-wide">Layanan Tanggap Darurat & Pertanyaan Umum 24 Jam</p>
+                <h4 className="font-black text-xl md:text-2xl uppercase tracking-tight">Saluran Bantuan Warga</h4>
+                <p className="text-xs md:text-sm font-bold opacity-80 uppercase tracking-wide">Layanan Tanggap Darurat 24 Jam</p>
               </div>
             </div>
-            <div className="flex gap-4 w-full md:w-auto">
-              <div className="flex-1 md:flex-none px-8 py-4 bg-slate-950 text-white rounded-xl font-black text-xl flex items-center justify-center gap-3">
-                <span className="text-amber-500 text-sm">POLISI</span> 9-1-1
+            
+            {/* Improved Button Layout for Mobile */}
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <div className="flex-1 md:flex-none px-4 py-3 sm:px-8 sm:py-4 bg-slate-950 text-white rounded-xl font-black text-lg sm:text-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-3 text-center shadow-lg active:scale-95 transition-transform">
+                <span className="text-amber-500 text-[10px] sm:text-sm font-bold uppercase tracking-wider">POLISI</span> 
+                <span className="whitespace-nowrap">9-1-1</span>
               </div>
-              <div className="flex-1 md:flex-none px-8 py-4 bg-white/20 backdrop-blur-md rounded-xl font-black text-xl flex items-center justify-center gap-3 border border-white/20">
-                <span className="text-slate-900 text-sm">UMUM</span> 3-1-1
+              <div className="flex-1 md:flex-none px-4 py-3 sm:px-8 sm:py-4 bg-white/20 backdrop-blur-md rounded-xl font-black text-lg sm:text-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-3 border border-white/20 text-center shadow-lg active:scale-95 transition-transform">
+                <span className="text-slate-900 text-[10px] sm:text-sm font-bold uppercase tracking-wider">UMUM</span> 
+                <span className="whitespace-nowrap">3-1-1</span>
               </div>
             </div>
           </div>

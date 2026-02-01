@@ -135,13 +135,13 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-950 p-5 md:p-6 rounded-2xl border border-white/5 gap-4">
         <div>
-          <h3 className="text-[9px] md:text-[10px] font-black text-amber-500 uppercase tracking-widest">Bendahara Negara</h3>
-          <p className="text-[8px] text-slate-500">Database Payroll Terpadu</p>
+          <h3 className="text-[10px] md:text-xs font-black text-amber-500 uppercase tracking-widest">Bendahara Negara</h3>
+          <p className="text-[10px] text-slate-500">Database Payroll Terpadu</p>
         </div>
         
         <button 
           onClick={() => setIsAdding(!isAdding)} 
-          className="w-full sm:w-auto bg-amber-500 text-slate-950 text-[9px] md:text-[10px] font-black px-6 py-3 rounded-xl uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/10"
+          className="w-full sm:w-auto bg-amber-500 text-slate-950 text-[10px] font-black px-6 py-3 rounded-xl uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/10"
         >
           {isAdding ? 'TUTUP FORM' : '+ INPUT GAJI ASN'}
         </button>
@@ -157,7 +157,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
             className="bg-slate-950 border border-amber-500/20 p-5 md:p-6 rounded-2xl space-y-6 overflow-hidden"
           >
             <div className="relative">
-              <label className="text-[8px] font-bold text-amber-500 uppercase tracking-widest mb-2 block">Cari Database HR (Staff Aktif)</label>
+              <label className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-2 block">Cari Database HR (Staff Aktif)</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <input 
@@ -201,11 +201,11 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Jabatan</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Jabatan</label>
                 <input type="text" value={newRecord.position} onChange={e => setNewRecord({...newRecord, position: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" />
               </div>
               <div className="space-y-1">
-                <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Departemen</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Departemen</label>
                 <select value={newRecord.deptName} onChange={e => setNewRecord({...newRecord, deptName: e.target.value as any})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
                   {deptsPlusExecutive.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -214,15 +214,15 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1">
-                <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Gaji Pokok ($)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gaji Pokok ($)</label>
                 <input type="number" value={newRecord.baseSalary} onChange={e => setNewRecord({...newRecord, baseSalary: Number(e.target.value)})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" />
               </div>
               <div className="space-y-1">
-                <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Bonus ($)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Bonus ($)</label>
                 <input type="number" value={newRecord.bonus} onChange={e => setNewRecord({...newRecord, bonus: Number(e.target.value)})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" />
               </div>
               <div className="space-y-1">
-                <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Penalti</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Penalti</label>
                 <select value={newRecord.penaltyLevel} onChange={e => setNewRecord({...newRecord, penaltyLevel: e.target.value as any})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
                   <option value="NONE">Bersih</option>
                   <option value="SP1">SP 1 (50%)</option>
@@ -234,7 +234,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
 
             <button 
               onClick={handleAdd} 
-              className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl text-[9px] md:text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-amber-500/20"
+              className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-amber-500/20"
             >
               SIMPAN PAYROLL
             </button>
@@ -245,7 +245,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
       {/* Main Table */}
       <div className="bg-slate-950 rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto scrollbar-hide">
-          <table className="w-full text-left text-[9px] md:text-[10px] whitespace-nowrap">
+          <table className="w-full text-left text-[11px] whitespace-nowrap">
             <thead className="bg-white/5 text-slate-400 font-black uppercase tracking-widest">
               <tr>
                 <th className="px-5 py-4">Penerima</th>
@@ -266,13 +266,13 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
                         {isExec && <span className="text-amber-500">👑</span>}
                         <div>
                           <p className="font-bold text-white truncate max-w-[120px]">{s.staffName}</p>
-                          <p className="text-[7px] md:text-[8px] text-slate-500 uppercase tracking-tighter truncate max-w-[120px]">{s.deptName}</p>
+                          <p className="text-[9px] text-slate-500 uppercase tracking-tighter truncate max-w-[120px]">{s.deptName}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-4 text-slate-300 font-mono">${s.baseSalary.toLocaleString()}</td>
                     <td className="px-5 py-4">
-                      <span className={`px-2 py-0.5 rounded text-[7px] md:text-[8px] font-bold ${s.penaltyLevel === 'NONE' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold ${s.penaltyLevel === 'NONE' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}`}>
                         {s.penaltyLevel === 'NONE' ? 'BERSIH' : s.penaltyLevel}
                       </span>
                     </td>
@@ -282,7 +282,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
                     <td className="px-5 py-4 text-right space-x-2">
                       <button 
                         onClick={() => setSelectedSlip(s)}
-                        className="bg-white/5 hover:bg-white/10 text-white text-[7px] md:text-[8px] font-bold px-3 py-1.5 rounded uppercase tracking-widest border border-white/10"
+                        className="bg-white/5 hover:bg-white/10 text-white text-[9px] font-bold px-3 py-1.5 rounded uppercase tracking-widest border border-white/10"
                       >
                         SLIP
                       </button>
@@ -293,7 +293,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
               })}
               {salaries.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-600 uppercase tracking-widest text-[9px]">Belum ada data penggajian</td>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-600 uppercase tracking-widest text-[10px]">Belum ada data penggajian</td>
                 </tr>
               )}
             </tbody>
@@ -303,7 +303,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
 
       {/* Webhook Settings */}
       <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5">
-        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Discord Webhook</label>
+        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Discord Webhook</label>
         <input 
           type="text" 
           value={webhookUrl} 
@@ -326,11 +326,11 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
               className="relative w-full h-full md:h-auto md:max-w-lg bg-white text-slate-950 p-6 md:p-10 md:rounded-xl shadow-2xl overflow-y-auto font-serif flex flex-col"
             >
               <div className="border-2 md:border-4 border-double border-slate-900 p-4 md:p-6 relative flex-1 md:flex-none">
-                <div className="absolute top-2 right-2 md:top-4 md:right-4 text-[7px] md:text-[8px] font-bold text-slate-400">Ref: GOV/SAL/{selectedSlip.id.slice(-6)}</div>
+                <div className="absolute top-2 right-2 md:top-4 md:right-4 text-[9px] font-bold text-slate-400">Ref: GOV/SAL/{selectedSlip.id.slice(-6)}</div>
                 
                 <div className="text-center mb-6 md:mb-8 mt-4 md:mt-0">
                    <h1 className="text-lg md:text-xl font-black uppercase tracking-[0.15em] md:tracking-[0.2em] border-b-2 border-slate-950 pb-2 inline-block">Official Salary Slip</h1>
-                   <p className="text-[9px] md:text-[10px] font-bold mt-2 text-slate-600">STATE OF SAN ANDREAS GOVERNMENT</p>
+                   <p className="text-[10px] font-bold mt-2 text-slate-600">STATE OF SAN ANDREAS GOVERNMENT</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 text-[10px] md:text-[11px] mb-6 md:mb-8">
@@ -374,11 +374,11 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
                 </div>
 
                 <div className="flex justify-between items-end mt-auto">
-                   <div className="text-[8px] md:text-[9px] text-slate-400 italic">Electronic generated doc.</div>
+                   <div className="text-[9px] text-slate-400 italic">Electronic generated doc.</div>
                    <div className="text-center">
                       <div className="w-20 md:w-24 h-px bg-slate-900 mb-1 mx-auto"></div>
-                      <div className="text-[9px] md:text-[10px] font-black uppercase">Victoria Glass</div>
-                      <div className="text-[7px] md:text-[8px] text-slate-500">State Treasurer</div>
+                      <div className="text-[10px] font-black uppercase">Victoria Glass</div>
+                      <div className="text-[8px] text-slate-500">State Treasurer</div>
                    </div>
                 </div>
               </div>

@@ -50,7 +50,7 @@ const PawnshopMarket: React.FC = () => {
               Pantau harga jual barang ke negara secara real-time berdasarkan tingkat kebutuhan material di gudang logistik pemerintah.
             </p>
           </div>
-          <div className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-white/5 px-4 py-2 rounded-lg bg-white/5 ml-2 md:ml-0">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-white/5 px-4 py-2 rounded-lg bg-white/5 ml-2 md:ml-0">
             Sumber Data: {lastUpdate}
           </div>
         </div>
@@ -62,8 +62,8 @@ const PawnshopMarket: React.FC = () => {
                <span className="text-2xl mb-2">{statusConfig[s as PawnStatus].icon}</span>
                <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-widest ${statusConfig[s as PawnStatus].color}`}>{statusConfig[s as PawnStatus].label}</span>
                <div className="mt-1 flex flex-col items-center">
-                 <span className="text-[8px] text-slate-500 uppercase font-black tracking-tighter">Status Gudang:</span>
-                 <span className="text-[10px] text-slate-300 font-medium">{statusConfig[s as PawnStatus].desc}</span>
+                 <span className="text-[8px] md:text-[9px] text-slate-500 uppercase font-black tracking-tighter">Status Gudang:</span>
+                 <span className="text-[10px] md:text-[11px] text-slate-300 font-medium">{statusConfig[s as PawnStatus].desc}</span>
                </div>
             </div>
           ))}
@@ -95,19 +95,19 @@ const PawnshopMarket: React.FC = () => {
                           <span className="text-base md:text-lg flex-shrink-0">{statusConfig[status].icon}</span>
                           <div className="min-w-0">
                             <p className="text-xs md:text-sm font-bold text-slate-200 group-hover:text-amber-500 transition-colors truncate">{item.name}</p>
-                            <p className="text-[7px] md:text-[8px] text-slate-500 uppercase tracking-widest font-black">{statusConfig[status].desc}</p>
+                            <p className="text-[8px] md:text-[9px] text-slate-500 uppercase tracking-widest font-black">{statusConfig[status].desc}</p>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="flex flex-col items-end">
                             {status === 'BLACK' ? (
-                              <span className="text-[9px] font-black text-red-500/80 bg-red-500/10 px-2 py-1 rounded">X CLOSED</span>
+                              <span className="text-[9px] md:text-[10px] font-black text-red-500/80 bg-red-500/10 px-2 py-1 rounded">X CLOSED</span>
                             ) : (
                               <>
                                 <span className={`text-base md:text-lg font-black tracking-tighter ${statusConfig[status].color}`}>
                                   ${Math.floor(item.basePrice * statusConfig[status].multiplier)}
                                 </span>
-                                <span className="text-[7px] md:text-[8px] text-slate-500 uppercase font-black">Per Unit</span>
+                                <span className="text-[8px] md:text-[9px] text-slate-500 uppercase font-black">Per Unit</span>
                               </>
                             )}
                           </div>

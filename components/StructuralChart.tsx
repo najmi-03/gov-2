@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DeptInfo, LeadershipMember } from '../types';
 
@@ -29,7 +29,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-12 md:mb-16">
           <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-4 md:mb-6 leading-tight">Struktural Organisasi</h2>
-          <p className="text-slate-400 max-w-2xl mx-auto text-xs md:text-base px-4">
+          <p className="text-slate-400 max-w-2xl mx-auto text-sm md:text-base px-4">
             Hierarki kepemimpinan eksekutif tertinggi yang mengarahkan visi strategis dan operasional negara bagian San Andreas.
           </p>
         </div>
@@ -44,7 +44,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
               className={`p-6 md:p-8 bg-slate-900/80 backdrop-blur border border-amber-500/20 rounded-3xl shadow-[0_0_40px_rgba(245,158,11,0.05)] w-full max-w-xs sm:max-w-sm md:max-w-md text-center`}
             >
               <span className="text-3xl md:text-4xl mb-3 md:mb-4 block">{leadershipData[0].icon}</span>
-              <h3 className="text-[8px] md:text-xs font-bold text-amber-500 uppercase tracking-[0.2em] mb-1">{leadershipData[0].role}</h3>
+              <h3 className="text-[10px] md:text-xs font-bold text-amber-500 uppercase tracking-[0.2em] mb-2">{leadershipData[0].role}</h3>
               <p className="text-lg md:text-2xl font-bold text-white uppercase tracking-tight">{leadershipData[0].name}</p>
             </motion.div>
           </div>
@@ -66,7 +66,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
               className="p-6 md:p-8 bg-[#111827] border border-white/10 rounded-3xl shadow-2xl w-full max-w-xs sm:max-w-sm md:max-w-md text-center relative z-20"
             >
               <span className="text-2xl md:text-3xl text-amber-500 mb-3 md:mb-4 block">{leadershipData[1].icon}</span>
-              <h3 className="text-[8px] md:text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-1 md:mb-2">{leadershipData[1].role}</h3>
+              <h3 className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">{leadershipData[1].role}</h3>
               <p className="text-base md:text-xl font-bold text-white uppercase tracking-wider">{leadershipData[1].name}</p>
             </motion.div>
             <div className="absolute top-[100%] left-1/2 -translate-x-1/2 w-0.5 h-12 bg-white/10 hidden lg:block"></div>
@@ -84,7 +84,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
               className="p-5 md:p-6 bg-slate-900 border border-blue-500/20 rounded-3xl shadow-xl w-full max-w-xs md:max-w-sm text-center mt-4 md:mt-6"
             >
               <span className="text-xl md:text-2xl mb-2 block">{leadershipData[2].icon}</span>
-              <h3 className="text-[7px] md:text-[9px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-1">{leadershipData[2].role}</h3>
+              <h3 className="text-[9px] md:text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-1">{leadershipData[2].role}</h3>
               <p className="text-sm md:text-lg font-bold text-white uppercase">{leadershipData[2].name}</p>
             </motion.div>
           )}
@@ -99,7 +99,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
               transition={{ delay: 0.3 }}
               className="p-4 md:p-5 bg-slate-900/60 border border-blue-400/10 rounded-2xl shadow-lg w-full max-w-[280px] sm:max-w-xs text-center mt-4 md:mt-2"
             >
-              <h3 className="text-[7px] md:text-[8px] font-bold text-blue-300 uppercase tracking-[0.2em] mb-1">{leadershipData[3].role}</h3>
+              <h3 className="text-[9px] md:text-[10px] font-bold text-blue-300 uppercase tracking-[0.2em] mb-1">{leadershipData[3].role}</h3>
               <p className="text-xs md:text-base font-bold text-slate-200 uppercase">{leadershipData[3].name}</p>
             </motion.div>
           )}
@@ -129,11 +129,11 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
                   <div className="h-8 md:h-10 mb-3 md:mb-4">
                     {renderIcon(dept.icon, "text-xl md:text-2xl filter grayscale group-hover:grayscale-0 transition-all h-full")}
                   </div>
-                  <h4 className="text-[7px] md:text-[8px] font-bold text-amber-500 uppercase tracking-widest mb-1 opacity-80 group-hover:opacity-100">Kepala Departemen</h4>
-                  <p className="text-[10px] md:text-xs font-bold text-white group-hover:text-amber-500 transition-colors uppercase leading-tight mb-2 truncate">
+                  <h4 className="text-[9px] md:text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 opacity-80 group-hover:opacity-100">Kepala Departemen</h4>
+                  <p className="text-xs md:text-sm font-bold text-white group-hover:text-amber-500 transition-colors uppercase leading-tight mb-2 truncate">
                     {head ? head.name : "Belum Ditentukan"}
                   </p>
-                  <div className="text-[7px] text-slate-500 uppercase font-black tracking-widest truncate">{dept.name}</div>
+                  <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest truncate">{dept.name}</div>
                 </div>
                 
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-500/0 group-hover:bg-amber-500 transition-all"></div>
@@ -170,7 +170,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
                 <div className="h-14 md:h-16 mb-4">
                    {renderIcon(activeDept.icon, "text-4xl md:text-5xl h-full")}
                 </div>
-                <h3 className="text-[9px] md:text-[10px] font-bold text-amber-500 uppercase tracking-[0.3em] mb-2">Hierarki Internal</h3>
+                <h3 className="text-[10px] md:text-xs font-bold text-amber-500 uppercase tracking-[0.3em] mb-2">Hierarki Internal</h3>
                 <h2 className="text-2xl md:text-3xl font-serif font-bold text-white px-4">{activeDept.name}</h2>
               </div>
 
@@ -186,12 +186,12 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
                     }`}
                   >
                     <div className="pr-4">
-                      <h4 className={`text-[8px] md:text-[10px] font-bold uppercase tracking-widest ${
+                      <h4 className={`text-[9px] md:text-[10px] font-bold uppercase tracking-widest ${
                         staff.level === 1 ? 'text-amber-500' : 'text-slate-500'
                       }`}>
                         {staff.role}
                       </h4>
-                      <p className={`text-base md:text-lg font-bold leading-tight ${staff.level === 1 ? 'text-white' : 'text-slate-300'}`}>
+                      <p className={`text-sm md:text-lg font-bold leading-tight ${staff.level === 1 ? 'text-white' : 'text-slate-300'}`}>
                         {staff.name}
                       </p>
                     </div>

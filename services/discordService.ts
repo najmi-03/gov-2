@@ -72,7 +72,26 @@ export const formatSalarySlipEmbed = (salary: any) => {
   };
 };
 
-export const formatInventoryEmbed = (type: 'UMUM' | 'HITAM' | 'PAWNSHOP', items: any[]) => {
+// Helper untuk format sisa waktu di Discord
+const getExpiryLabel = (expiryDate?: number) => {
+  if (!expiryDate) return "";
+  const diff = expiryDate - Date.now();
+  if (diff <= 0) return " (EXPIRED)";
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  
+  if (days > 0) return ` (⏳ ${days} Hari)`;
+  return ` (⚠️ ${hours} Jam)`;
+};
+
+export const formatInventoryEmbed = (
+  type: 'UMUM' | 'HITAM' | 'PAWNSHOP', 
+  items: any[], 
+  staffName?: string | null, 
+  staffRole?: string,
+  logs: string[] = [] 
+) => {
   let title = "📦 LAPORAN LOKER UMUM";
   let color = 3447003; 
   let description = "Pembaruan ketersediaan logistik publik San Andreas.";
@@ -117,16 +136,40 @@ export const formatInventoryEmbed = (type: 'UMUM' | 'HITAM' | 'PAWNSHOP', items:
     };
   }
 
+  // LOGIC KHUSUS UMUM & HITAM
+  const headerFields = staffName ? [
+    { name: "👤 Petugas Pelapor", value: staffName, inline: true },
+    { name: "🎖️ Jabatan", value: staffRole || "Staff", inline: true },
+    { name: "🕒 Waktu Laporan", value: new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'medium' }), inline: true },
+  ] : [];
+
+  const itemFields = items.length > 0 ? items.map(item => ({
+    name: `🔹 ${item.name}${getExpiryLabel(item.expiryDate)}`,
+    value: `Jumlah: **${item.stock.toLocaleString()} unit**`,
+    inline: true
+  })) : [{ name: "Status", value: "Gudang Kosong", inline: false }];
+
+  // Menambahkan Field Log Aktivitas jika ada data log
+  const logFields = [];
+  if (logs && logs.length > 0) {
+    const logString = logs.join('\n');
+    const displayLog = logString.length > 1000 ? logString.substring(0, 1000) + '... (dan lainnya)' : logString;
+    
+    logFields.push({
+      name: "📋 RIWAYAT AKTIVITAS (Sesi Ini)",
+      value: "```diff\n" + displayLog + "\n```",
+      inline: false
+    });
+  }
+
+  const divider = [{ name: "────────────────", value: "**DAFTAR INVENTARIS TERKINI**", inline: false }];
+
   return {
     embeds: [{
       title,
       description,
       color,
-      fields: items.length > 0 ? items.map(item => ({
-        name: `🔹 ${item.name}`,
-        value: `Jumlah: **${item.stock.toLocaleString()} unit**`,
-        inline: true
-      })) : [{ name: "Status", value: "Gudang Kosong", inline: false }],
+      fields: [...headerFields, ...logFields, ...divider, ...itemFields],
       footer: { text: "Sistem Manajemen Logistik San Andreas" },
       timestamp: new Date().toISOString()
     }]

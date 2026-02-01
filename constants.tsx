@@ -1,5 +1,63 @@
 
-import { Department, DeptInfo, NewsItem, PawnItem, PawnStatus, PawnCategory, FormConfig } from './types';
+import { Department, DeptInfo, NewsItem, PawnItem, PawnStatus, PawnCategory, FormConfig, RecruitmentConfig, PermissionConfig } from './types';
+
+// Default Config jika LocalStorage kosong
+export const DEFAULT_RECRUITMENT_CONFIG: RecruitmentConfig = {
+  isOpen: true,
+  title: "Penerimaan Calon Pegawai Pemerintah",
+  targetSheetName: "Rekrutmen_Batch_1",
+  scriptUrl: "https://script.google.com/macros/s/AKfycbxEwELc8Mx_OWR4tZMlGyEUXxTU4dMHSEHGrowsgX60lX3otdcus6Xv7uQ9p29HRFuR/exec", 
+  spreadsheetUrl: "", // Default kosong
+  questions: [
+    { id: 'q1', label: "Nama Lengkap (IC)", type: 'SHORT', required: true, isBold: true, placeholder: "Nama sesuai KTP..." },
+    { id: 'q2', label: "Nomor Telepon", type: 'SHORT', required: true, isBold: false, placeholder: "555-xxxx" },
+    { id: 'q3', label: "Departemen yang Dituju", type: 'CHOICE', options: ['Home Affairs', 'Treasury', 'Human Resource', 'Social Affairs'], required: true, isBold: true },
+    { id: 'q4', label: "Jelaskan pengalaman kerja Anda sebelumnya", type: 'PARAGRAPH', required: true, isBold: false, placeholder: "Ceritakan pengalaman..." }
+  ]
+};
+
+export const DEFAULT_PERMISSIONS: PermissionConfig[] = [
+  { 
+    id: 'perm_cuti', 
+    title: 'Pengajuan Cuti (LOA)', 
+    icon: '🏖️', 
+    color: '#3b82f6', 
+    webhookKey: 'ls_gov_webhook_cuti', 
+    requireDate: true 
+  },
+  { 
+    id: 'perm_sakit', 
+    title: 'Izin Sakit', 
+    icon: '🤢', 
+    color: '#eab308', 
+    webhookKey: 'ls_gov_webhook_sakit', 
+    requireDate: true 
+  },
+  { 
+    id: 'perm_dinas', 
+    title: 'Surat Dinas Luar', 
+    icon: '🗺️', 
+    color: '#8b5cf6', 
+    webhookKey: 'ls_gov_webhook_dinas', 
+    requireDate: true 
+  },
+  { 
+    id: 'perm_resign', 
+    title: 'Pengunduran Diri (Resign)', 
+    icon: '🚪', 
+    color: '#ef4444', 
+    webhookKey: 'ls_gov_webhook_resign', 
+    requireDate: false 
+  },
+  { 
+    id: 'perm_lembur', 
+    title: 'Laporan Lembur', 
+    icon: '⏰', 
+    color: '#22c55e', 
+    webhookKey: 'ls_gov_webhook_lembur', 
+    requireDate: true 
+  }
+];
 
 export const DEFAULT_FORMS: FormConfig[] = [
   {

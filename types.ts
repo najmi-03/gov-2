@@ -28,6 +28,40 @@ export interface FormConfig {
   webhookKey: string;
 }
 
+// === NEW PERMISSION TYPES ===
+export interface PermissionConfig {
+  id: string;
+  title: string; // Misal: Izin Cuti, Resign, Sakit
+  icon: string;
+  color: string; // hex color code untuk embed discord
+  webhookKey: string; // Key localStorage untuk webhook url
+  requireDate: boolean; // Apakah butuh tanggal mulai/selesai?
+}
+// =============================
+
+// === NEW RECRUITMENT TYPES ===
+export type QuestionType = 'SHORT' | 'PARAGRAPH' | 'CHOICE' | 'IMAGE';
+
+export interface RecruitmentQuestion {
+  id: string;
+  label: string;
+  type: QuestionType;
+  options?: string[]; // Untuk pilihan ganda (dipisah koma)
+  required: boolean;
+  isBold: boolean;
+  placeholder?: string;
+}
+
+export interface RecruitmentConfig {
+  isOpen: boolean;
+  title: string;
+  targetSheetName: string; // Nama Tab di Spreadsheet, misal: 'Batch 1'
+  scriptUrl: string; // URL Google Apps Script Web App
+  spreadsheetUrl?: string; // URL Link View Spreadsheet
+  questions: RecruitmentQuestion[];
+}
+// =============================
+
 export interface PawnItem {
   id: string;
   name: string;
@@ -92,7 +126,8 @@ export interface NewsItem {
   imageUrl?: string;
 }
 
-export type AdminRole = 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'DHA_ADMIN' | 'NONE';
+// Menambahkan Role SECRETARY_ADMIN dan SECRETARY_OF_STATE
+export type AdminRole = 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'PAWN_STAFF' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'DHA_ADMIN' | 'SECRETARY_ADMIN' | 'SECRETARY_OF_STATE' | 'NONE';
 
 export interface AuthState {
   isAdmin: boolean;

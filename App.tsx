@@ -16,9 +16,11 @@ import NewsAdmin from './components/NewsAdmin';
 import NewsDetail from './components/NewsDetail';
 import PrivacyModal from './components/PrivacyModal';
 import TermsModal from './components/TermsModal';
+import FeedbackFloating from './components/FeedbackFloating';
 import { DEPARTMENTS as INITIAL_DEPARTMENTS, NEWS as INITIAL_NEWS } from './constants';
-import { DeptInfo, NewsItem, AuthState, AdminRole, LeadershipMember, LegislativeDocument } from './types';
+import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument } from './types';
 import { motion } from 'framer-motion';
+import { loginWithSpreadsheet } from './services/authService';
 
 const INITIAL_LEADERSHIP: LeadershipMember[] = [
   { id: 'pres', role: 'Presiden San Andreas', name: 'His Excellency, Marcus Vane', icon: '👑', color: 'border-amber-500' },
@@ -52,43 +54,25 @@ const App: React.FC = () => {
   const [auth, setAuth] = useState<AuthState>({ isAdmin: false, staffName: null, role: 'NONE' });
 
   useEffect(() => {
-    // Load news
+    // Load local storage items
     const savedNews = localStorage.getItem('ls_gov_news');
-    if (savedNews) {
-      setNews(JSON.parse(savedNews));
-    } else {
-      setNews(INITIAL_NEWS);
-    }
+    if (savedNews) setNews(JSON.parse(savedNews));
+    else setNews(INITIAL_NEWS);
 
-    // Load Departments
     const savedDepts = localStorage.getItem('ls_gov_depts');
-    if (savedDepts) {
-      setDepts(JSON.parse(savedDepts));
-    }
+    if (savedDepts) setDepts(JSON.parse(savedDepts));
 
-    // Load Leadership
     const savedLeadership = localStorage.getItem('ls_gov_leadership');
-    if (savedLeadership) {
-      setLeadership(JSON.parse(savedLeadership));
-    }
+    if (savedLeadership) setLeadership(JSON.parse(savedLeadership));
 
-    // Load Legislative Docs
     const savedDocs = localStorage.getItem('ls_gov_docs');
-    if (savedDocs) {
-      setLegislativeDocs(JSON.parse(savedDocs));
-    }
+    if (savedDocs) setLegislativeDocs(JSON.parse(savedDocs));
 
-    // Load Terms
     const savedTerms = localStorage.getItem('ls_gov_terms');
-    if (savedTerms) {
-      setTermsContent(savedTerms);
-    }
+    if (savedTerms) setTermsContent(savedTerms);
 
-    // Load Recruitment Link
     const savedRecruitmentLink = localStorage.getItem('ls_gov_recruitment_link');
-    if (savedRecruitmentLink) {
-      setRecruitmentLink(savedRecruitmentLink);
-    }
+    if (savedRecruitmentLink) setRecruitmentLink(savedRecruitmentLink);
 
     // Check auth session
     const savedAuth = sessionStorage.getItem('ls_gov_auth');
@@ -97,6 +81,7 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Update handlers
   const updateNews = (updatedNews: NewsItem[]) => {
     setNews(updatedNews);
     localStorage.setItem('ls_gov_news', JSON.stringify(updatedNews));
@@ -128,20 +113,10 @@ const App: React.FC = () => {
     localStorage.setItem('ls_gov_recruitment_link', link);
   };
 
-  const handleLogin = (pin: string) => {
-    let newAuth: AuthState | null = null;
-
-    if (pin === "NEWS789") {
-      newAuth = { isAdmin: true, staffName: "Staff Humas", role: 'NEWS_ADMIN' };
-    } else if (pin === "PAWN456") {
-      newAuth = { isAdmin: true, staffName: "Staff Logistik", role: 'PAWN_ADMIN' };
-    } else if (pin === "HR123") {
-      newAuth = { isAdmin: true, staffName: "Staff HR", role: 'HR_ADMIN' };
-    } else if (pin === "CASH999") {
-      newAuth = { isAdmin: true, staffName: "Bendahara Negara", role: 'TREASURY_ADMIN' };
-    } else if (pin === "DHA123") {
-      newAuth = { isAdmin: true, staffName: "Staff Home Affairs", role: 'DHA_ADMIN' };
-    }
+  // NEW LOGIN HANDLER
+  const handleLogin = async (pin: string) => {
+    // Call the new service that connects to Google Sheet
+    const newAuth = await loginWithSpreadsheet(pin);
 
     if (newAuth) {
       setAuth(newAuth);
@@ -237,11 +212,15 @@ const App: React.FC = () => {
         onTermsClick={() => setShowTerms(true)}
       />
 
+      {/* Floating Feedback Button */}
+      <FeedbackFloating auth={auth} />
+
       {auth.isAdmin && (
         <NewsAdmin 
           news={news} 
           setNews={updateNews} 
           userRole={auth.role} 
+          staffName={auth.staffName}
           depts={depts}
           setDepts={updateDepts}
           leadership={leadership}

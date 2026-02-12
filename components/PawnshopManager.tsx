@@ -38,7 +38,8 @@ const InventoryRow: React.FC<{
   onDelete: (id: string) => void;
   onRecordLog: (name: string, type: 'DEPOSIT' | 'WITHDRAW', amount: number) => void;
   categoryName: string;
-}> = ({ item, onUpdate, onDelete, onRecordLog }) => {
+  setEditing: (isEditing: boolean) => void;
+}> = ({ item, onUpdate, onDelete, onRecordLog, setEditing }) => {
   const [action, setAction] = useState<'DEPOSIT' | 'WITHDRAW'>('DEPOSIT');
   const [amount, setAmount] = useState<string>('');
   
@@ -72,6 +73,8 @@ const InventoryRow: React.FC<{
                <input 
                 type="text" 
                 value={item.name}
+                onFocus={() => setEditing(true)}
+                onBlur={() => setEditing(false)}
                 onChange={e => onUpdate(item.id, 'name', e.target.value)}
                 className="bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white w-full outline-none focus:border-amber-500/50 transition-all placeholder:text-slate-600 focus:shadow-[0_0_10px_rgba(245,158,11,0.2)]"
                 placeholder="Nama Item..."
@@ -194,7 +197,8 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
   }, [isEditing]); 
 
   const refreshCloudData = async () => {
-    if (isEditing && activeTab === 'PAWNSHOP') {
+    // JANGAN UPDATE DATA JIKA USER SEDANG MENGETIK APAPUN
+    if (isEditing) {
         return; 
     }
 
@@ -567,6 +571,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                         onDelete={deleteSimpleItem} 
                         onRecordLog={recordLog}
                         categoryName={`LOKER ${activeTab}`}
+                        setEditing={setIsEditing}
                       />
                    ))}
                    {(activeTab === 'UMUM' ? commonItems : blackItems).length === 0 && (

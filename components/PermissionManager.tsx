@@ -124,11 +124,11 @@ const PermissionManager: React.FC<PermissionManagerProps> = ({ permissions, setP
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Judul Izin</label>
-                            <input type="text" value={perm.title} onChange={e => updatePermission(perm.id, 'title', e.target.value)} className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-xs text-white" />
+                            <input type="text" value={perm.title} onChange={e => updatePermission(perm.id, 'title', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white" />
                         </div>
                         <div className="space-y-1">
                             <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Icon (Emoji)</label>
-                            <input type="text" value={perm.icon} onChange={e => updatePermission(perm.id, 'icon', e.target.value)} className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-xs text-white" />
+                            <input type="text" value={perm.icon} onChange={e => updatePermission(perm.id, 'icon', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white" />
                         </div>
                         <div className="space-y-1">
                             <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Warna Embed (Hex)</label>

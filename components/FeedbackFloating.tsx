@@ -59,12 +59,12 @@ const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth }) => {
       {/* TOMBOL FLOATING */}
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-12 h-12 md:w-14 md:h-14 bg-slate-900 border border-amber-500/50 text-amber-500 rounded-full shadow-2xl shadow-amber-500/10 flex items-center justify-center hover:scale-110 hover:bg-amber-500 hover:text-slate-950 transition-all group"
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 md:w-14 md:h-14 bg-slate-900 border border-amber-500/50 text-amber-500 rounded-full shadow-2xl shadow-amber-500/10 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-amber-500 hover:text-slate-950 group active:scale-95 hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]"
         title="Kritik & Saran"
       >
-        <span className="text-xl md:text-2xl group-hover:animate-pulse">💬</span>
+        <span className="text-xl md:text-2xl group-hover:animate-bounce">💬</span>
         {/* Label on Hover (Desktop) */}
-        <span className="absolute right-full mr-3 bg-slate-900 text-white text-[10px] px-2 py-1 rounded border border-white/10 uppercase font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none hidden md:block">
+        <span className="absolute right-full mr-3 bg-slate-900 text-white text-[10px] px-2 py-1 rounded border border-white/10 uppercase font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none hidden md:block shadow-xl">
           Kotak Saran
         </span>
       </button>
@@ -96,7 +96,7 @@ const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth }) => {
                     {isStaff ? `Logged as: ${auth.staffName}` : 'Layanan Publik'}
                   </p>
                 </div>
-                <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full bg-white/5 text-slate-500 hover:text-white flex items-center justify-center">✕</button>
+                <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full bg-white/5 text-slate-500 hover:text-white flex items-center justify-center transition-all hover:bg-white/10">✕</button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -105,7 +105,7 @@ const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth }) => {
                   <select 
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-amber-500/50"
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-amber-500/50 transition-all"
                   >
                     <option value="Saran">💡 Saran Pengembangan</option>
                     <option value="Kritik">⚠️ Kritik Kinerja</option>
@@ -123,14 +123,14 @@ const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth }) => {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={isStaff ? "Sampaikan masukan untuk kemajuan departemen..." : "Tulis kritik atau saran Anda untuk pemerintah..."}
-                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500/50 placeholder:text-slate-700"
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500/50 placeholder:text-slate-700 transition-all focus:shadow-inner"
                   />
                 </div>
 
                 <div className="pt-2">
                   <button 
                     disabled={isSending}
-                    className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl uppercase tracking-widest text-xs hover:bg-amber-400 shadow-lg shadow-amber-500/20 active:scale-95 transition-transform disabled:opacity-50"
+                    className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl uppercase tracking-widest text-xs hover:bg-amber-400 shadow-lg shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50 hover:-translate-y-1"
                   >
                     {isSending ? 'MENGIRIM...' : 'KIRIM MASUKAN'}
                   </button>

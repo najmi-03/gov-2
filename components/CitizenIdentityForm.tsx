@@ -103,7 +103,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-4"
+            className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-4 hover:bg-amber-500/20 transition-colors cursor-default"
           >
             Pusat Layanan Terpadu
           </motion.div>
@@ -117,14 +117,15 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
           {forms.map((form) => (
             <motion.div
               key={form.id}
-              whileHover={{ y: -5, borderColor: 'rgba(245, 158, 11, 0.4)' }}
+              whileHover={{ y: -10, scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => handleOpenForm(form)}
-              className="bg-slate-950 border border-white/5 p-6 md:p-8 rounded-3xl cursor-pointer transition-all text-center group flex flex-col items-center justify-center min-h-[220px]"
+              className="bg-slate-950 border border-white/5 p-6 md:p-8 rounded-3xl cursor-pointer transition-all text-center group flex flex-col items-center justify-center min-h-[220px] hover:border-amber-500/40 hover:shadow-2xl hover:shadow-amber-500/10 hover:bg-slate-900"
             >
               <div className="mb-4 group-hover:scale-110 transition-transform duration-300">
-                {renderFormIcon(form.icon, "text-4xl md:text-5xl w-16 h-16 object-contain mx-auto block")}
+                {renderFormIcon(form.icon, "text-4xl md:text-5xl w-16 h-16 object-contain mx-auto block drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]")}
               </div>
-              <h3 className="text-white font-bold text-xs md:text-sm mb-2 uppercase tracking-tighter leading-tight">{form.title}</h3>
+              <h3 className="text-white font-bold text-xs md:text-sm mb-2 uppercase tracking-tighter leading-tight group-hover:text-amber-500 transition-colors">{form.title}</h3>
               <p className="text-[9px] text-slate-500 leading-relaxed uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
                 Klik untuk Membuka Form
               </p>
@@ -157,7 +158,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
                       <p className="text-[10px] text-amber-500 uppercase tracking-widest font-black">Formulir Resmi Pemerintah</p>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedForm(null)} className="text-slate-500 hover:text-white">✕</button>
+                  <button onClick={() => setSelectedForm(null)} className="text-slate-500 hover:text-white w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-all">✕</button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
@@ -172,7 +173,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
                             value={formData[field.id] || ''}
                             onChange={e => setFormData({...formData, [field.id]: e.target.value})}
                             placeholder={field.placeholder}
-                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none"
+                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none transition-all duration-300 focus:shadow-[0_0_10px_rgba(245,158,11,0.1)]"
                           />
                         ) : (
                           <input
@@ -181,7 +182,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
                             value={formData[field.id] || ''}
                             onChange={e => setFormData({...formData, [field.id]: e.target.value})}
                             placeholder={field.placeholder}
-                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none"
+                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none transition-all duration-300 focus:shadow-[0_0_10px_rgba(245,158,11,0.1)]"
                           />
                         )}
                       </div>
@@ -192,8 +193,8 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Unggah Lampiran (Foto Karakter/KTP/Pendukung)</label>
                     <div 
                       onClick={() => fileInputRef.current?.click()}
-                      className={`group cursor-pointer border-2 border-dashed rounded-2xl p-6 transition-all flex flex-col items-center justify-center gap-4 text-center ${
-                        preview ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 hover:border-amber-500/50 bg-slate-950'
+                      className={`group cursor-pointer border-2 border-dashed rounded-2xl p-6 transition-all duration-300 flex flex-col items-center justify-center gap-4 text-center ${
+                        preview ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 hover:border-amber-500/50 bg-slate-950 hover:bg-slate-900'
                       }`}
                     >
                       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
@@ -201,7 +202,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
                         <img src={preview} alt="Preview" className="h-40 rounded-lg shadow-xl" />
                       ) : (
                         <div className="text-slate-500 group-hover:text-amber-500 transition-colors">
-                          <p className="text-xs font-bold uppercase tracking-widest">Pilih File Foto (Maks 8MB)</p>
+                          <p className="text-xs font-bold uppercase tracking-widest group-hover:scale-105 transition-transform">Pilih File Foto (Maks 8MB)</p>
                         </div>
                       )}
                     </div>
@@ -209,7 +210,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
 
                   <button 
                     disabled={isSending}
-                    className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl uppercase tracking-widest shadow-xl shadow-amber-500/10 disabled:opacity-50"
+                    className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl uppercase tracking-widest shadow-xl shadow-amber-500/10 disabled:opacity-50 transition-all duration-300 hover:bg-amber-400 hover:shadow-amber-500/30 hover:-translate-y-1 active:scale-95"
                   >
                     {isSending ? "MENGIRIM..." : "KIRIM PERMOHONAN"}
                   </button>

@@ -1,34 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { RecruitmentConfig } from '../types';
-import { DEFAULT_RECRUITMENT_CONFIG } from '../constants';
 
 interface RegistrationFormProps {
-  googleFormUrl?: string; 
+  config: RecruitmentConfig; // Sekarang wajib menerima config dari App.tsx
 }
 
-const RegistrationForm: React.FC<RegistrationFormProps> = () => {
-  const [config, setConfig] = useState<RecruitmentConfig>(DEFAULT_RECRUITMENT_CONFIG);
+const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const loadConfig = () => {
-      const saved = localStorage.getItem('ls_gov_recruitment_config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (!parsed.scriptUrl) {
-            parsed.scriptUrl = DEFAULT_RECRUITMENT_CONFIG.scriptUrl;
-        }
-        setConfig(parsed);
-      } else {
-        setConfig(DEFAULT_RECRUITMENT_CONFIG);
-      }
-    };
-    loadConfig();
-    window.addEventListener('recruitment_update', loadConfig);
-    return () => window.removeEventListener('recruitment_update', loadConfig);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,15 +58,15 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
   return (
     <section id="recruitment" className="py-24 px-4 bg-slate-950">
       <div className="max-w-4xl mx-auto">
-        <div className="flex flex-col md:flex-row gap-12 items-start bg-slate-900/40 p-6 md:p-12 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row gap-12 items-start bg-slate-900/40 p-6 md:p-12 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden transition-all duration-500 hover:border-amber-500/20">
           
-          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse-slow"></div>
 
           <div className="md:w-1/3 relative z-10">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-6">
               Karir <br/> <span className="text-amber-500">Pemerintahan</span>
             </h2>
-            <div className="p-4 bg-white/5 border-l-4 border-amber-500 rounded-r-lg mb-6">
+            <div className="p-4 bg-white/5 border-l-4 border-amber-500 rounded-r-lg mb-6 hover:bg-white/10 transition-colors">
               <p className="text-sm text-slate-300 italic font-medium">
                 "{config.title}"
               </p>
@@ -96,7 +76,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
             </p>
           </div>
           
-          <div className="md:w-2/3 w-full bg-slate-950 border border-white/10 rounded-2xl p-6 relative z-10">
+          <div className="md:w-2/3 w-full bg-slate-950 border border-white/10 rounded-2xl p-6 relative z-10 hover:border-white/20 transition-all duration-300">
             <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-6 border-b border-white/10 pb-4">
               Formulir Pendaftaran Digital
             </h3>
@@ -115,7 +95,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
                                 placeholder={q.placeholder}
                                 value={answers[q.id] || ''}
                                 onChange={e => setAnswers({...answers, [q.id]: e.target.value})}
-                                className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none placeholder:text-slate-700"
+                                className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none placeholder:text-slate-700 transition-all duration-300 focus:shadow-[0_0_10px_rgba(245,158,11,0.2)]"
                             />
                         )}
 
@@ -126,7 +106,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
                                 placeholder={q.placeholder}
                                 value={answers[q.id] || ''}
                                 onChange={e => setAnswers({...answers, [q.id]: e.target.value})}
-                                className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none placeholder:text-slate-700"
+                                className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none placeholder:text-slate-700 transition-all duration-300 focus:shadow-[0_0_10px_rgba(245,158,11,0.2)]"
                             />
                         )}
 
@@ -136,7 +116,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
                                     required={q.required}
                                     value={answers[q.id] || ''}
                                     onChange={e => setAnswers({...answers, [q.id]: e.target.value})}
-                                    className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none appearance-none"
+                                    className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none appearance-none transition-all duration-300 cursor-pointer"
                                 >
                                     <option value="">-- Pilih Opsi --</option>
                                     {q.options?.map((opt, i) => (
@@ -151,7 +131,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = () => {
 
                 <button 
                     disabled={isSubmitting}
-                    className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl shadow-xl shadow-amber-500/20 hover:bg-amber-400 transition-all uppercase tracking-widest text-xs disabled:opacity-50 mt-8 active:scale-95"
+                    className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl shadow-xl shadow-amber-500/20 hover:bg-amber-400 transition-all duration-300 uppercase tracking-widest text-xs disabled:opacity-50 mt-8 active:scale-95 hover:shadow-amber-500/40 hover:-translate-y-1"
                 >
                     {isSubmitting ? 'MENGIRIM DATA...' : 'KIRIM LAMARAN'}
                 </button>

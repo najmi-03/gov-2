@@ -17,8 +17,8 @@ import PrivacyModal from './components/PrivacyModal';
 import TermsModal from './components/TermsModal';
 import FeedbackFloating from './components/FeedbackFloating';
 import NewsArchive from './components/NewsArchive';
-import { DEPARTMENTS as INITIAL_DEPARTMENTS, NEWS as INITIAL_NEWS, DEFAULT_FORMS } from './constants';
-import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument, FormConfig } from './types';
+import { DEPARTMENTS as INITIAL_DEPARTMENTS, NEWS as INITIAL_NEWS, DEFAULT_FORMS, DEFAULT_RECRUITMENT_CONFIG, DEFAULT_PERMISSIONS } from './constants';
+import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument, FormConfig, RecruitmentConfig, PermissionConfig } from './types';
 import { loginWithSpreadsheet } from './services/authService';
 import { fetchFromDatabase } from './services/databaseService';
 
@@ -59,6 +59,8 @@ const App: React.FC = () => {
   const [docs, setDocs] = useState<LegislativeDocument[]>(INITIAL_DOCS);
   const [forms, setForms] = useState<FormConfig[]>(DEFAULT_FORMS);
   const [termsContent, setTermsContent] = useState(DEFAULT_TERMS);
+  const [recruitmentConfig, setRecruitmentConfig] = useState<RecruitmentConfig>(DEFAULT_RECRUITMENT_CONFIG);
+  const [permissionConfig, setPermissionConfig] = useState<PermissionConfig[]>(DEFAULT_PERMISSIONS);
 
   const [selectedDept, setSelectedDept] = useState<DeptInfo | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
@@ -71,28 +73,49 @@ const App: React.FC = () => {
     role: 'NONE'
   });
 
-  // Sync data with cloud database on initialization
+  const syncData = async () => {
+    // 1. Departments
+    const cloudDepts = await fetchFromDatabase('DEPTS');
+    if (cloudDepts) setDepts(cloudDepts);
+
+    // 2. News
+    const cloudNews = await fetchFromDatabase('NEWS');
+    if (cloudNews) setNews(cloudNews);
+
+    // 3. Leadership
+    const cloudLeadership = await fetchFromDatabase('LEADERSHIP');
+    if (cloudLeadership) setLeadership(cloudLeadership);
+
+    // 4. Docs
+    const cloudDocs = await fetchFromDatabase('DOCS');
+    if (cloudDocs) setDocs(cloudDocs);
+
+    // 5. Forms
+    const cloudForms = await fetchFromDatabase('FORMS');
+    if (cloudForms) setForms(cloudForms);
+
+    // 6. Terms
+    const cloudTerms = await fetchFromDatabase('TERMS');
+    if (cloudTerms) setTermsContent(cloudTerms);
+
+    // 7. Recruitment (INI YANG PENTING AGAR SINGKRON)
+    const cloudRecruitment = await fetchFromDatabase('RECRUITMENT');
+    if (cloudRecruitment) setRecruitmentConfig(cloudRecruitment);
+
+    // 8. Permissions (Agar portal izin staff singkron)
+    const cloudPermissions = await fetchFromDatabase('PERMISSIONS');
+    if (cloudPermissions) setPermissionConfig(cloudPermissions);
+  };
+
+  // Sync data with cloud database on initialization AND poll interval
   useEffect(() => {
-    const initData = async () => {
-      const cloudDepts = await fetchFromDatabase('DEPTS');
-      if (cloudDepts) setDepts(cloudDepts);
+    // Initial Load
+    syncData();
 
-      const cloudNews = await fetchFromDatabase('NEWS');
-      if (cloudNews) setNews(cloudNews);
+    // Auto-refresh every 10 seconds to keep clients in sync
+    const interval = setInterval(syncData, 10000);
 
-      const cloudLeadership = await fetchFromDatabase('LEADERSHIP');
-      if (cloudLeadership) setLeadership(cloudLeadership);
-
-      const cloudDocs = await fetchFromDatabase('DOCS');
-      if (cloudDocs) setDocs(cloudDocs);
-
-      const cloudForms = await fetchFromDatabase('FORMS');
-      if (cloudForms) setForms(cloudForms);
-
-      const cloudTerms = await fetchFromDatabase('TERMS');
-      if (cloudTerms) setTermsContent(cloudTerms);
-    };
-    initData();
+    return () => clearInterval(interval);
   }, []);
 
   const handleNavClick = (sectionId: string) => {
@@ -188,7 +211,8 @@ const App: React.FC = () => {
               onArchiveClick={() => handleNavClick('news_archive')}
             />
 
-            <RegistrationForm />
+            {/* Registration Form sekarang menerima CONFIG LANGSUNG DARI APP.TSX (DATABASE) */}
+            <RegistrationForm config={recruitmentConfig} />
           </>
         )}
 
@@ -228,6 +252,7 @@ const App: React.FC = () => {
       />
 
       {/* Administration Dashboard for authenticated staff */}
+      {/* SEMUA CONFIG DI-PASS KE SINI AGAR SAAT ADMIN UPDATE, DATABASE TERUPDATE */}
       {auth.isAdmin && (
         <NewsAdmin 
           news={news}
@@ -244,6 +269,8 @@ const App: React.FC = () => {
           setTermsContent={setTermsContent}
           forms={forms}
           setForms={setForms}
+          recruitmentConfig={recruitmentConfig} // Pass current Config
+          permissionConfig={permissionConfig}   // Pass current Permissions
         />
       )}
 

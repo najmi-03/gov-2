@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RecruitmentConfig, RecruitmentQuestion } from '../types';
 import { DEFAULT_RECRUITMENT_CONFIG } from '../constants';
 
@@ -12,6 +12,11 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
   const [localConfig, setLocalConfig] = useState<RecruitmentConfig>(config);
   const [showGuide, setShowGuide] = useState(false);
   
+  // Update local state when parent prop changes (real-time sync)
+  useEffect(() => {
+    setLocalConfig(config);
+  }, [config]);
+
   const addQuestion = () => {
     const newQ: RecruitmentQuestion = {
       id: `q-${Date.now()}`,

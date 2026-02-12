@@ -2,7 +2,8 @@
 import { DATABASE_SCRIPT_URL } from '../constants';
 
 // Tipe data yang bisa dikirim
-type ConfigType = 'NEWS' | 'DEPTS' | 'LEADERSHIP' | 'DOCS' | 'RECRUITMENT' | 'PAWN' | 'TERMS' | 'FORMS' | 'ATTENDANCE';
+// Ditambahkan: PERMISSIONS agar setting izin bisa online
+type ConfigType = 'NEWS' | 'DEPTS' | 'LEADERSHIP' | 'DOCS' | 'RECRUITMENT' | 'PAWN' | 'TERMS' | 'FORMS' | 'ATTENDANCE' | 'INVENTORY_COMMON' | 'INVENTORY_BLACK' | 'PERMISSIONS';
 
 // MAPPING PENTING: Menentukan nama Tab/Sheet di Google Spreadsheet tujuan.
 // Admin WAJIB membuat Tab dengan nama-nama ini di Spreadsheet Database.
@@ -15,7 +16,10 @@ const SHEET_MAPPING: Record<ConfigType, string> = {
   PAWN: 'Database_Harga_Pawn',
   TERMS: 'Database_Terms',
   FORMS: 'Database_Layanan_Form',
-  ATTENDANCE: 'Database_Absensi'
+  ATTENDANCE: 'Database_Absensi',
+  INVENTORY_COMMON: 'Database_Loker_Umum',
+  INVENTORY_BLACK: 'Database_Loker_Hitam',
+  PERMISSIONS: 'Database_Config_Izin' // Tab baru untuk izin
 };
 
 /**
@@ -34,7 +38,7 @@ export const fetchFromDatabase = async (type: ConfigType) => {
     const json = await response.json();
     return json.data;
   } catch (error) {
-    console.warn(`[Offline Mode] Gagal load ${type} dari server (${sheetName}). Menggunakan data lokal.`);
+    // console.warn(`[Offline Mode] Gagal load ${type} dari server (${sheetName}).`);
     return null;
   }
 };
@@ -68,7 +72,7 @@ export const saveToDatabase = async (type: ConfigType, data: any) => {
     return true;
   } catch (error) {
     console.error(`Gagal menyimpan ${type}:`, error);
-    alert("Gagal terhubung ke server. Periksa internet Anda.");
+    // alert("Gagal terhubung ke server. Periksa internet Anda.");
     return false;
   }
 };

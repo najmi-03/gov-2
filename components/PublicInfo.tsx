@@ -27,7 +27,7 @@ const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick, on
             </div>
             <button 
               onClick={onArchiveClick}
-              className="text-xs font-bold text-slate-400 hover:text-amber-500 transition-colors uppercase tracking-[0.2em] border-b border-white/10 pb-1"
+              className="text-xs font-bold text-slate-400 hover:text-amber-500 transition-all uppercase tracking-[0.2em] border-b border-white/10 pb-1 hover:border-amber-500 hover:scale-105 active:scale-95"
             >
               Lihat Semua Arsip
             </button>
@@ -48,8 +48,8 @@ const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick, on
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {docs.map((law, i) => (
-              <div key={law.id} className="group p-8 bg-slate-900/30 border border-white/5 rounded-2xl hover:border-amber-500/30 hover:bg-slate-900/50 transition-all flex flex-col items-center text-center">
-                <div className="text-4xl mb-6 group-hover:scale-110 transition-transform">
+              <div key={law.id} className="group p-8 bg-slate-900/30 border border-white/5 rounded-2xl hover:border-amber-500/30 hover:bg-slate-900/50 transition-all duration-300 flex flex-col items-center text-center hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-1">
+                <div className="text-4xl mb-6 group-hover:scale-110 transition-transform duration-300">
                   {law.icon && law.icon.startsWith('http') ? (
                     <img src={law.icon} alt="icon" className="w-12 h-12 object-contain mx-auto" />
                   ) : (
@@ -84,11 +84,11 @@ const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick, on
             
             {/* Improved Button Layout for Mobile */}
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div className="flex-1 md:flex-none px-4 py-3 sm:px-8 sm:py-4 bg-slate-950 text-white rounded-xl font-black text-lg sm:text-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-3 text-center shadow-lg active:scale-95 transition-transform">
+              <div className="flex-1 md:flex-none px-4 py-3 sm:px-8 sm:py-4 bg-slate-950 text-white rounded-xl font-black text-lg sm:text-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-3 text-center shadow-lg active:scale-95 transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-default">
                 <span className="text-amber-500 text-[10px] sm:text-sm font-bold uppercase tracking-wider">POLISI</span> 
                 <span className="whitespace-nowrap">9-1-1</span>
               </div>
-              <div className="flex-1 md:flex-none px-4 py-3 sm:px-8 sm:py-4 bg-white/20 backdrop-blur-md rounded-xl font-black text-lg sm:text-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-3 border border-white/20 text-center shadow-lg active:scale-95 transition-transform">
+              <div className="flex-1 md:flex-none px-4 py-3 sm:px-8 sm:py-4 bg-white/20 backdrop-blur-md rounded-xl font-black text-lg sm:text-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-3 border border-white/20 text-center shadow-lg active:scale-95 transition-all duration-300 hover:scale-105 hover:bg-white/30 cursor-default">
                 <span className="text-slate-900 text-[10px] sm:text-sm font-bold uppercase tracking-wider">UMUM</span> 
                 <span className="whitespace-nowrap">3-1-1</span>
               </div>

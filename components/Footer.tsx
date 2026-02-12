@@ -36,14 +36,14 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
           <div className="flex flex-col items-center md:items-start gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 group">
               <img 
                 src={logoUrl} 
                 alt="Logo SA" 
-                className="h-12 w-auto object-contain"
+                className="h-12 w-auto object-contain transition-transform duration-500 group-hover:rotate-3 group-hover:scale-110"
               />
-              <span className="text-sm md:text-lg font-serif font-bold italic text-white tracking-[0.2em] uppercase">
-                PEMERINTAH <span className="text-amber-500">SAN ANDREAS</span>
+              <span className="text-sm md:text-lg font-serif font-bold italic text-white tracking-[0.2em] uppercase transition-colors group-hover:text-amber-500">
+                PEMERINTAH <span className="text-amber-500 group-hover:text-white">SAN ANDREAS</span>
               </span>
             </div>
             <div className="text-center md:text-left">
@@ -58,27 +58,27 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
             <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-slate-500">
               <button 
                 onClick={(e) => { e.preventDefault(); onPrivacyClick(); }}
-                className="hover:text-amber-500 transition-colors uppercase"
+                className="hover:text-amber-500 transition-all hover:scale-105 uppercase"
               >
                 Kebijakan Privasi
               </button>
               <button 
                 onClick={(e) => { e.preventDefault(); onTermsClick(); }}
-                className="hover:text-amber-500 transition-colors uppercase"
+                className="hover:text-amber-500 transition-all hover:scale-105 uppercase"
               >
                 Syarat & Ketentuan
               </button>
               {!auth.isAdmin ? (
                 <button 
                   onClick={() => setShowLogin(!showLogin)}
-                  className="hover:text-amber-500 transition-colors"
+                  className="hover:text-amber-500 transition-all hover:scale-105"
                 >
                   Staff Access
                 </button>
               ) : (
                 <button 
                   onClick={onLogout}
-                  className="text-amber-500 hover:text-amber-400 font-bold"
+                  className="text-amber-500 hover:text-amber-400 font-bold transition-all hover:scale-105"
                 >
                   Logout ({auth.staffName})
                 </button>
@@ -89,7 +89,7 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
 
         {/* Login Form */}
         {showLogin && !auth.isAdmin && (
-          <div className="max-w-xs mx-auto md:mx-0 p-4 bg-slate-900 rounded-xl border border-white/10 mb-4">
+          <div className="max-w-xs mx-auto md:mx-0 p-4 bg-slate-900 rounded-xl border border-white/10 mb-4 animate-fade-in-up">
             <h4 className="text-[10px] font-bold text-white uppercase tracking-[0.2em] mb-3">Portal Login Staff</h4>
             <form onSubmit={handleLoginSubmit} className="flex gap-2">
               <input 
@@ -98,11 +98,11 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
                 value={pin}
                 onChange={e => setPin(e.target.value)}
                 disabled={isLoading}
-                className="flex-1 bg-slate-950 border border-white/5 rounded px-3 py-1.5 text-xs outline-none focus:border-amber-500/50 disabled:opacity-50"
+                className="flex-1 bg-slate-950 border border-white/5 rounded px-3 py-1.5 text-xs outline-none focus:border-amber-500/50 disabled:opacity-50 transition-all"
               />
               <button 
                 disabled={isLoading}
-                className="bg-amber-500 text-slate-950 text-[10px] font-bold px-3 py-1 rounded disabled:bg-slate-700 disabled:text-slate-400"
+                className="bg-amber-500 text-slate-950 text-[10px] font-bold px-3 py-1 rounded disabled:bg-slate-700 disabled:text-slate-400 transition-all hover:bg-amber-400 active:scale-95"
               >
                 {isLoading ? '...' : 'MASUK'}
               </button>

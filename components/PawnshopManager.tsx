@@ -73,12 +73,12 @@ const InventoryRow: React.FC<{
                 type="text" 
                 value={item.name}
                 onChange={e => onUpdate(item.id, 'name', e.target.value)}
-                className="bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white w-full outline-none focus:border-amber-500/50 transition-all placeholder:text-slate-600"
+                className="bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white w-full outline-none focus:border-amber-500/50 transition-all placeholder:text-slate-600 focus:shadow-[0_0_10px_rgba(245,158,11,0.2)]"
                 placeholder="Nama Item..."
               />
               <button 
                 onClick={() => onDelete(item.id)}
-                className="w-10 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"
+                className="w-10 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95"
               >
                 🗑️
               </button>
@@ -127,17 +127,17 @@ const InventoryRow: React.FC<{
                 type="number" 
                 value={amount} 
                 onChange={e => setAmount(e.target.value)}
-                className="bg-slate-900 border border-white/10 rounded-xl px-3 py-3 text-xs font-bold text-white w-16 md:w-20 text-center outline-none focus:border-amber-500/50 placeholder:text-slate-700"
+                className="bg-slate-900 border border-white/10 rounded-xl px-3 py-3 text-xs font-bold text-white w-16 md:w-20 text-center outline-none focus:border-amber-500/50 placeholder:text-slate-700 focus:shadow-inner"
                 min="1"
                 placeholder="Jml"
               />
               
               <button 
                 onClick={handleExecute}
-                className={`flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-950 transition-all shadow-lg active:scale-95 ${
+                className={`flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-950 transition-all duration-200 shadow-lg active:scale-95 hover:shadow-xl hover:-translate-y-0.5 ${
                   action === 'DEPOSIT' 
-                    ? 'bg-green-500 hover:bg-green-400 shadow-green-500/20' 
-                    : 'bg-red-500 hover:bg-red-400 shadow-red-500/20'
+                    ? 'bg-green-500 hover:bg-green-400 shadow-green-500/20 hover:shadow-green-500/40' 
+                    : 'bg-red-500 hover:bg-red-400 shadow-red-500/20 hover:shadow-red-500/40'
                 }`}
               >
                 {action === 'DEPOSIT' ? 'SIMPAN' : 'AMBIL'}
@@ -162,10 +162,8 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
   const [blackItems, setBlackItems] = useState<SimpleItem[]>([]);
   const [pawnItems, setPawnItems] = useState<PawnItem[]>(INITIAL_PAWN_DATA);
   
-  // State untuk Log Sesi
+  const [isEditing, setIsEditing] = useState(false);
   const [sessionLogs, setSessionLogs] = useState<string[]>([]);
-  
-  // State untuk Form Tambah Item Baru (Pengganti window.prompt)
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemDuration, setNewItemDuration] = useState('0'); // 0 = Permanen
@@ -178,8 +176,11 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
   const [lockerImage, setLockerImage] = useState<File | null>(null);
   const lockerFileInputRef = useRef<HTMLInputElement>(null);
 
+  // === REALTIME POLLING SYSTEM ===
   useEffect(() => {
     loadLocalData();
+    refreshCloudData();
+
     const savedPawnUrl = localStorage.getItem('ls_gov_pawn_webhook');
     const savedLockerUrl = localStorage.getItem('ls_gov_locker_webhook');
     const savedLogs = localStorage.getItem('ls_gov_session_logs');
@@ -187,7 +188,43 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     if (savedPawnUrl) setPawnWebhookUrl(savedPawnUrl);
     if (savedLockerUrl) setLockerWebhookUrl(savedLockerUrl);
     if (savedLogs) setSessionLogs(JSON.parse(savedLogs));
-  }, []);
+
+    const intervalId = setInterval(refreshCloudData, 5000);
+    return () => clearInterval(intervalId);
+  }, [isEditing]); 
+
+  const refreshCloudData = async () => {
+    if (isEditing && activeTab === 'PAWNSHOP') {
+        return; 
+    }
+
+    const cloudPawn = await fetchFromDatabase('PAWN');
+    if (cloudPawn && Array.isArray(cloudPawn)) {
+      if (!isEditing) { 
+          setPawnItems(cloudPawn);
+          localStorage.setItem('ls_gov_pawn_market', JSON.stringify(cloudPawn));
+      }
+    }
+
+    const cloudCommon = await fetchFromDatabase('INVENTORY_COMMON');
+    if (cloudCommon && Array.isArray(cloudCommon)) {
+      const activeCommon = filterExpired(cloudCommon);
+      setCommonItems(activeCommon);
+      localStorage.setItem('ls_gov_inv_common', JSON.stringify(activeCommon));
+    }
+
+    const cloudBlack = await fetchFromDatabase('INVENTORY_BLACK');
+    if (cloudBlack && Array.isArray(cloudBlack)) {
+        const activeBlack = filterExpired(cloudBlack);
+        setBlackItems(activeBlack);
+        localStorage.setItem('ls_gov_inv_black', JSON.stringify(activeBlack));
+    }
+  };
+
+  const filterExpired = (items: SimpleItem[]) => {
+    const now = Date.now();
+    return items.filter(item => !item.expiryDate || item.expiryDate > now);
+  };
 
   const recordLog = (itemName: string, type: 'DEPOSIT' | 'WITHDRAW', amount: number) => {
     const symbol = type === 'DEPOSIT' ? '+' : '-';
@@ -198,27 +235,13 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     localStorage.setItem('ls_gov_session_logs', JSON.stringify(updatedLogs));
   };
 
-  const loadLocalData = async () => {
+  const loadLocalData = () => {
     const savedCommon = localStorage.getItem('ls_gov_inv_common');
     const savedBlack = localStorage.getItem('ls_gov_inv_black');
     const savedPawn = localStorage.getItem('ls_gov_pawn_market');
     
-    // --- LOAD FROM CLOUD ---
-    const cloudPawn = await fetchFromDatabase('PAWN');
-    if (cloudPawn && Array.isArray(cloudPawn)) {
-      setPawnItems(cloudPawn);
-      localStorage.setItem('ls_gov_pawn_market', JSON.stringify(cloudPawn));
-    } else if (savedPawn) {
-      setPawnItems(JSON.parse(savedPawn));
-    } else {
-      setPawnItems(INITIAL_PAWN_DATA);
-    }
-    // -----------------------
-
-    const filterExpired = (items: SimpleItem[]) => {
-      const now = Date.now();
-      return items.filter(item => !item.expiryDate || item.expiryDate > now);
-    };
+    if (savedPawn) setPawnItems(JSON.parse(savedPawn));
+    else setPawnItems(INITIAL_PAWN_DATA);
 
     const safeParse = (json: string): SimpleItem[] => {
       try {
@@ -237,27 +260,20 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
       }
     };
 
-    if (savedCommon) {
-      const parsedCommon = safeParse(savedCommon);
-      const activeCommon = filterExpired(parsedCommon);
-      setCommonItems(activeCommon);
-    }
-
-    if (savedBlack) {
-      const parsedBlack = safeParse(savedBlack);
-      const activeBlack = filterExpired(parsedBlack);
-      setBlackItems(activeBlack);
-    }
+    if (savedCommon) setCommonItems(filterExpired(safeParse(savedCommon)));
+    if (savedBlack) setBlackItems(filterExpired(safeParse(savedBlack)));
   };
 
   const saveCommon = (items: SimpleItem[]) => {
     setCommonItems(items);
     localStorage.setItem('ls_gov_inv_common', JSON.stringify(items));
+    saveToDatabase('INVENTORY_COMMON', items);
   };
 
   const saveBlack = (items: SimpleItem[]) => {
     setBlackItems(items);
     localStorage.setItem('ls_gov_inv_black', JSON.stringify(items));
+    saveToDatabase('INVENTORY_BLACK', items);
   };
 
   const savePawn = (items: PawnItem[]) => {
@@ -267,10 +283,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     }));
     setPawnItems(autoUpdated);
     localStorage.setItem('ls_gov_pawn_market', JSON.stringify(autoUpdated));
-    
-    // SAVE TO CLOUD
     saveToDatabase('PAWN', autoUpdated);
-    
     window.dispatchEvent(new Event('pawn_update'));
   };
 
@@ -352,14 +365,12 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     setIsSyncing(true);
     let success = false;
 
-    // Logic khusus untuk Loker dengan Gambar
     if (activeTab !== 'PAWNSHOP' && lockerImage) {
         const formData = new FormData();
         formData.append('files[0]', lockerImage);
         
         const payload = formatInventoryEmbed(activeTab, data, staffName, userRole, sessionLogs);
         
-        // Attach image reference to embed
         if (payload.embeds && payload.embeds.length > 0) {
             (payload.embeds[0] as any).image = { url: `attachment://${lockerImage.name}` };
         }
@@ -368,7 +379,6 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
         
         success = await sendFileToDiscord(targetWebhook, formData);
     } else {
-        // Standard JSON payload
         success = await sendToDiscord(targetWebhook, formatInventoryEmbed(activeTab, data, staffName, userRole, sessionLogs));
     }
     
@@ -376,7 +386,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
       alert(`Laporan ${activeTab} berhasil dikirim!`);
       setSessionLogs([]);
       localStorage.removeItem('ls_gov_session_logs');
-      setLockerImage(null); // Reset image
+      setLockerImage(null);
     } else {
       alert("Gagal mengirim laporan. Cek URL Webhook.");
     }
@@ -393,10 +403,10 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 px-4 min-w-[100px] text-[10px] font-black tracking-widest rounded-lg transition-all ${
+              className={`flex-1 py-3 px-4 min-w-[100px] text-[10px] font-black tracking-widest rounded-lg transition-all duration-300 ${
                 activeTab === tab 
-                ? (tab === 'UMUM' ? 'bg-blue-600' : tab === 'HITAM' ? 'bg-red-600' : 'bg-amber-600') + ' text-white' 
-                : 'text-slate-500 hover:text-slate-300'
+                ? (tab === 'UMUM' ? 'bg-blue-600 shadow-lg shadow-blue-500/20' : tab === 'HITAM' ? 'bg-red-600 shadow-lg shadow-red-500/20' : 'bg-amber-600 shadow-lg shadow-amber-500/20') + ' text-white scale-105' 
+                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
               }`}
             >
               {tab}
@@ -410,29 +420,29 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
           <div className="bg-slate-950 border border-white/10 p-5 rounded-2xl">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                 {/* Legend UI */}
-                <div className="bg-blue-500/10 p-2 rounded border border-blue-500/20 text-[10px] flex justify-between items-center">
+                <div className="bg-blue-500/10 p-2 rounded border border-blue-500/20 text-[10px] flex justify-between items-center hover:scale-105 transition-transform">
                   <span>🔵 1 - 5K (200%)</span>
                   <span className="text-blue-400 font-bold uppercase">MENDESAK</span>
                 </div>
-                <div className="bg-green-500/10 p-2 rounded border border-green-500/20 text-[10px] flex justify-between items-center">
+                <div className="bg-green-500/10 p-2 rounded border border-green-500/20 text-[10px] flex justify-between items-center hover:scale-105 transition-transform">
                   <span>🟢 5K - 20K (150%)</span>
                   <span className="text-green-400 font-bold uppercase">TINGGI</span>
                 </div>
-                <div className="bg-yellow-500/10 p-2 rounded border border-yellow-500/20 text-[10px] flex justify-between items-center">
+                <div className="bg-yellow-500/10 p-2 rounded border border-yellow-500/20 text-[10px] flex justify-between items-center hover:scale-105 transition-transform">
                   <span>🟡 20K - 200K (100%)</span>
                   <span className="text-yellow-400 font-bold uppercase">STABIL</span>
                 </div>
-                <div className="bg-red-500/10 p-2 rounded border border-red-500/20 text-[10px] flex justify-between items-center">
+                <div className="bg-red-500/10 p-2 rounded border border-red-500/20 text-[10px] flex justify-between items-center hover:scale-105 transition-transform">
                   <span>🔴 200K - 500K (50%)</span>
                   <span className="text-red-400 font-bold uppercase">BERLEBIH</span>
                 </div>
-                <div className="bg-slate-500/10 p-2 rounded border border-white/10 text-[10px] flex justify-between items-center sm:col-span-2">
+                <div className="bg-slate-500/10 p-2 rounded border border-white/10 text-[10px] flex justify-between items-center sm:col-span-2 hover:scale-105 transition-transform">
                   <span>❌ &gt; 500K (0%)</span>
                   <span className="text-slate-400 font-bold uppercase">PENERIMAAN DITUTUP</span>
                 </div>
              </div>
              
-             <button onClick={handleSyncDiscord} disabled={isSyncing} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20 mb-4">
+             <button onClick={handleSyncDiscord} disabled={isSyncing} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 shadow-lg shadow-amber-500/20 mb-4 hover:shadow-amber-500/40 hover:-translate-y-1 active:scale-95">
                 {isSyncing ? 'MENGIRIM LAPORAN...' : '📢 KIRIM LAPORAN HARGA KE DISCORD'}
              </button>
 
@@ -446,13 +456,13 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                     localStorage.setItem('ls_gov_pawn_webhook', e.target.value);
                   }} 
                   placeholder="https://discord.com/api/webhooks/..." 
-                  className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none" 
+                  className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none focus:border-amber-500/50 focus:shadow-inner transition-all" 
                 />
               </div>
           </div>
 
           {categories.map(cat => (
-            <div key={cat} className="bg-slate-950 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
+            <div key={cat} className="bg-slate-950 rounded-2xl border border-white/5 overflow-hidden shadow-xl hover:border-white/10 transition-all">
               <div className="px-5 py-3 bg-white/5 border-b border-white/5">
                 <h4 className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{cat}</h4>
               </div>
@@ -470,14 +480,16 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
-                            <button onClick={() => updatePawnStock(item.id, item.stock - 1000)} className="w-6 h-6 flex items-center justify-center bg-white/5 rounded text-slate-500 hover:text-white">-</button>
+                            <button onClick={() => updatePawnStock(item.id, item.stock - 1000)} className="w-6 h-6 flex items-center justify-center bg-white/5 rounded text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-90">-</button>
                             <input 
                               type="number" 
                               value={item.stock}
+                              onFocus={() => setIsEditing(true)} // PAUSE SYNC SAAT DIKLIK
+                              onBlur={() => setIsEditing(false)} // LANJUT SYNC SAAT SELESAI
                               onChange={(e) => updatePawnStock(item.id, parseInt(e.target.value) || 0)}
                               className="w-16 md:w-20 bg-slate-900 border border-white/10 rounded px-1 text-center text-slate-300 text-[10px] focus:border-amber-500/50 outline-none"
                             />
-                            <button onClick={() => updatePawnStock(item.id, item.stock + 1000)} className="w-6 h-6 flex items-center justify-center bg-white/5 rounded text-slate-500 hover:text-white">+</button>
+                            <button onClick={() => updatePawnStock(item.id, item.stock + 1000)} className="w-6 h-6 flex items-center justify-center bg-white/5 rounded text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-90">+</button>
                           </div>
                         </td>
                         <td className="px-5 py-4 text-right">
@@ -500,7 +512,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MANAJEMEN {activeTab}</h3>
                <p className="text-[9px] text-slate-600 uppercase">Petugas: <span className="text-amber-500">{staffName || 'Guest'}</span></p>
              </div>
-             <button onClick={handleSyncDiscord} className="text-[10px] font-black bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-all border border-white/10 text-amber-500">
+             <button onClick={handleSyncDiscord} className="text-[10px] font-black bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-all border border-white/10 text-amber-500 hover:text-white hover:scale-105 active:scale-95">
                {isSyncing ? 'SENDING...' : 'SYNC REPORT (DISCORD)'}
              </button>
            </div>
@@ -508,7 +520,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
            {/* Image Upload Area */}
            <div 
              onClick={() => lockerFileInputRef.current?.click()}
-             className={`p-4 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer transition-all ${lockerImage ? 'bg-amber-500/10 border-amber-500' : 'bg-slate-900/50 border-white/10 hover:border-amber-500/30'}`}
+             className={`p-4 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300 ${lockerImage ? 'bg-amber-500/10 border-amber-500' : 'bg-slate-900/50 border-white/10 hover:border-amber-500/30 hover:bg-slate-900'}`}
            >
               <input type="file" ref={lockerFileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
               {lockerImage ? (
@@ -518,7 +530,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                   </div>
               ) : (
                   <div className="flex items-center gap-2 text-slate-500 group">
-                      <span className="text-xl">📸</span>
+                      <span className="text-xl group-hover:scale-110 transition-transform">📸</span>
                       <span className="text-[10px] font-bold uppercase tracking-widest group-hover:text-amber-500 transition-colors">Upload Bukti Foto (Opsional)</span>
                   </div>
               )}
@@ -528,7 +540,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
              <div className="bg-slate-950 border border-amber-500/20 p-4 rounded-xl">
                <div className="flex justify-between items-center mb-2">
                   <h4 className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Aktivitas Sesi Ini (Belum Disync)</h4>
-                  <button onClick={() => { setSessionLogs([]); localStorage.removeItem('ls_gov_session_logs'); }} className="text-[9px] text-red-500 hover:text-white uppercase">Reset Log</button>
+                  <button onClick={() => { setSessionLogs([]); localStorage.removeItem('ls_gov_session_logs'); }} className="text-[9px] text-red-500 hover:text-white uppercase transition-colors">Reset Log</button>
                </div>
                <div className="bg-slate-900/50 p-3 rounded-lg max-h-32 overflow-y-auto text-[10px] font-mono text-slate-400 border border-white/5">
                  {sessionLogs.map((log, idx) => (
@@ -567,12 +579,12 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                 </tbody>
               </table>
               
-              {/* UI TAMBAH ITEM (MENGGANTIKAN WINDOW.PROMPT) */}
+              {/* UI TAMBAH ITEM */}
               <div className="p-4 bg-white/[0.02] border-t border-white/5">
                  {!isAddingItem ? (
                    <button 
                      onClick={() => setIsAddingItem(true)} 
-                     className="w-full py-3 border-2 border-dashed border-white/10 text-slate-500 hover:border-amber-500 hover:text-amber-500 transition-all rounded-xl text-[10px] font-black uppercase tracking-widest"
+                     className="w-full py-3 border-2 border-dashed border-white/10 text-slate-500 hover:border-amber-500 hover:text-amber-500 transition-all rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900"
                    >
                       + Tambah Item Baru
                    </button>
@@ -580,7 +592,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                    <div className="bg-slate-900 p-4 rounded-xl border border-amber-500/30 space-y-4">
                       <div className="flex justify-between items-center">
                         <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Item Baru</h4>
-                        <button onClick={() => setIsAddingItem(false)} className="text-slate-500 hover:text-white">✕</button>
+                        <button onClick={() => setIsAddingItem(false)} className="text-slate-500 hover:text-white transition-colors">✕</button>
                       </div>
                       
                       <div className="space-y-3">
@@ -589,7 +601,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                            value={newItemName}
                            onChange={e => setNewItemName(e.target.value)}
                            placeholder="Nama Item (misal: Radio, Borgol)"
-                           className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
+                           className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none transition-all"
                          />
                          
                          <div className="flex items-center gap-3">
@@ -597,7 +609,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                            <select 
                              value={newItemDuration}
                              onChange={e => setNewItemDuration(e.target.value)}
-                             className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
+                             className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none transition-all"
                            >
                              <option value="0">♾️ Permanen (Selamanya)</option>
                              <option value="1">⏳ 1 Hari</option>
@@ -611,13 +623,13 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                       <div className="flex gap-3">
                          <button 
                            onClick={handleAddItem}
-                           className="flex-1 bg-green-500 hover:bg-green-400 text-slate-950 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                           className="flex-1 bg-green-500 hover:bg-green-400 text-slate-950 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
                          >
                            SIMPAN
                          </button>
                          <button 
                            onClick={() => setIsAddingItem(false)}
-                           className="flex-1 bg-white/5 hover:bg-white/10 text-slate-400 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                           className="flex-1 bg-white/5 hover:bg-white/10 text-slate-400 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:text-white"
                          >
                            BATAL
                          </button>

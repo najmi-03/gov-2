@@ -12,6 +12,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
   const [activeDept, setActiveDept] = useState<DeptInfo | null>(null);
 
   const renderIcon = (icon: string, className: string) => {
+    if (!icon) return null;
     const isImage = icon.startsWith('http') || icon.startsWith('/') || icon.includes('.');
     if (isImage) {
       return <img src={icon} alt="logo" className={`${className} object-contain mx-auto filter drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]`} />;
@@ -20,7 +21,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
   };
 
   return (
-    <section id="structural" className="py-16 md:py-24 px-4 bg-slate-950 relative overflow-hidden">
+    <section id="structural" className="py-16 md:py-24 px-4 bg-slate-950 relative overflow-hidden min-h-screen">
       {/* Visual Lines Decor - Only for Desktop */}
       <div className="absolute inset-0 opacity-10 pointer-events-none hidden lg:block">
         <div className="h-full w-px bg-amber-500/50 absolute left-1/2 -translate-x-1/2"></div>
@@ -28,6 +29,9 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-12 md:mb-16">
+          <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-4">
+              Peta Organisasi Resmi
+          </div>
           <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-4 md:mb-6 leading-tight">Struktural Organisasi</h2>
           <p className="text-slate-400 max-w-2xl mx-auto text-sm md:text-base px-4">
             Hierarki kepemimpinan eksekutif tertinggi yang mengarahkan visi strategis dan operasional negara bagian San Andreas.

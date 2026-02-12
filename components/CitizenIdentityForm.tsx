@@ -1,33 +1,20 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { sendFileToDiscord } from '../services/discordService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormConfig, FormField } from '../types';
-import { DEFAULT_FORMS } from '../constants';
+import { FormConfig } from '../types';
 
-const GovernmentFormSection: React.FC = () => {
-  const [forms, setForms] = useState<FormConfig[]>(DEFAULT_FORMS);
+interface CitizenIdentityFormProps {
+  forms: FormConfig[];
+}
+
+const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) => {
   const [selectedForm, setSelectedForm] = useState<FormConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const savedForms = localStorage.getItem('ls_gov_dynamic_forms');
-    if (savedForms) {
-      setForms(JSON.parse(savedForms));
-    }
-
-    // Listener untuk update dari admin
-    const handleUpdate = () => {
-      const updated = localStorage.getItem('ls_gov_dynamic_forms');
-      if (updated) setForms(JSON.parse(updated));
-    };
-    window.addEventListener('forms_update', handleUpdate);
-    return () => window.removeEventListener('forms_update', handleUpdate);
-  }, []);
 
   const handleOpenForm = (form: FormConfig) => {
     setSelectedForm(form);
@@ -46,6 +33,15 @@ const GovernmentFormSection: React.FC = () => {
       setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile));
     }
+  };
+
+  const renderFormIcon = (icon: string, className: string) => {
+    if (!icon) return null;
+    const isImage = icon.startsWith('http') || icon.startsWith('data:image') || icon.includes('.');
+    if (isImage) {
+      return <img src={icon} alt="" className={className} />;
+    }
+    return <span className={className.includes('text-4xl') ? 'text-4xl md:text-5xl' : 'text-3xl'}>{icon}</span>;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,7 +121,9 @@ const GovernmentFormSection: React.FC = () => {
               onClick={() => handleOpenForm(form)}
               className="bg-slate-950 border border-white/5 p-6 md:p-8 rounded-3xl cursor-pointer transition-all text-center group flex flex-col items-center justify-center min-h-[220px]"
             >
-              <div className="text-4xl md:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">{form.icon}</div>
+              <div className="mb-4 group-hover:scale-110 transition-transform duration-300">
+                {renderFormIcon(form.icon, "text-4xl md:text-5xl w-16 h-16 object-contain mx-auto block")}
+              </div>
               <h3 className="text-white font-bold text-xs md:text-sm mb-2 uppercase tracking-tighter leading-tight">{form.title}</h3>
               <p className="text-[9px] text-slate-500 leading-relaxed uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
                 Klik untuk Membuka Form
@@ -151,7 +149,9 @@ const GovernmentFormSection: React.FC = () => {
               >
                 <div className="p-6 md:p-8 border-b border-white/5 flex justify-between items-center">
                   <div className="flex items-center gap-4">
-                    <span className="text-3xl">{selectedForm.icon}</span>
+                    <div className="w-12 h-12 flex items-center justify-center">
+                      {renderFormIcon(selectedForm.icon, "w-full h-full object-contain")}
+                    </div>
                     <div>
                       <h2 className="text-xl font-bold text-white uppercase tracking-tight">{selectedForm.title}</h2>
                       <p className="text-[10px] text-amber-500 uppercase tracking-widest font-black">Formulir Resmi Pemerintah</p>
@@ -181,7 +181,7 @@ const GovernmentFormSection: React.FC = () => {
                             value={formData[field.id] || ''}
                             onChange={e => setFormData({...formData, [field.id]: e.target.value})}
                             placeholder={field.placeholder}
-                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none"
+                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none"
                           />
                         )}
                       </div>

@@ -1,13 +1,32 @@
 
 import { Department, DeptInfo, NewsItem, PawnItem, PawnStatus, PawnCategory, FormConfig, RecruitmentConfig, PermissionConfig } from './types';
 
-// Default Config jika LocalStorage kosong
+// ============================================================================
+// KONFIGURASI DATABASE PUSAT (GOOGLE SHEETS)
+// ============================================================================
+
+// LINK 1: SCRIPT DATABASE UTAMA (Config, Berita, KTP, SIM, Izin, dll)
+// Digunakan untuk menyimpan dan mengambil data global
+export const DATABASE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzd7i8QCxT24ux5nQIpoEvDOhcglUJ2AiS3g9RMEcpSrPMkXzoXgpXMwqrsSmdLZ17G9w/exec";
+
+// LINK 2: SCRIPT KHUSUS REKRUTMEN (Hanya untuk Form Lamaran Kerja)
+// Digunakan saat pelamar mengirim form "Karir Pemerintahan"
+export const RESPONSES_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEwELc8Mx_OWR4tZMlGyEUXxTU4dMHSEHGrowsgX60lX3otdcus6Xv7uQ9p29HRFuR/exec"; 
+
+// LINK 3: SCRIPT KHUSUS ABSENSI (Attendance) - KOSONGKAN JIKA TIDAK DIPAKAI
+export const ATTENDANCE_SCRIPT_URL = "";
+
+// ============================================================================
+
+export const DEFAULT_MASTER_SCRIPT_URL = DATABASE_SCRIPT_URL; // Backward compatibility
+
+// Default Config (Fallback jika internet mati)
 export const DEFAULT_RECRUITMENT_CONFIG: RecruitmentConfig = {
   isOpen: true,
   title: "Penerimaan Calon Pegawai Pemerintah",
   targetSheetName: "Rekrutmen_Batch_1",
-  scriptUrl: "https://script.google.com/macros/s/AKfycbxEwELc8Mx_OWR4tZMlGyEUXxTU4dMHSEHGrowsgX60lX3otdcus6Xv7uQ9p29HRFuR/exec", 
-  spreadsheetUrl: "", // Default kosong
+  scriptUrl: RESPONSES_SCRIPT_URL, 
+  spreadsheetUrl: "", 
   questions: [
     { id: 'q1', label: "Nama Lengkap (IC)", type: 'SHORT', required: true, isBold: true, placeholder: "Nama sesuai KTP..." },
     { id: 'q2', label: "Nomor Telepon", type: 'SHORT', required: true, isBold: false, placeholder: "555-xxxx" },
@@ -23,7 +42,11 @@ export const DEFAULT_PERMISSIONS: PermissionConfig[] = [
     icon: '🏖️', 
     color: '#3b82f6', 
     webhookKey: 'ls_gov_webhook_cuti', 
-    requireDate: true 
+    requireDate: true,
+    fields: [
+      { id: 'f_reason', label: 'Alasan Cuti', placeholder: 'Jelaskan alasan pengajuan...', type: 'textarea', required: true },
+      { id: 'f_contact', label: 'Kontak Darurat (Discord ID)', placeholder: 'username#1234', type: 'text', required: true }
+    ]
   },
   { 
     id: 'perm_sakit', 
@@ -31,7 +54,11 @@ export const DEFAULT_PERMISSIONS: PermissionConfig[] = [
     icon: '🤢', 
     color: '#eab308', 
     webhookKey: 'ls_gov_webhook_sakit', 
-    requireDate: true 
+    requireDate: true,
+    fields: [
+      { id: 'f_diagnosis', label: 'Diagnosa / Keluhan', placeholder: 'Demam, Cedera, dll', type: 'text', required: true },
+      { id: 'f_proof', label: 'Link Bukti Medis (Jika Ada)', placeholder: 'imgur.com/...', type: 'text', required: false }
+    ]
   },
   { 
     id: 'perm_dinas', 
@@ -39,7 +66,11 @@ export const DEFAULT_PERMISSIONS: PermissionConfig[] = [
     icon: '🗺️', 
     color: '#8b5cf6', 
     webhookKey: 'ls_gov_webhook_dinas', 
-    requireDate: true 
+    requireDate: true,
+    fields: [
+      { id: 'f_loc', label: 'Lokasi Tujuan', placeholder: 'Nama Kota / Area', type: 'text', required: true },
+      { id: 'f_purpose', label: 'Tujuan Dinas', placeholder: 'Rapat / Investigasi / dll', type: 'textarea', required: true }
+    ]
   },
   { 
     id: 'perm_resign', 
@@ -47,7 +78,11 @@ export const DEFAULT_PERMISSIONS: PermissionConfig[] = [
     icon: '🚪', 
     color: '#ef4444', 
     webhookKey: 'ls_gov_webhook_resign', 
-    requireDate: false 
+    requireDate: false,
+    fields: [
+      { id: 'f_reason', label: 'Alasan Pengunduran Diri', placeholder: 'Jelaskan secara detail...', type: 'textarea', required: true },
+      { id: 'f_handover', label: 'Status Inventaris', placeholder: 'Sudah dikembalikan / Belum', type: 'text', required: true }
+    ]
   },
   { 
     id: 'perm_lembur', 
@@ -55,7 +90,11 @@ export const DEFAULT_PERMISSIONS: PermissionConfig[] = [
     icon: '⏰', 
     color: '#22c55e', 
     webhookKey: 'ls_gov_webhook_lembur', 
-    requireDate: true 
+    requireDate: true,
+    fields: [
+      { id: 'f_activity', label: 'Aktivitas yang Dilakukan', placeholder: 'Patroli / Dokumen / dll', type: 'textarea', required: true },
+      { id: 'f_hours', label: 'Total Jam Lembur', placeholder: 'Contoh: 2 Jam', type: 'text', required: true }
+    ]
   }
 ];
 

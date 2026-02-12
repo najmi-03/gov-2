@@ -7,9 +7,10 @@ interface PublicInfoProps {
   newsData: NewsItem[];
   docs: LegislativeDocument[];
   onNewsClick: (news: NewsItem) => void;
+  onArchiveClick: () => void;
 }
 
-const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick }) => {
+const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick, onArchiveClick }) => {
   return (
     <section id="information" className="py-24 px-4 bg-slate-950 relative">
       {/* Background Decor */}
@@ -24,7 +25,10 @@ const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick }) 
               </div>
               <h2 className="text-4xl md:text-5xl font-serif font-bold text-white">Informasi & <span className="text-amber-500">Berita Publik</span></h2>
             </div>
-            <button className="text-xs font-bold text-slate-400 hover:text-amber-500 transition-colors uppercase tracking-[0.2em] border-b border-white/10 pb-1">
+            <button 
+              onClick={onArchiveClick}
+              className="text-xs font-bold text-slate-400 hover:text-amber-500 transition-colors uppercase tracking-[0.2em] border-b border-white/10 pb-1"
+            >
               Lihat Semua Arsip
             </button>
           </div>
@@ -46,7 +50,7 @@ const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick }) 
             {docs.map((law, i) => (
               <div key={law.id} className="group p-8 bg-slate-900/30 border border-white/5 rounded-2xl hover:border-amber-500/30 hover:bg-slate-900/50 transition-all flex flex-col items-center text-center">
                 <div className="text-4xl mb-6 group-hover:scale-110 transition-transform">
-                  {law.icon.startsWith('http') ? (
+                  {law.icon && law.icon.startsWith('http') ? (
                     <img src={law.icon} alt="icon" className="w-12 h-12 object-contain mx-auto" />
                   ) : (
                     <span>{law.icon}</span>

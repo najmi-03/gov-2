@@ -10,7 +10,7 @@ interface DepartmentCardProps {
 }
 
 const DepartmentCard: React.FC<DepartmentCardProps> = ({ dept, onClick, index }) => {
-  const isImageIcon = dept.icon.startsWith('http') || dept.icon.startsWith('/') || dept.icon.includes('.');
+  const isImageIcon = dept.icon && (dept.icon.startsWith('http') || dept.icon.startsWith('/') || dept.icon.includes('.'));
 
   return (
     <motion.div 

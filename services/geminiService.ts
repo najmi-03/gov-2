@@ -1,8 +1,12 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Always initialize with named parameter and use process.env.API_KEY directly
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+/**
+ * Handles citizen support queries using AI grounding against the portal knowledge base.
+ */
 export const getCitizenSupport = async (query: string, context: string) => {
   try {
     const response = await ai.models.generateContent({
@@ -20,9 +24,10 @@ export const getCitizenSupport = async (query: string, context: string) => {
 
         DATA PORTAL:
         ${context}`,
-        temperature: 0.2, // Rendah agar AI tetap pada fakta (konsisten)
+        temperature: 0.2, // Low temperature for high factual accuracy
       },
     });
+    // Use the .text property directly as per latest SDK guidelines
     return response.text;
   } catch (error) {
     console.error("Gemini Error:", error);
@@ -30,6 +35,9 @@ export const getCitizenSupport = async (query: string, context: string) => {
   }
 };
 
+/**
+ * Generates synthetic RP city news in JSON format.
+ */
 export const generateCityNews = async () => {
   try {
     const response = await ai.models.generateContent({
@@ -40,7 +48,8 @@ export const generateCityNews = async () => {
         systemInstruction: "Anda adalah jurnalis resmi pemerintah San Andreas. Buat berita yang terasa nyata dalam konteks Roleplay GTA. Gunakan tanggal hari ini.",
       },
     });
-    return JSON.parse(response.text);
+    // Safely parse the .text property
+    return JSON.parse(response.text || '[]');
   } catch (error) {
     console.error("Gagal generate berita:", error);
     return null;

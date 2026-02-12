@@ -36,7 +36,7 @@ const PawnshopMarket: React.FC = () => {
   const categories: PawnCategory[] = ['PERTANIAN', 'PERTAMBANGAN', 'PERHIASAN', 'ALKOHOL', 'HUNTING', 'RONGSOK'];
 
   return (
-    <section id="pawnshop-market" className="py-16 md:py-24 px-4 bg-slate-950 relative overflow-hidden">
+    <section id="pawnshop-market" className="py-16 md:py-24 px-4 bg-slate-950 relative overflow-hidden min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 md:mb-16">
           <div className="max-w-2xl px-2">

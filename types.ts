@@ -36,6 +36,7 @@ export interface PermissionConfig {
   color: string; // hex color code untuk embed discord
   webhookKey: string; // Key localStorage untuk webhook url
   requireDate: boolean; // Apakah butuh tanggal mulai/selesai?
+  fields: FormField[]; // Custom questions for the permission
 }
 // =============================
 
@@ -126,11 +127,18 @@ export interface NewsItem {
   imageUrl?: string;
 }
 
-// Menambahkan Role SECRETARY_ADMIN dan SECRETARY_OF_STATE
-export type AdminRole = 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'PAWN_STAFF' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'DHA_ADMIN' | 'SECRETARY_ADMIN' | 'SECRETARY_OF_STATE' | 'NONE';
+// Update Role untuk mendukung Super Admin (Presiden) dan Staff Biasa
+export type AdminRole = 'SUPER_ADMIN' | 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'PAWN_STAFF' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'DHA_ADMIN' | 'SECRETARY_ADMIN' | 'SECRETARY_OF_STATE' | 'STAFF' | 'NONE';
 
 export interface AuthState {
   isAdmin: boolean;
   staffName: string | null;
   role: AdminRole;
+}
+
+export interface AttendanceLog {
+  staffName: string;
+  role: string;
+  action: string;
+  timestamp: string;
 }

@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
-import { sendToDiscord, formatInventoryEmbed } from '../services/discordService';
+import React, { useState, useEffect, useRef } from 'react';
+import { sendToDiscord, sendFileToDiscord, formatInventoryEmbed } from '../services/discordService';
 import { PawnItem, PawnStatus, PawnCategory, AdminRole } from '../types';
 import { INITIAL_PAWN_DATA, getStatusFromStock } from '../constants';
+import { saveToDatabase, fetchFromDatabase } from '../services/databaseService';
 
 interface SimpleItem {
   id: string;
@@ -173,6 +174,10 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
   const [lockerWebhookUrl, setLockerWebhookUrl] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // State untuk Upload Gambar Loker
+  const [lockerImage, setLockerImage] = useState<File | null>(null);
+  const lockerFileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     loadLocalData();
     const savedPawnUrl = localStorage.getItem('ls_gov_pawn_webhook');
@@ -193,11 +198,23 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     localStorage.setItem('ls_gov_session_logs', JSON.stringify(updatedLogs));
   };
 
-  const loadLocalData = () => {
+  const loadLocalData = async () => {
     const savedCommon = localStorage.getItem('ls_gov_inv_common');
     const savedBlack = localStorage.getItem('ls_gov_inv_black');
     const savedPawn = localStorage.getItem('ls_gov_pawn_market');
     
+    // --- LOAD FROM CLOUD ---
+    const cloudPawn = await fetchFromDatabase('PAWN');
+    if (cloudPawn && Array.isArray(cloudPawn)) {
+      setPawnItems(cloudPawn);
+      localStorage.setItem('ls_gov_pawn_market', JSON.stringify(cloudPawn));
+    } else if (savedPawn) {
+      setPawnItems(JSON.parse(savedPawn));
+    } else {
+      setPawnItems(INITIAL_PAWN_DATA);
+    }
+    // -----------------------
+
     const filterExpired = (items: SimpleItem[]) => {
       const now = Date.now();
       return items.filter(item => !item.expiryDate || item.expiryDate > now);
@@ -208,7 +225,6 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
         const parsed = JSON.parse(json);
         if (Array.isArray(parsed)) {
           return parsed.map((item: any) => ({
-            // Gunakan random string agar ID unik dan tidak crash saat map loop cepat
             id: item.id || `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: item.name || '',
             stock: typeof item.stock === 'number' ? item.stock : (typeof item.count === 'number' ? item.count : 0),
@@ -225,24 +241,12 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
       const parsedCommon = safeParse(savedCommon);
       const activeCommon = filterExpired(parsedCommon);
       setCommonItems(activeCommon);
-      if (activeCommon.length !== parsedCommon.length) {
-         localStorage.setItem('ls_gov_inv_common', JSON.stringify(activeCommon));
-      }
     }
 
     if (savedBlack) {
       const parsedBlack = safeParse(savedBlack);
       const activeBlack = filterExpired(parsedBlack);
       setBlackItems(activeBlack);
-      if (activeBlack.length !== parsedBlack.length) {
-         localStorage.setItem('ls_gov_inv_black', JSON.stringify(activeBlack));
-      }
-    }
-    
-    if (savedPawn) {
-      setPawnItems(JSON.parse(savedPawn));
-    } else {
-      setPawnItems(INITIAL_PAWN_DATA);
     }
   };
 
@@ -263,6 +267,10 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     }));
     setPawnItems(autoUpdated);
     localStorage.setItem('ls_gov_pawn_market', JSON.stringify(autoUpdated));
+    
+    // SAVE TO CLOUD
+    saveToDatabase('PAWN', autoUpdated);
+    
     window.dispatchEvent(new Event('pawn_update'));
   };
 
@@ -289,11 +297,9 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     }
 
     const days = parseInt(newItemDuration);
-    // Hitung expiry date
     const expiryDate = days > 0 ? Date.now() + (days * 24 * 60 * 60 * 1000) : undefined;
 
     const newItem: SimpleItem = {
-      // Buat ID yang benar-benar unik
       id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: newItemName,
       stock: 0,
@@ -306,7 +312,6 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
       saveBlack([...blackItems, newItem]);
     }
 
-    // Reset Form
     setNewItemName('');
     setNewItemDuration('0');
     setIsAddingItem(false);
@@ -314,6 +319,12 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
 
   const updatePawnStock = (id: string, stock: number) => {
     savePawn(pawnItems.map(item => item.id === id ? { ...item, stock: Math.max(0, stock) } : item));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+        setLockerImage(e.target.files[0]);
+    }
   };
 
   const statusConfig: Record<PawnStatus, { label: string, multiplier: number, icon: string, color: string, desc: string }> = {
@@ -333,18 +344,39 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
       targetWebhook = pawnWebhookUrl;
       data = pawnItems;
     } else {
-      if (!lockerWebhookUrl) return alert("Masukkan Webhook Loker (Digunakan untuk Umum & Hitam)!");
+      if (!lockerWebhookUrl) return alert("Webhook Loker belum diatur oleh Admin!");
       targetWebhook = lockerWebhookUrl;
       data = activeTab === 'UMUM' ? commonItems : blackItems;
     }
 
     setIsSyncing(true);
-    const success = await sendToDiscord(targetWebhook, formatInventoryEmbed(activeTab, data, staffName, userRole, sessionLogs));
+    let success = false;
+
+    // Logic khusus untuk Loker dengan Gambar
+    if (activeTab !== 'PAWNSHOP' && lockerImage) {
+        const formData = new FormData();
+        formData.append('files[0]', lockerImage);
+        
+        const payload = formatInventoryEmbed(activeTab, data, staffName, userRole, sessionLogs);
+        
+        // Attach image reference to embed
+        if (payload.embeds && payload.embeds.length > 0) {
+            (payload.embeds[0] as any).image = { url: `attachment://${lockerImage.name}` };
+        }
+
+        formData.append('payload_json', JSON.stringify(payload));
+        
+        success = await sendFileToDiscord(targetWebhook, formData);
+    } else {
+        // Standard JSON payload
+        success = await sendToDiscord(targetWebhook, formatInventoryEmbed(activeTab, data, staffName, userRole, sessionLogs));
+    }
     
     if (success) {
       alert(`Laporan ${activeTab} berhasil dikirim!`);
       setSessionLogs([]);
       localStorage.removeItem('ls_gov_session_logs');
+      setLockerImage(null); // Reset image
     } else {
       alert("Gagal mengirim laporan. Cek URL Webhook.");
     }
@@ -473,19 +505,23 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
              </button>
            </div>
            
-           <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Webhook Loker (Report Center)</label>
-              <input 
-                type="text" 
-                value={lockerWebhookUrl} 
-                onChange={e => {
-                  setLockerWebhookUrl(e.target.value);
-                  localStorage.setItem('ls_gov_locker_webhook', e.target.value);
-                }} 
-                placeholder="https://discord.com/api/webhooks/..." 
-                className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none focus:border-amber-500/50" 
-              />
-              <p className="text-[10px] text-slate-500 mt-2 italic">*Link ini digunakan untuk mengirim Laporan Inventaris + History Log Aktivitas saat tombol Sync ditekan.</p>
+           {/* Image Upload Area */}
+           <div 
+             onClick={() => lockerFileInputRef.current?.click()}
+             className={`p-4 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer transition-all ${lockerImage ? 'bg-amber-500/10 border-amber-500' : 'bg-slate-900/50 border-white/10 hover:border-amber-500/30'}`}
+           >
+              <input type="file" ref={lockerFileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+              {lockerImage ? (
+                  <div className="text-center">
+                      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Foto Terlampir: {lockerImage.name}</p>
+                      <p className="text-[9px] text-slate-500">(Klik untuk ganti)</p>
+                  </div>
+              ) : (
+                  <div className="flex items-center gap-2 text-slate-500 group">
+                      <span className="text-xl">📸</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest group-hover:text-amber-500 transition-colors">Upload Bukti Foto (Opsional)</span>
+                  </div>
+              )}
            </div>
            
            {sessionLogs.length > 0 && (
@@ -553,7 +589,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                            value={newItemName}
                            onChange={e => setNewItemName(e.target.value)}
                            placeholder="Nama Item (misal: Radio, Borgol)"
-                           className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
+                           className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
                          />
                          
                          <div className="flex items-center gap-3">
@@ -561,7 +597,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                            <select 
                              value={newItemDuration}
                              onChange={e => setNewItemDuration(e.target.value)}
-                             className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
+                             className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
                            >
                              <option value="0">♾️ Permanen (Selamanya)</option>
                              <option value="1">⏳ 1 Hari</option>

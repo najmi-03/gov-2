@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { SalaryRecord, Department, LeadershipMember, DeptInfo, StaffMember } from '../types';
+import { SalaryRecord, Department, LeadershipMember, DeptInfo, StaffMember, AttendanceLog } from '../types';
 import { sendToDiscord, formatSalarySlipEmbed } from '../services/discordService';
+import { fetchFromDatabase, saveToDatabase } from '../services/databaseService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SalaryManagerProps {
@@ -19,11 +20,15 @@ interface FlatEmployee {
 const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState<SalaryRecord | null>(null);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHrDropdown, setShowHrDropdown] = useState(false);
+  
+  // State untuk Import Absensi
+  const [hourlyRate, setHourlyRate] = useState(2500); // Default $2500 per jam
 
   const [newRecord, setNewRecord] = useState<Partial<SalaryRecord>>({
     staffName: '',
@@ -99,6 +104,153 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
     setNewRecord({ staffName: '', position: '', deptName: 'Executive Office', baseSalary: 0, bonus: 0, penaltyLevel: 'NONE', notes: '' });
   };
 
+  // === FITUR INIT DATABASE SHEET ===
+  const handleInitAttendanceDB = async () => {
+    if (confirm("⚠️ SETUP ULANG DATABASE ABSENSI?\n\nIni akan menghapus isi sheet 'Database_Absensi' dan menggantinya dengan HEADER STANDAR.\n\nLakukan ini HANYA JIKA sheet masih kosong atau rusak.")) {
+      setIsImporting(true);
+      
+      const templateData = [
+        {
+           staffName: "staffName", // Header Row Explicit
+           role: "role",
+           action: "action",
+           timestamp: "timestamp"
+        },
+        {
+           staffName: "CONTOH_NAMA",
+           role: "CONTOH_ROLE",
+           action: "CLOCK-IN",
+           timestamp: "2024-01-01 08:00:00"
+        }
+      ];
+      
+      const success = await saveToDatabase('ATTENDANCE', templateData);
+      
+      if (success) {
+        alert("✅ Header Berhasil Dibuat!\nSilakan cek Spreadsheet tab 'Database_Absensi'.\nPastikan data selanjutnya masuk di bawah kolom yang tersedia.");
+      } else {
+        alert("❌ Gagal. Pastikan Script Google Apps sudah diupdate.");
+      }
+      setIsImporting(false);
+    }
+  };
+
+  // === FITUR BARU: IMPORT DARI LOG ABSENSI BOT DISCORD ===
+  const handleImportAttendance = async () => {
+    setIsImporting(true);
+      
+    try {
+      const rawData = await fetchFromDatabase('ATTENDANCE');
+      
+      // DEBUG: Cek apakah data masuk
+      console.log("Raw Data Absensi:", rawData);
+
+      if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
+        alert("⚠️ Data Absensi KOSONG atau Gagal Dimuat.\n\nTips:\n1. Cek tab 'Database_Absensi' di Google Sheet.\n2. Pastikan Script Google sudah dideploy sebagai 'Web App'.\n3. Pastikan ada data (selain header).");
+        setIsImporting(false);
+        return;
+      }
+
+      // KONVERSI DATA RAW KE ATTENDANCELOG YANG AMAN
+      // Kita coba tebak nama kolomnya (Case Insensitive)
+      const logs: AttendanceLog[] = rawData.map((row: any) => {
+          // Cari key yang cocok di object row
+          const keys = Object.keys(row);
+          
+          const findKey = (search: string) => keys.find(k => k.toLowerCase().includes(search.toLowerCase()));
+          
+          // Fallback logic yang kuat
+          const keyName = findKey('staff') || findKey('nama') || findKey('name') || '0';
+          const keyRole = findKey('role') || findKey('jabatan') || '1';
+          const keyAction = findKey('action') || findKey('aksi') || findKey('status') || '2';
+          const keyTime = findKey('time') || findKey('waktu') || findKey('date') || '3';
+
+          return {
+              staffName: row[keyName],
+              role: row[keyRole],
+              action: row[keyAction]?.toString().toUpperCase().trim(),
+              timestamp: row[keyTime]
+          };
+      }).filter(log => {
+          // Filter data sampah/header/kosong
+          return log.staffName && 
+                 log.action && 
+                 !log.staffName.toLowerCase().includes('staffname') && // Skip header row if fetched
+                 !log.staffName.includes('SYSTEM_HEADER');
+      });
+
+      if (logs.length === 0) {
+          alert("⚠️ Data ditemukan tapi format kolom tidak dikenali.\n\nPastikan Header di Excel adalah: staffName, role, action, timestamp");
+          setIsImporting(false);
+          return;
+      }
+
+      // LOGIKA PERHITUNGAN JAM KERJA
+      const workHours: Record<string, { totalHours: number, role: string, name: string }> = {};
+      const tempCheckIn: Record<string, number> = {}; // Menyimpan waktu masuk sementara
+
+      // Urutkan log berdasarkan waktu (ASCENDING)
+      logs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      logs.forEach(log => {
+          const time = new Date(log.timestamp).getTime();
+          if (isNaN(time)) return; // Skip invalid date
+          
+          // Support variasi kata kunci yang luas (Manual Entry Friendly)
+          const act = log.action;
+          const isClockIn = act.includes('IN') || act.includes('ON') || act.includes('LOGIN') || act.includes('MASUK');
+          const isClockOut = act.includes('OUT') || act.includes('OFF') || act.includes('LOGOUT') || act.includes('KELUAR');
+
+          if (isClockIn) {
+              tempCheckIn[log.staffName] = time;
+              if (!workHours[log.staffName]) {
+                  workHours[log.staffName] = { totalHours: 0, role: log.role, name: log.staffName };
+              }
+          } else if (isClockOut && tempCheckIn[log.staffName]) {
+              const durationMs = time - tempCheckIn[log.staffName];
+              const durationHours = durationMs / (1000 * 60 * 60); // Konversi ms ke jam
+              
+              // Validasi jam kerja wajar (misal max 24 jam per sesi, hindari bug tahunan)
+              if (durationHours > 0 && durationHours < 24) {
+                  if (workHours[log.staffName]) {
+                      workHours[log.staffName].totalHours += durationHours;
+                  }
+              }
+              delete tempCheckIn[log.staffName]; // Reset checkin
+          }
+      });
+
+      // KONVERSI HASIL HITUNG KE RECORD GAJI
+      const newSalaries: SalaryRecord[] = Object.values(workHours)
+        .filter(s => s.totalHours > 0) // Hanya yang punya jam kerja
+        .map((staff, idx) => ({
+            id: `auto-${Date.now()}-${idx}`,
+            staffName: staff.name,
+            position: staff.role || 'Staff',
+            deptName: 'Government Staff', 
+            baseSalary: Math.floor(staff.totalHours * hourlyRate), 
+            bonus: 0,
+            penaltyLevel: 'NONE',
+            notes: `Total Jam: ${staff.totalHours.toFixed(2)} | Rate: $${hourlyRate}`
+        }));
+
+      if (newSalaries.length > 0) {
+          if(confirm(`Berhasil memproses ${newSalaries.length} pegawai dengan total jam valid.\n\nKlik OK untuk memasukkan ke tabel gaji.`)) {
+              saveSalaries([...salaries, ...newSalaries]);
+          }
+      } else {
+          alert("⚠️ Data terbaca tapi TIDAK ADA pasangan Clock-In/Out yang valid.\n\nPastikan:\n1. Ada 'CLOCK-IN' dan 'CLOCK-OUT' untuk nama yang sama.\n2. Tanggal valid.");
+      }
+
+    } catch (e) {
+      console.error(e);
+      alert("Terjadi kesalahan sistem saat memproses data.");
+    }
+
+    setIsImporting(false);
+  };
+  // ========================================================
+
   const selectEmployee = (emp: FlatEmployee) => {
     setNewRecord({
       ...newRecord,
@@ -128,7 +280,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
     setIsSending(false);
   };
 
-  const deptsPlusExecutive = [...Object.values(Department), 'Executive Office'];
+  const deptsPlusExecutive = [...Object.values(Department), 'Executive Office', 'Government Staff'];
 
   return (
     <div className="space-y-6">
@@ -139,12 +291,52 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
           <p className="text-[10px] text-slate-500">Database Payroll Terpadu</p>
         </div>
         
-        <button 
-          onClick={() => setIsAdding(!isAdding)} 
-          className="w-full sm:w-auto bg-amber-500 text-slate-950 text-[10px] font-black px-6 py-3 rounded-xl uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/10"
-        >
-          {isAdding ? 'TUTUP FORM' : '+ INPUT GAJI ASN'}
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+            <button 
+            onClick={() => setIsAdding(!isAdding)} 
+            className="flex-1 sm:flex-none bg-white/5 border border-white/10 text-white text-[10px] font-black px-4 py-3 rounded-xl uppercase tracking-widest hover:bg-white/10 transition-all"
+            >
+            {isAdding ? 'TUTUP MANUAL' : '+ INPUT MANUAL'}
+            </button>
+        </div>
+      </div>
+
+      {/* SECTION BARU: IMPORT OTOMATIS */}
+      <div className="bg-blue-500/5 border border-blue-500/20 p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+            <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                🤖 Integrasi Bot Absensi
+            </h4>
+            <p className="text-[9px] text-slate-400 mt-1">
+                Sistem akan menghitung gaji otomatis berdasarkan log <b>Clock-In/Out</b> dari Spreadsheet.
+            </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <button 
+                onClick={handleInitAttendanceDB}
+                disabled={isImporting}
+                className="bg-slate-800 text-slate-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-bold uppercase border border-white/10"
+                title="Buat Header Kolom jika sheet kosong"
+            >
+                ⚙️ SETUP DB
+            </button>
+            <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border border-white/10">
+                <span className="text-[9px] font-bold text-slate-500 uppercase">Rate/Jam: $</span>
+                <input 
+                    type="number" 
+                    value={hourlyRate}
+                    onChange={(e) => setHourlyRate(parseInt(e.target.value) || 0)}
+                    className="w-16 bg-transparent text-white text-xs font-bold outline-none"
+                />
+            </div>
+            <button 
+                onClick={handleImportAttendance}
+                disabled={isImporting}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
+            >
+                {isImporting ? 'Memproses...' : '🔄 TARIK DATA'}
+            </button>
+        </div>
       </div>
 
       {/* Input Form with HR Sync */}
@@ -259,11 +451,13 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
               {salaries.map(s => {
                 const net = calculateTotal(s.baseSalary, s.bonus, s.penaltyLevel);
                 const isExec = s.deptName === 'Executive Office';
+                const isAuto = s.id && s.id.startsWith('auto-'); // Safeguard against null id
                 return (
                   <tr key={s.id} className={`hover:bg-white/[0.02] ${isExec ? 'bg-amber-500/5' : ''}`}>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         {isExec && <span className="text-amber-500">👑</span>}
+                        {isAuto && <span className="text-blue-500" title="Data Otomatis">🤖</span>}
                         <div>
                           <p className="font-bold text-white truncate max-w-[120px]">{s.staffName}</p>
                           <p className="text-[9px] text-slate-500 uppercase tracking-tighter truncate max-w-[120px]">{s.deptName}</p>
@@ -312,7 +506,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
             localStorage.setItem('ls_discord_webhook', e.target.value);
           }} 
           placeholder="https://discord.com/api/webhooks/..." 
-          className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none" 
+          className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none" 
         />
       </div>
 
@@ -361,6 +555,11 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
                     <span>Bonus / OT</span>
                     <span className="font-bold">+${selectedSlip.bonus.toLocaleString()}</span>
                   </div>
+                  {selectedSlip.notes && (
+                      <div className="text-[9px] text-slate-500 italic mt-1 pb-2 border-b border-slate-200">
+                          Catatan: {selectedSlip.notes}
+                      </div>
+                  )}
                   {selectedSlip.penaltyLevel !== 'NONE' && (
                     <div className="flex justify-between text-xs md:text-sm text-red-600">
                       <span>Penalty ({selectedSlip.penaltyLevel})</span>

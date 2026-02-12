@@ -46,7 +46,12 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
                 PEMERINTAH <span className="text-amber-500">SAN ANDREAS</span>
               </span>
             </div>
-            <p className="text-xs text-slate-500">© 2026 Cabang Eksekutif San Andreas. Seluruh hak cipta dilindungi melalui Protokol Otoritas Negara.</p>
+            <div className="text-center md:text-left">
+              <p className="text-xs text-slate-500">© 2026 Cabang Eksekutif San Andreas. Seluruh hak cipta dilindungi melalui Protokol Otoritas Negara.</p>
+              <p className="text-[10px] text-slate-600 mt-2 font-mono">
+                 Powered by <span className="font-bold text-amber-500/50">side.co</span>
+              </p>
+            </div>
           </div>
           
           <div className="flex flex-col items-center md:items-end gap-2">

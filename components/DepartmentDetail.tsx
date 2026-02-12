@@ -12,7 +12,7 @@ interface DepartmentDetailProps {
 const DepartmentDetail: React.FC<DepartmentDetailProps> = ({ dept, onClose, onApply }) => {
   if (!dept) return null;
 
-  const isImageIcon = dept.icon.startsWith('http') || dept.icon.startsWith('/') || dept.icon.includes('.');
+  const isImageIcon = dept.icon && (dept.icon.startsWith('http') || dept.icon.startsWith('/') || dept.icon.includes('.'));
 
   return (
     <AnimatePresence>

@@ -107,15 +107,10 @@ const App: React.FC = () => {
     if (cloudPermissions) setPermissionConfig(cloudPermissions);
   };
 
-  // Sync data with cloud database on initialization AND poll interval
+  // Sync data with cloud database on initialization ONLY (No Auto Refresh Interval)
   useEffect(() => {
     // Initial Load
     syncData();
-
-    // Auto-refresh every 10 seconds to keep clients in sync
-    const interval = setInterval(syncData, 10000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const handleNavClick = (sectionId: string) => {

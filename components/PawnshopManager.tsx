@@ -179,8 +179,9 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
   const [lockerImage, setLockerImage] = useState<File | null>(null);
   const lockerFileInputRef = useRef<HTMLInputElement>(null);
 
-  // === REALTIME POLLING SYSTEM ===
+  // === REALTIME POLLING SYSTEM REMOVED (SYNC ON LOAD ONLY) ===
   useEffect(() => {
+    // 1. Initial Load
     loadLocalData();
     refreshCloudData();
 
@@ -192,22 +193,14 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     if (savedLockerUrl) setLockerWebhookUrl(savedLockerUrl);
     if (savedLogs) setSessionLogs(JSON.parse(savedLogs));
 
-    const intervalId = setInterval(refreshCloudData, 5000);
-    return () => clearInterval(intervalId);
-  }, [isEditing]); 
+    // Interval removed per request (user refreshes page to get updates)
+  }, []); 
 
   const refreshCloudData = async () => {
-    // JANGAN UPDATE DATA JIKA USER SEDANG MENGETIK APAPUN
-    if (isEditing) {
-        return; 
-    }
-
     const cloudPawn = await fetchFromDatabase('PAWN');
     if (cloudPawn && Array.isArray(cloudPawn)) {
-      if (!isEditing) { 
-          setPawnItems(cloudPawn);
-          localStorage.setItem('ls_gov_pawn_market', JSON.stringify(cloudPawn));
-      }
+        setPawnItems(cloudPawn);
+        localStorage.setItem('ls_gov_pawn_market', JSON.stringify(cloudPawn));
     }
 
     const cloudCommon = await fetchFromDatabase('INVENTORY_COMMON');

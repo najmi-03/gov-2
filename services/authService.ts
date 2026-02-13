@@ -60,7 +60,8 @@ export const loginWithSpreadsheet = async (pin: string): Promise<AuthState | nul
     return {
       isAdmin: true,
       staffName: localAdmin.name,
-      role: localAdmin.role as AdminRole
+      role: localAdmin.role as AdminRole,
+      nip: localAdmin.pin // Simpan PIN lokal sebagai NIP
     };
   }
 
@@ -124,7 +125,8 @@ export const loginWithSpreadsheet = async (pin: string): Promise<AuthState | nul
             return {
               isAdmin: true,
               staffName: detectedName || 'Staff',
-              role: assignedRole
+              role: assignedRole,
+              nip: rowPin // Simpan PIN dari spreadsheet sebagai NIP
             };
           }
         }

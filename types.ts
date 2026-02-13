@@ -127,6 +127,15 @@ export interface NewsItem {
   imageUrl?: string;
 }
 
+// === NEW CAROUSEL TYPE ===
+export interface CarouselItem {
+  id: string;
+  imageUrl: string;
+  title: string;
+  subtitle: string;
+}
+// =========================
+
 // Update Role untuk mendukung Super Admin (Presiden) dan Staff Biasa
 export type AdminRole = 'SUPER_ADMIN' | 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'PAWN_STAFF' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'DHA_ADMIN' | 'SECRETARY_ADMIN' | 'SECRETARY_OF_STATE' | 'STAFF' | 'NONE';
 
@@ -134,6 +143,7 @@ export interface AuthState {
   isAdmin: boolean;
   staffName: string | null;
   role: AdminRole;
+  nip?: string; // Menyimpan ID/PIN Login sebagai NIP
 }
 
 export interface AttendanceLog {

@@ -17,8 +17,9 @@ import PrivacyModal from './components/PrivacyModal';
 import TermsModal from './components/TermsModal';
 import FeedbackFloating from './components/FeedbackFloating';
 import NewsArchive from './components/NewsArchive';
+import AttendancePage from './components/AttendancePage';
 import { DEPARTMENTS as INITIAL_DEPARTMENTS, NEWS as INITIAL_NEWS, DEFAULT_FORMS, DEFAULT_RECRUITMENT_CONFIG, DEFAULT_PERMISSIONS } from './constants';
-import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument, FormConfig, RecruitmentConfig, PermissionConfig } from './types';
+import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument, FormConfig, RecruitmentConfig, PermissionConfig, CarouselItem } from './types';
 import { loginWithSpreadsheet } from './services/authService';
 import { fetchFromDatabase } from './services/databaseService';
 
@@ -45,7 +46,22 @@ Setiap warga yang berinteraksi dengan layanan pemerintah San Andreas wajib memat
 Warga diharapkan menjaga integritas dan ketertiban umum. Segala bentuk pelanggaran hukum akan diproses melalui sistem peradilan San Andreas yang berlaku.
 `;
 
-type ViewState = 'home' | 'structural' | 'pawnshop' | 'news_archive';
+const INITIAL_SLIDES: CarouselItem[] = [
+  {
+    id: 'slide_1',
+    imageUrl: "https://blogger.googleusercontent.com/img/a/AVvXsEjaXIjnkB3jrrHYq0gTWWZwzEBlvj3q4tR9RWxppWhLLbDh6UcoH1tUPsyJcRKstJtuddulcnjJ8ZXhp4QvVuA9aXYFlcq522L9P2KWJ_j9VpkQFAZzaLx7IqDpaCmtKAryBFW_CS73run7Ah9GLZKqcFbrnKqdiyRZX1M5t9zClMbMt-iuNzJCQHJxXd3I",
+    title: "Visi Masa Depan",
+    subtitle: "Membangun infrastruktur yang berkelanjutan untuk generasi mendatang di Los Santos."
+  },
+  {
+    id: 'slide_2',
+    imageUrl: "https://blogger.googleusercontent.com/img/a/AVvXsEglh6sjEsTdQCjEHUYOdDRqd8fBkvki-GH2ixxjtTOiXPRoagtlQULiZXPcSNV8cBbGVAZa3uFRzY4Y7d0oUrNSYaz7L8ExRoWIUhlDZ_nIfa4N7G2RCpb7oI6LWsw6_5sx_xls57PUDqng7qhDUQHZz1pNj4ufjL3Dtl0VCwTXxaiWukbjh37UKPlPZhuw",
+    title: "Dedikasi Tanpa Batas",
+    subtitle: "Otoritas pemerintahan yang bekerja tanpa henti demi keamanan dan kenyamanan publik."
+  }
+];
+
+type ViewState = 'home' | 'structural' | 'pawnshop' | 'news_archive' | 'attendance';
 
 /**
  * Main App Component
@@ -61,6 +77,7 @@ const App: React.FC = () => {
   const [termsContent, setTermsContent] = useState(DEFAULT_TERMS);
   const [recruitmentConfig, setRecruitmentConfig] = useState<RecruitmentConfig>(DEFAULT_RECRUITMENT_CONFIG);
   const [permissionConfig, setPermissionConfig] = useState<PermissionConfig[]>(DEFAULT_PERMISSIONS);
+  const [carouselSlides, setCarouselSlides] = useState<CarouselItem[]>(INITIAL_SLIDES); // NEW STATE
 
   const [selectedDept, setSelectedDept] = useState<DeptInfo | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
@@ -98,13 +115,17 @@ const App: React.FC = () => {
     const cloudTerms = await fetchFromDatabase('TERMS');
     if (cloudTerms) setTermsContent(cloudTerms);
 
-    // 7. Recruitment (INI YANG PENTING AGAR SINGKRON)
+    // 7. Recruitment
     const cloudRecruitment = await fetchFromDatabase('RECRUITMENT');
     if (cloudRecruitment) setRecruitmentConfig(cloudRecruitment);
 
-    // 8. Permissions (Agar portal izin staff singkron)
+    // 8. Permissions
     const cloudPermissions = await fetchFromDatabase('PERMISSIONS');
     if (cloudPermissions) setPermissionConfig(cloudPermissions);
+
+    // 9. Carousel (New)
+    const cloudCarousel = await fetchFromDatabase('CAROUSEL');
+    if (cloudCarousel && Array.isArray(cloudCarousel)) setCarouselSlides(cloudCarousel);
   };
 
   // Sync data with cloud database on initialization ONLY (No Auto Refresh Interval)
@@ -130,6 +151,11 @@ const App: React.FC = () => {
     if (sectionId === 'news_archive') {
       setCurrentView('news_archive');
       window.scrollTo(0, 0);
+      return;
+    }
+
+    if (sectionId === 'attendance') {
+      setCurrentView('attendance');
       return;
     }
 
@@ -167,132 +193,141 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200">
-      <Navbar onNavClick={handleNavClick} />
-      
-      <main>
-        {/* VIEW: HOME LANDING PAGE */}
-        {currentView === 'home' && (
-          <>
-            <Hero 
-              onApplyClick={() => handleNavClick('recruitment')} 
-              onFormClick={() => handleNavClick('citizen-form')} 
-            />
+      {/* Jika di halaman Absensi, tampilkan overlay full screen, sembunyikan navigasi utama */}
+      {currentView === 'attendance' ? (
+        <AttendancePage onBack={() => handleNavClick('home')} auth={auth} />
+      ) : (
+        <>
+          <Navbar onNavClick={handleNavClick} auth={auth} />
+          
+          <main>
+            {/* VIEW: HOME LANDING PAGE */}
+            {currentView === 'home' && (
+              <>
+                <Hero 
+                  onApplyClick={() => handleNavClick('recruitment')} 
+                  onFormClick={() => handleNavClick('citizen-form')} 
+                />
 
-            <CityCarousel />
+                <CityCarousel slides={carouselSlides} />
 
-            <section id="departments" className="py-24 px-4 max-w-7xl mx-auto">
-              <div className="text-center mb-16">
-                <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-4">Departemen Pemerintahan</h2>
-                <p className="text-slate-400 max-w-xl mx-auto">Pilar utama pelayanan publik yang berdedikasi membangun San Andreas.</p>
+                <section id="departments" className="py-24 px-4 max-w-7xl mx-auto">
+                  <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-4">Departemen Pemerintahan</h2>
+                    <p className="text-slate-400 max-w-xl mx-auto">Pilar utama pelayanan publik yang berdedikasi membangun San Andreas.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {depts.map((dept, idx) => (
+                      <DepartmentCard 
+                        key={dept.id} 
+                        dept={dept} 
+                        index={idx} 
+                        onClick={setSelectedDept} 
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                <CitizenIdentityForm forms={forms} />
+
+                <PublicInfo 
+                  newsData={news} 
+                  docs={docs} 
+                  onNewsClick={setSelectedNews} 
+                  onArchiveClick={() => handleNavClick('news_archive')}
+                />
+
+                {/* Registration Form sekarang menerima CONFIG LANGSUNG DARI APP.TSX (DATABASE) */}
+                <RegistrationForm config={recruitmentConfig} />
+              </>
+            )}
+
+            {/* VIEW: STRUCTURAL PAGE */}
+            {currentView === 'structural' && (
+              <div className="min-h-screen pt-24 bg-slate-950">
+                <StructuralChart 
+                    depts={depts} 
+                    leadershipData={leadership} 
+                />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {depts.map((dept, idx) => (
-                  <DepartmentCard 
-                    key={dept.id} 
-                    dept={dept} 
-                    index={idx} 
-                    onClick={setSelectedDept} 
-                  />
-                ))}
+            )}
+
+            {/* VIEW: PAWNSHOP PAGE */}
+            {currentView === 'pawnshop' && (
+              <div className="min-h-screen pt-24 bg-slate-950">
+                  <PawnshopMarket />
               </div>
-            </section>
+            )}
 
-            <CitizenIdentityForm forms={forms} />
+            {/* VIEW: NEWS ARCHIVE PAGE */}
+            {currentView === 'news_archive' && (
+              <NewsArchive 
+                news={news}
+                onNewsClick={setSelectedNews}
+              />
+            )}
 
-            <PublicInfo 
-              newsData={news} 
-              docs={docs} 
-              onNewsClick={setSelectedNews} 
-              onArchiveClick={() => handleNavClick('news_archive')}
+          </main>
+
+          <Footer 
+            onLogin={handleLogin} 
+            onLogout={handleLogout} 
+            auth={auth} 
+            onPrivacyClick={() => setIsPrivacyOpen(true)}
+            onTermsClick={() => setIsTermsOpen(true)}
+          />
+
+          {/* Administration Dashboard for authenticated staff */}
+          {/* SEMUA CONFIG DI-PASS KE SINI AGAR SAAT ADMIN UPDATE, DATABASE TERUPDATE */}
+          {auth.isAdmin && (
+            <NewsAdmin 
+              news={news}
+              setNews={setNews}
+              userRole={auth.role}
+              staffName={auth.staffName}
+              depts={depts}
+              setDepts={setDepts}
+              leadership={leadership}
+              setLeadership={setLeadership}
+              docs={docs}
+              setDocs={setDocs}
+              termsContent={termsContent}
+              setTermsContent={setTermsContent}
+              forms={forms}
+              setForms={setForms}
+              recruitmentConfig={recruitmentConfig} 
+              permissionConfig={permissionConfig}   
+              carouselSlides={carouselSlides} // PASS TO ADMIN
+              setCarouselSlides={setCarouselSlides} // PASS TO ADMIN
             />
+          )}
 
-            {/* Registration Form sekarang menerima CONFIG LANGSUNG DARI APP.TSX (DATABASE) */}
-            <RegistrationForm config={recruitmentConfig} />
-          </>
-        )}
+          {/* Modals and Overlays */}
+          <DepartmentDetail 
+            dept={selectedDept} 
+            onClose={() => setSelectedDept(null)} 
+            onApply={() => handleNavClick('recruitment')}
+          />
 
-        {/* VIEW: STRUCTURAL PAGE */}
-        {currentView === 'structural' && (
-          <div className="min-h-screen pt-24 bg-slate-950">
-             <StructuralChart 
-                depts={depts} 
-                leadershipData={leadership} 
-             />
-          </div>
-        )}
+          <NewsDetail 
+            news={selectedNews} 
+            onClose={() => setSelectedNews(null)} 
+          />
 
-        {/* VIEW: PAWNSHOP PAGE */}
-        {currentView === 'pawnshop' && (
-           <div className="min-h-screen pt-24 bg-slate-950">
-              <PawnshopMarket />
-           </div>
-        )}
+          <PrivacyModal 
+            isOpen={isPrivacyOpen} 
+            onClose={() => setIsPrivacyOpen(false)} 
+          />
 
-        {/* VIEW: NEWS ARCHIVE PAGE */}
-        {currentView === 'news_archive' && (
-           <NewsArchive 
-             news={news}
-             onNewsClick={setSelectedNews}
-           />
-        )}
+          <TermsModal 
+            isOpen={isTermsOpen} 
+            onClose={() => setIsTermsOpen(false)} 
+            content={termsContent}
+          />
 
-      </main>
-
-      <Footer 
-        onLogin={handleLogin} 
-        onLogout={handleLogout} 
-        auth={auth} 
-        onPrivacyClick={() => setIsPrivacyOpen(true)}
-        onTermsClick={() => setIsTermsOpen(true)}
-      />
-
-      {/* Administration Dashboard for authenticated staff */}
-      {/* SEMUA CONFIG DI-PASS KE SINI AGAR SAAT ADMIN UPDATE, DATABASE TERUPDATE */}
-      {auth.isAdmin && (
-        <NewsAdmin 
-          news={news}
-          setNews={setNews}
-          userRole={auth.role}
-          staffName={auth.staffName}
-          depts={depts}
-          setDepts={setDepts}
-          leadership={leadership}
-          setLeadership={setLeadership}
-          docs={docs}
-          setDocs={setDocs}
-          termsContent={termsContent}
-          setTermsContent={setTermsContent}
-          forms={forms}
-          setForms={setForms}
-          recruitmentConfig={recruitmentConfig} // Pass current Config
-          permissionConfig={permissionConfig}   // Pass current Permissions
-        />
+          <FeedbackFloating auth={auth} />
+        </>
       )}
-
-      {/* Modals and Overlays */}
-      <DepartmentDetail 
-        dept={selectedDept} 
-        onClose={() => setSelectedDept(null)} 
-        onApply={() => handleNavClick('recruitment')}
-      />
-
-      <NewsDetail 
-        news={selectedNews} 
-        onClose={() => setSelectedNews(null)} 
-      />
-
-      <PrivacyModal 
-        isOpen={isPrivacyOpen} 
-        onClose={() => setIsPrivacyOpen(false)} 
-      />
-
-      <TermsModal 
-        isOpen={isTermsOpen} 
-        onClose={() => setIsTermsOpen(false)} 
-        content={termsContent}
-      />
-
-      <FeedbackFloating auth={auth} />
     </div>
   );
 };

@@ -1,21 +1,27 @@
 
 import React, { useState } from 'react';
+import { AuthState } from '../types';
 
 interface NavbarProps {
   onNavClick: (section: string) => void;
+  auth: AuthState;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
+const Navbar: React.FC<NavbarProps> = ({ onNavClick, auth }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const menuItems = [
+  const baseMenuItems = [
     { label: 'Departemen', id: 'departments' },
     { label: 'Struktural', id: 'structural' },
     { label: 'Layanan Form', id: 'citizen-form' }, 
     { label: 'Informasi', id: 'information' },
-    { label: 'Rekrutmen', id: 'recruitment' },
-    { label: 'Asisten AI', id: 'assistant' }
+    { label: 'Rekrutmen', id: 'recruitment' }
   ];
+
+  // Only show Absensi if user is logged in as staff (isAdmin = true)
+  const menuItems = auth.isAdmin 
+    ? [...baseMenuItems, { label: 'Absensi', id: 'attendance' }]
+    : baseMenuItems;
 
   const logoUrl = "https://blogger.googleusercontent.com/img/a/AVvXsEhzvSdkUPwo4gRLcVNJ96dqOYMJK2KndlS1XjV2ZOkV_F5x3H5yFZl8TQKJKSuGGODEyt676kxH6AsjMdXrxAfDEyFYPHqOWlPfh91-yfw0BpF5G2BFiL7yxvic4RwwQryScLaaTAr7fDBrsYK-gPYRpCStWd5gWsQLdV1hXuYXbDcxHbcUpRJhm4899joR";
 
@@ -34,7 +40,7 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
               alt="Logo SA" 
               className="h-10 sm:h-12 md:h-14 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(245,158,11,0.4)] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
             />
-            <span className="text-sm sm:text-base md:text-xl font-serif font-bold tracking-tighter text-amber-500 hidden xs:block border-l border-white/10 pl-3 sm:pl-4 py-1 transition-colors group-hover:text-amber-400">
+            <span className="text-sm sm:text-base md:text-xl font-serif font-bold tracking-tighter text-amber-500 border-l border-white/10 pl-3 sm:pl-4 py-1 transition-colors group-hover:text-amber-400">
               PORTAL <span className="text-white group-hover:text-slate-200">PEMERINTAH</span>
             </span>
           </div>
@@ -44,7 +50,7 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick }) => {
               <button
                 key={item.id}
                 onClick={() => onNavClick(item.id)}
-                className="text-[11px] lg:text-sm font-medium text-slate-300 hover:text-amber-500 transition-all duration-300 uppercase tracking-widest hover:scale-110 active:scale-95"
+                className={`text-[11px] lg:text-sm font-medium transition-all duration-300 uppercase tracking-widest hover:scale-110 active:scale-95 ${item.id === 'attendance' ? 'text-amber-500 font-bold border-b border-amber-500/50' : 'text-slate-300 hover:text-amber-500'}`}
               >
                 {item.label}
               </button>

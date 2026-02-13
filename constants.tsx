@@ -13,8 +13,15 @@ export const DATABASE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzd7
 // Digunakan saat pelamar mengirim form "Karir Pemerintahan"
 export const RESPONSES_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEwELc8Mx_OWR4tZMlGyEUXxTU4dMHSEHGrowsgX60lX3otdcus6Xv7uQ9p29HRFuR/exec"; 
 
-// LINK 3: SCRIPT KHUSUS ABSENSI (Attendance) - KOSONGKAN JIKA TIDAK DIPAKAI
-export const ATTENDANCE_SCRIPT_URL = "";
+// LINK 3: SCRIPT KHUSUS ABSENSI (Write Only / Clock In-Out & Read JSON)
+// Digunakan untuk mencatat Clock-In/Clock-Out pegawai dan membaca data real-time
+// UPDATED: Mendukung Auto-Create Tab Bulanan
+export const ATTENDANCE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbykfsIUO-f4sDh8QBrC4mCu1ZH1psVdPJFh_OfdEJtHdfC97EKiZRyXJDHtgyYdmx3I/exec";
+
+// LINK 4: LINK DATA ABSENSI (Read Only / CSV)
+// Digunakan oleh Admin Treasury untuk menarik data gaji (Lebih cepat untuk data banyak)
+// DIKOSONGKAN AGAR SISTEM MENGGUNAKAN SCRIPT URL (JSON) SECARA OTOMATIS
+export const ATTENDANCE_CSV_URL = ""; 
 
 // ============================================================================
 

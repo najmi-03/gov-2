@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { SalaryRecord, Department, LeadershipMember, DeptInfo, StaffMember, AttendanceLog } from '../types';
+import { SalaryRecord, Department, LeadershipMember, DeptInfo, AttendanceLog } from '../types';
 import { sendToDiscord, formatSalarySlipEmbed } from '../services/discordService';
-import { fetchFromDatabase, saveToDatabase } from '../services/databaseService';
+import { fetchFromDatabase } from '../services/databaseService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SalaryManagerProps {
@@ -17,18 +17,47 @@ interface FlatEmployee {
   isLeader: boolean;
 }
 
+interface CalculatedStat {
+    name: string;
+    role: string;
+    totalHours: number;
+    daysPresent: number;
+    salary: number;
+}
+
 const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState<SalaryRecord | null>(null);
+  
+  // State untuk Edit Full
+  const [editingRecord, setEditingRecord] = useState<SalaryRecord | null>(null);
+
   const [webhookUrl, setWebhookUrl] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHrDropdown, setShowHrDropdown] = useState(false);
   
-  // State untuk Import Absensi
-  const [hourlyRate, setHourlyRate] = useState(2500); // Default $2500 per jam
+  // State untuk Rate Management
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [roleRates, setRoleRates] = useState<Record<string, number>>({});
+  const [defaultRate, setDefaultRate] = useState(2500);
+
+  // State untuk Preview Statistik
+  const [previewStats, setPreviewStats] = useState<CalculatedStat[]>([]);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+  // === SOURCE SHEET SELECTOR ===
+  const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const YEARS = [2025, 2026, 2027, 2028];
+  
+  const [importMonth, setImportMonth] = useState(new Date().getMonth());
+  const [importYear, setImportYear] = useState(new Date().getFullYear());
+
+  // State untuk Filter Tanggal (Mingguan/Bulanan)
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const [newRecord, setNewRecord] = useState<Partial<SalaryRecord>>({
     staffName: '',
@@ -43,21 +72,23 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
   // Flat list of all employees from HR and Leadership
   const allEmployees = useMemo(() => {
     const list: FlatEmployee[] = [];
-    
-    // Add Leadership
-    leadership.forEach(l => {
-      list.push({ name: l.name, role: l.role, dept: 'Executive Office', isLeader: true });
-    });
-
-    // Add All Dept Staff
+    leadership.forEach(l => list.push({ name: l.name, role: l.role, dept: 'Executive Office', isLeader: true }));
     depts.forEach(d => {
-      d.structuralStaff.forEach(s => {
-        list.push({ name: s.name, role: s.role, dept: d.name, isLeader: false });
-      });
+      d.structuralStaff.forEach(s => list.push({ name: s.name, role: s.role, dept: d.name, isLeader: false }));
     });
-
     return list;
   }, [leadership, depts]);
+
+  // Extract unique roles for Rate Settings
+  const availableRoles = useMemo(() => {
+    const roles = new Set<string>();
+    allEmployees.forEach(e => roles.add(e.role));
+    // Tambahkan role umum manual
+    roles.add('Staff');
+    roles.add('Magang');
+    roles.add('Security');
+    return Array.from(roles).sort();
+  }, [allEmployees]);
 
   const filteredEmployees = allEmployees.filter(e => 
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -70,11 +101,51 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
 
     const savedUrl = localStorage.getItem('ls_discord_webhook');
     if (savedUrl) setWebhookUrl(savedUrl);
+
+    // Load Saved Rates
+    const savedRates = localStorage.getItem('ls_gov_salary_rates');
+    if (savedRates) setRoleRates(JSON.parse(savedRates));
   }, []);
+
+  // Update default dates when month changes (Default: Full Month)
+  useEffect(() => {
+    const firstDay = new Date(importYear, importMonth, 1);
+    const lastDay = new Date(importYear, importMonth + 1, 0);
+    setStartDate(formatDateForInput(firstDay));
+    setEndDate(formatDateForInput(lastDay));
+  }, [importMonth, importYear]);
+
+  const formatDateForInput = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleSetThisWeek = () => {
+    const today = new Date();
+    const currentDay = today.getDay(); // 0-6
+    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay; // Adjust to Monday
+    
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diffToMonday);
+    
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    setStartDate(formatDateForInput(monday));
+    setEndDate(formatDateForInput(sunday));
+  };
 
   const saveSalaries = (data: SalaryRecord[]) => {
     setSalaries(data);
     localStorage.setItem('ls_gov_salaries', JSON.stringify(data));
+  };
+
+  const handleUpdateRate = (role: string, amount: number) => {
+    const updated = { ...roleRates, [role]: amount };
+    setRoleRates(updated);
+    localStorage.setItem('ls_gov_salary_rates', JSON.stringify(updated));
   };
 
   const calculateTotal = (base: number, bonus: number, penalty: string) => {
@@ -104,152 +175,145 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
     setNewRecord({ staffName: '', position: '', deptName: 'Executive Office', baseSalary: 0, bonus: 0, penaltyLevel: 'NONE', notes: '' });
   };
 
-  // === FITUR INIT DATABASE SHEET ===
-  const handleInitAttendanceDB = async () => {
-    if (confirm("⚠️ SETUP ULANG DATABASE ABSENSI?\n\nIni akan menghapus isi sheet 'Database_Absensi' dan menggantinya dengan HEADER STANDAR.\n\nLakukan ini HANYA JIKA sheet masih kosong atau rusak.")) {
-      setIsImporting(true);
-      
-      const templateData = [
-        {
-           staffName: "staffName", // Header Row Explicit
-           role: "role",
-           action: "action",
-           timestamp: "timestamp"
-        },
-        {
-           staffName: "CONTOH_NAMA",
-           role: "CONTOH_ROLE",
-           action: "CLOCK-IN",
-           timestamp: "2024-01-01 08:00:00"
-        }
-      ];
-      
-      const success = await saveToDatabase('ATTENDANCE', templateData);
-      
-      if (success) {
-        alert("✅ Header Berhasil Dibuat!\nSilakan cek Spreadsheet tab 'Database_Absensi'.\nPastikan data selanjutnya masuk di bawah kolom yang tersedia.");
-      } else {
-        alert("❌ Gagal. Pastikan Script Google Apps sudah diupdate.");
-      }
-      setIsImporting(false);
-    }
+  const handleSaveEdit = () => {
+      if (!editingRecord) return;
+      const updatedList = salaries.map(s => s.id === editingRecord.id ? editingRecord : s);
+      saveSalaries(updatedList);
+      setEditingRecord(null);
   };
 
-  // === FITUR BARU: IMPORT DARI LOG ABSENSI BOT DISCORD ===
   const handleImportAttendance = async () => {
     setIsImporting(true);
       
     try {
-      const rawData = await fetchFromDatabase('ATTENDANCE');
-      
-      // DEBUG: Cek apakah data masuk
-      console.log("Raw Data Absensi:", rawData);
+      const targetSheetName = `Absensi_${MONTH_NAMES[importMonth]}_${importYear}`;
+      console.log(`Treasury fetching from: ${targetSheetName}`);
 
+      const rawData = await fetchFromDatabase('ATTENDANCE', targetSheetName);
+      
       if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
-        alert("⚠️ Data Absensi KOSONG atau Gagal Dimuat.\n\nTips:\n1. Cek tab 'Database_Absensi' di Google Sheet.\n2. Pastikan Script Google sudah dideploy sebagai 'Web App'.\n3. Pastikan ada data (selain header).");
+        alert(`⚠️ Database "${targetSheetName}" KOSONG.\n\nTips: Pastikan Database Absensi bulan tersebut sudah dibuat di panel Absensi.`);
         setIsImporting(false);
         return;
       }
 
-      // KONVERSI DATA RAW KE ATTENDANCELOG YANG AMAN
-      // Kita coba tebak nama kolomnya (Case Insensitive)
-      const logs: AttendanceLog[] = rawData.map((row: any) => {
-          // Cari key yang cocok di object row
-          const keys = Object.keys(row);
+      // 1. Parsing Logs
+      let logs: AttendanceLog[] = rawData.map((row: any) => {
+          const keys = Object.keys(row).reduce((acc, k) => {
+              acc[k.toLowerCase().replace(/[^a-z0-9]/g, "")] = row[k];
+              return acc;
+          }, {} as any);
           
-          const findKey = (search: string) => keys.find(k => k.toLowerCase().includes(search.toLowerCase()));
-          
-          // Fallback logic yang kuat
-          const keyName = findKey('staff') || findKey('nama') || findKey('name') || '0';
-          const keyRole = findKey('role') || findKey('jabatan') || '1';
-          const keyAction = findKey('action') || findKey('aksi') || findKey('status') || '2';
-          const keyTime = findKey('time') || findKey('waktu') || findKey('date') || '3';
+          const name = keys['namapegawai'] || keys['nama'] || keys['name'] || keys['0'] || 'Unknown';
+          const role = keys['jabatan'] || keys['role'] || keys['posisi'] || keys['1'] || 'Staff';
+          const action = keys['clockstatus'] || keys['statusabsensi'] || keys['status'] || keys['action'] || keys['aksi'] || keys['2'] || 'INFO';
+          const timestamp = keys['timestamp'] || keys['waktu'] || keys['date'] || keys['3'] || new Date().toISOString();
 
           return {
-              staffName: row[keyName],
-              role: row[keyRole],
-              action: row[keyAction]?.toString().toUpperCase().trim(),
-              timestamp: row[keyTime]
+              staffName: name,
+              role: role,
+              action: action ? action.toString().toUpperCase().trim() : 'UNKNOWN',
+              timestamp: timestamp
           };
-      }).filter(log => {
-          // Filter data sampah/header/kosong
-          return log.staffName && 
-                 log.action && 
-                 !log.staffName.toLowerCase().includes('staffname') && // Skip header row if fetched
-                 !log.staffName.includes('SYSTEM_HEADER');
+      }).filter(log => log.staffName && log.action && !log.staffName.toLowerCase().includes('nama')); 
+
+      // 2. Filter Date Range
+      const startTs = new Date(startDate).setHours(0, 0, 0, 0);
+      const endTs = new Date(endDate).setHours(23, 59, 59, 999);
+
+      logs = logs.filter(log => {
+          const logTime = new Date(log.timestamp).getTime();
+          return logTime >= startTs && logTime <= endTs;
       });
 
       if (logs.length === 0) {
-          alert("⚠️ Data ditemukan tapi format kolom tidak dikenali.\n\nPastikan Header di Excel adalah: staffName, role, action, timestamp");
+          alert(`Tidak ada data absensi pada periode ${startDate} s/d ${endDate}.`);
           setIsImporting(false);
           return;
       }
 
-      // LOGIKA PERHITUNGAN JAM KERJA
-      const workHours: Record<string, { totalHours: number, role: string, name: string }> = {};
-      const tempCheckIn: Record<string, number> = {}; // Menyimpan waktu masuk sementara
+      // 3. STATISTICAL CALCULATION (Same as AttendancePage)
+      const workStats: Record<string, { totalHours: number, role: string, days: Set<string> }> = {};
+      const tempCheckIn: Record<string, number> = {};
 
-      // Urutkan log berdasarkan waktu (ASCENDING)
+      // Sort Ascending (Older -> Newer)
       logs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
       logs.forEach(log => {
           const time = new Date(log.timestamp).getTime();
-          if (isNaN(time)) return; // Skip invalid date
+          if (isNaN(time)) return;
           
-          // Support variasi kata kunci yang luas (Manual Entry Friendly)
           const act = log.action;
-          const isClockIn = act.includes('IN') || act.includes('ON') || act.includes('LOGIN') || act.includes('MASUK');
-          const isClockOut = act.includes('OUT') || act.includes('OFF') || act.includes('LOGOUT') || act.includes('KELUAR');
+          const isClockIn = act.includes('IN') || act.includes('MASUK') || act.includes('LOGIN');
+          const isClockOut = act.includes('OUT') || act.includes('PULANG') || act.includes('KELUAR');
+          const dateStr = new Date(log.timestamp).toLocaleDateString();
 
+          // Init stats object
+          if (!workStats[log.staffName]) {
+              workStats[log.staffName] = { totalHours: 0, role: log.role, days: new Set() };
+          }
+
+          // Count presence days based on Clock IN
           if (isClockIn) {
+              workStats[log.staffName].days.add(dateStr);
               tempCheckIn[log.staffName] = time;
-              if (!workHours[log.staffName]) {
-                  workHours[log.staffName] = { totalHours: 0, role: log.role, name: log.staffName };
-              }
+              workStats[log.staffName].role = log.role; // Update latest role
           } else if (isClockOut && tempCheckIn[log.staffName]) {
               const durationMs = time - tempCheckIn[log.staffName];
-              const durationHours = durationMs / (1000 * 60 * 60); // Konversi ms ke jam
+              const durationHours = durationMs / (1000 * 60 * 60); 
               
-              // Validasi jam kerja wajar (misal max 24 jam per sesi, hindari bug tahunan)
-              if (durationHours > 0 && durationHours < 24) {
-                  if (workHours[log.staffName]) {
-                      workHours[log.staffName].totalHours += durationHours;
-                  }
+              if (durationHours > 0 && durationHours < 24) { 
+                  workStats[log.staffName].totalHours += durationHours;
               }
-              delete tempCheckIn[log.staffName]; // Reset checkin
+              delete tempCheckIn[log.staffName];
           }
       });
 
-      // KONVERSI HASIL HITUNG KE RECORD GAJI
-      const newSalaries: SalaryRecord[] = Object.values(workHours)
-        .filter(s => s.totalHours > 0) // Hanya yang punya jam kerja
-        .map((staff, idx) => ({
-            id: `auto-${Date.now()}-${idx}`,
-            staffName: staff.name,
-            position: staff.role || 'Staff',
-            deptName: 'Government Staff', 
-            baseSalary: Math.floor(staff.totalHours * hourlyRate), 
-            bonus: 0,
-            penaltyLevel: 'NONE',
-            notes: `Total Jam: ${staff.totalHours.toFixed(2)} | Rate: $${hourlyRate}`
-        }));
+      // 4. Generate Calculated List
+      const results: CalculatedStat[] = Object.entries(workStats)
+        .filter(([_, stat]) => stat.totalHours > 0.1 || stat.days.size > 0)
+        .map(([name, stat]) => {
+            // Find Rate
+            const roleKey = Object.keys(roleRates).find(key => key.toLowerCase() === stat.role.toLowerCase());
+            const rate = roleKey ? roleRates[roleKey] : defaultRate;
+            
+            return {
+                name: name,
+                role: stat.role,
+                totalHours: stat.totalHours,
+                daysPresent: stat.days.size,
+                salary: Math.floor(stat.totalHours * rate)
+            };
+        })
+        .sort((a, b) => b.totalHours - a.totalHours); // Sort by hours descending
 
-      if (newSalaries.length > 0) {
-          if(confirm(`Berhasil memproses ${newSalaries.length} pegawai dengan total jam valid.\n\nKlik OK untuk memasukkan ke tabel gaji.`)) {
-              saveSalaries([...salaries, ...newSalaries]);
-          }
-      } else {
-          alert("⚠️ Data terbaca tapi TIDAK ADA pasangan Clock-In/Out yang valid.\n\nPastikan:\n1. Ada 'CLOCK-IN' dan 'CLOCK-OUT' untuk nama yang sama.\n2. Tanggal valid.");
-      }
+      setPreviewStats(results);
+      setShowPreviewModal(true);
 
     } catch (e) {
       console.error(e);
-      alert("Terjadi kesalahan sistem saat memproses data.");
+      alert("Error saat memproses data absensi.");
     }
 
     setIsImporting(false);
   };
-  // ========================================================
+
+  const confirmImport = () => {
+      const newSalaries: SalaryRecord[] = previewStats.map((stat, idx) => ({
+          id: `auto-${Date.now()}-${idx}`,
+          staffName: stat.name,
+          position: stat.role,
+          deptName: 'Government Staff',
+          baseSalary: stat.salary,
+          bonus: 0,
+          penaltyLevel: 'NONE',
+          notes: `Hadir: ${stat.daysPresent} Hari | Total: ${stat.totalHours.toFixed(2)} Jam`
+      }));
+
+      saveSalaries([...salaries, ...newSalaries]);
+      setShowPreviewModal(false);
+      alert(`✅ Berhasil mengimpor ${newSalaries.length} data gaji.`);
+  };
 
   const selectEmployee = (emp: FlatEmployee) => {
     setNewRecord({
@@ -257,7 +321,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
       staffName: emp.name,
       position: emp.role,
       deptName: emp.dept,
-      baseSalary: emp.isLeader ? (emp.role.includes('Presiden') ? 50000 : 35000) : 10000
+      baseSalary: 0
     });
     setSearchTerm(emp.name);
     setShowHrDropdown(false);
@@ -265,6 +329,11 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
 
   const deleteRecord = (id: string) => {
     saveSalaries(salaries.filter(s => s.id !== id));
+  };
+
+  const updateRecord = (id: string, field: keyof SalaryRecord, value: any) => {
+    setSalaries(salaries.map(s => s.id === id ? { ...s, [field]: value } : s));
+    localStorage.setItem('ls_gov_salaries', JSON.stringify(salaries.map(s => s.id === id ? { ...s, [field]: value } : s)));
   };
 
   const handleSendToDiscord = async (salary: SalaryRecord) => {
@@ -301,43 +370,325 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
         </div>
       </div>
 
-      {/* SECTION BARU: IMPORT OTOMATIS */}
-      <div className="bg-blue-500/5 border border-blue-500/20 p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
-        <div>
-            <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                🤖 Integrasi Bot Absensi
-            </h4>
-            <p className="text-[9px] text-slate-400 mt-1">
-                Sistem akan menghitung gaji otomatis berdasarkan log <b>Clock-In/Out</b> dari Spreadsheet.
-            </p>
+      {/* SECTION BARU: IMPORT OTOMATIS & DATE FILTER */}
+      <div className="bg-blue-500/5 border border-blue-500/20 p-5 rounded-2xl space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                    🤖 Integrasi Gov Presensi
+                </h4>
+                <p className="text-[9px] text-slate-400 mt-1">
+                    Hitung statistik jam kerja & gaji otomatis dari Database Absensi.
+                </p>
+            </div>
+            <div className="flex gap-2">
+                <button 
+                    onClick={() => setShowRateModal(true)}
+                    className="bg-slate-800 text-amber-500 hover:text-white px-4 py-2 rounded-xl text-[9px] font-bold uppercase border border-amber-500/20 hover:bg-slate-700 transition-all flex items-center gap-2"
+                >
+                    ⚙️ ATUR RATE ($)
+                </button>
+            </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <button 
-                onClick={handleInitAttendanceDB}
-                disabled={isImporting}
-                className="bg-slate-800 text-slate-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-bold uppercase border border-white/10"
-                title="Buat Header Kolom jika sheet kosong"
-            >
-                ⚙️ SETUP DB
-            </button>
-            <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border border-white/10">
-                <span className="text-[9px] font-bold text-slate-500 uppercase">Rate/Jam: $</span>
-                <input 
-                    type="number" 
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(parseInt(e.target.value) || 0)}
-                    className="w-16 bg-transparent text-white text-xs font-bold outline-none"
-                />
+
+        {/* SELECTOR SHEET SOURCE */}
+        <div className="flex flex-col gap-3 bg-slate-900/50 p-4 rounded-xl border border-white/5">
+            <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-bold text-white uppercase tracking-widest bg-blue-600 px-2 py-0.5 rounded">Langkah 1</span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-widest">Pilih Database Sumber</span>
+            </div>
+            <div className="flex gap-2">
+                <select 
+                    value={importMonth} 
+                    onChange={(e) => setImportMonth(Number(e.target.value))}
+                    className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white uppercase outline-none focus:border-blue-500/50"
+                >
+                    {MONTH_NAMES.map((m, i) => (
+                        <option key={i} value={i}>{m}</option>
+                    ))}
+                </select>
+                <select 
+                    value={importYear} 
+                    onChange={(e) => setImportYear(Number(e.target.value))}
+                    className="w-24 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white uppercase outline-none focus:border-blue-500/50"
+                >
+                    {YEARS.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                    ))}
+                </select>
+            </div>
+        </div>
+
+        {/* DATE PICKER ROW */}
+        <div className="flex flex-col sm:flex-row gap-4 items-end bg-slate-900/50 p-4 rounded-xl border border-white/5">
+            <div className="flex-1 w-full">
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-bold text-white uppercase tracking-widest bg-blue-600 px-2 py-0.5 rounded">Langkah 2</span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Filter Statistik (Opsional)</span>
+                </div>
+                <div className="flex gap-2 items-center">
+                    <input 
+                        type="date" 
+                        value={startDate} 
+                        onChange={e => setStartDate(e.target.value)}
+                        className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white uppercase outline-none focus:border-blue-500/50"
+                    />
+                    <span className="text-white self-center">-</span>
+                    <input 
+                        type="date" 
+                        value={endDate} 
+                        onChange={e => setEndDate(e.target.value)}
+                        className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white uppercase outline-none focus:border-blue-500/50"
+                    />
+                    <button 
+                        onClick={handleSetThisWeek}
+                        className="bg-white/5 hover:bg-white/10 text-amber-500 px-3 py-2 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-amber-500/20 transition-all whitespace-nowrap h-full"
+                    >
+                        📅 Minggu Ini
+                    </button>
+                </div>
             </div>
             <button 
                 onClick={handleImportAttendance}
                 disabled={isImporting}
-                className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 h-[38px] self-end"
             >
-                {isImporting ? 'Memproses...' : '🔄 TARIK DATA'}
+                {isImporting ? 'Menghitung...' : '📊 HITUNG STATISTIK'}
             </button>
         </div>
       </div>
+
+      {/* PREVIEW MODAL (STATISTIK) */}
+      <AnimatePresence>
+        {showPreviewModal && (
+            <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+                <motion.div 
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={() => setShowPreviewModal(false)}
+                    className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                />
+                <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                    className="relative w-full max-w-4xl bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-6 flex flex-col max-h-[85vh]"
+                >
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest">Preview Statistik & Kalkulasi</h3>
+                            <p className="text-[10px] text-slate-500">Periksa data sebelum masuk ke tabel penggajian.</p>
+                        </div>
+                        <button onClick={() => setShowPreviewModal(false)} className="text-slate-500 hover:text-white">✕</button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-950 rounded-xl border border-white/5">
+                        <table className="w-full text-left text-[10px]">
+                            <thead className="bg-white/5 text-slate-400 font-bold uppercase sticky top-0 backdrop-blur-md">
+                                <tr>
+                                    <th className="px-4 py-3">Nama Pegawai</th>
+                                    <th className="px-4 py-3">Hari Hadir</th>
+                                    <th className="px-4 py-3">Total Jam</th>
+                                    <th className="px-4 py-3">Estimasi Gaji</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {previewStats.length > 0 ? (
+                                    previewStats.map((stat, i) => (
+                                        <tr key={i} className="hover:bg-white/[0.02]">
+                                            <td className="px-4 py-3">
+                                                <div className="font-bold text-white">{stat.name}</div>
+                                                <div className="text-[9px] text-slate-500 uppercase">{stat.role}</div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className="font-mono text-amber-500 font-bold">{stat.daysPresent}</span> Hari
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className="font-mono text-blue-400 font-bold">{stat.totalHours.toFixed(2)}</span> Jam
+                                            </td>
+                                            <td className="px-4 py-3 font-mono font-bold text-green-400">
+                                                ${stat.salary.toLocaleString()}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500">Data statistik kosong (Total jam 0).</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-white/10">
+                        <button onClick={() => setShowPreviewModal(false)} className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                            Batal
+                        </button>
+                        <button onClick={confirmImport} disabled={previewStats.length === 0} className="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-green-600/20 disabled:opacity-50">
+                            ✅ Import ke Payroll ({previewStats.length})
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
+
+      {/* EDIT RECORD MODAL (NEW) */}
+      <AnimatePresence>
+        {editingRecord && (
+            <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+                <motion.div 
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={() => setEditingRecord(null)}
+                    className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                />
+                <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                    className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-6 flex flex-col max-h-[85vh]"
+                >
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest">Edit Data Payroll</h3>
+                        <button onClick={() => setEditingRecord(null)} className="text-slate-500 hover:text-white">✕</button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nama Pegawai</label>
+                                <input type="text" value={editingRecord.staffName} onChange={(e) => setEditingRecord({...editingRecord, staffName: e.target.value})} className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Jabatan</label>
+                                <input type="text" value={editingRecord.position} onChange={(e) => setEditingRecord({...editingRecord, position: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Departemen</label>
+                            <select value={editingRecord.deptName} onChange={(e) => setEditingRecord({...editingRecord, deptName: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50">
+                                {deptsPlusExecutive.map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gaji Pokok ($)</label>
+                                <input type="number" value={editingRecord.baseSalary} onChange={(e) => setEditingRecord({...editingRecord, baseSalary: Number(e.target.value)})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Bonus ($)</label>
+                                <input type="number" value={editingRecord.bonus} onChange={(e) => setEditingRecord({...editingRecord, bonus: Number(e.target.value)})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Penalti (Potongan)</label>
+                            <select value={editingRecord.penaltyLevel} onChange={(e) => setEditingRecord({...editingRecord, penaltyLevel: e.target.value as any})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50">
+                                <option value="NONE">Bersih (0%)</option>
+                                <option value="SP1">SP 1 (Potong 50%)</option>
+                                <option value="SP2">SP 2 (Potong 75%)</option>
+                                <option value="SP3">SP 3 (Potong 100%)</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Catatan / Keterangan</label>
+                            <textarea rows={3} value={editingRecord.notes} onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" placeholder="Contoh: Telat 2x, Kinerja Bagus..." />
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-white/10">
+                        <button onClick={() => setEditingRecord(null)} className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                            Batal
+                        </button>
+                        <button onClick={handleSaveEdit} className="px-6 py-2 rounded-xl bg-amber-500 text-slate-950 text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 shadow-lg shadow-amber-500/20">
+                            💾 Simpan Perubahan
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
+
+      {/* RATE CONFIG MODAL */}
+      <AnimatePresence>
+        {showRateModal && (
+            <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+                <motion.div 
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={() => setShowRateModal(false)}
+                    className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                />
+                <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                    className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-6 flex flex-col max-h-[80vh]"
+                >
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest">Konfigurasi Gaji per Jam</h3>
+                        <button onClick={() => setShowRateModal(false)} className="text-slate-500 hover:text-white">✕</button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                        {/* Default Rate */}
+                        <div className="bg-slate-950 p-3 rounded-xl border border-white/10 flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Rate Standar (Default)</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-500">$</span>
+                                <input 
+                                    type="number" 
+                                    value={defaultRate}
+                                    onChange={(e) => setDefaultRate(Number(e.target.value))}
+                                    className="w-20 bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white text-right outline-none focus:border-amber-500"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="border-t border-white/10 my-4"></div>
+
+                        {/* List Jabatan */}
+                        {availableRoles.map(role => (
+                            <div key={role} className="flex justify-between items-center group">
+                                <span className="text-[10px] font-bold text-white uppercase truncate max-w-[60%]">{role}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500">$</span>
+                                    <input 
+                                        type="number" 
+                                        value={roleRates[role] || ''}
+                                        placeholder={defaultRate.toString()}
+                                        onChange={(e) => handleUpdateRate(role, Number(e.target.value))}
+                                        className="w-20 bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-amber-500 font-bold text-right outline-none focus:border-amber-500"
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                        
+                        {/* Custom Role Input */}
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                            <p className="text-[9px] text-slate-500 mb-2">Tambah Role Manual (Jika tidak ada di list):</p>
+                            <div className="flex gap-2">
+                                <input id="customRoleName" type="text" placeholder="Nama Jabatan" className="flex-1 bg-slate-950 border border-white/10 rounded px-2 py-1 text-xs text-white" />
+                                <button 
+                                    onClick={() => {
+                                        const input = document.getElementById('customRoleName') as HTMLInputElement;
+                                        if(input.value) {
+                                            handleUpdateRate(input.value, defaultRate);
+                                            input.value = '';
+                                        }
+                                    }}
+                                    className="bg-amber-500 text-slate-950 px-3 rounded text-[9px] font-bold"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-white/10 text-right">
+                        <button onClick={() => setShowRateModal(false)} className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all">
+                            Selesai & Simpan
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
 
       {/* Input Form with HR Sync */}
       <AnimatePresence>
@@ -442,7 +793,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
               <tr>
                 <th className="px-5 py-4">Penerima</th>
                 <th className="px-5 py-4">Gaji</th>
-                <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4">Bonus</th>
                 <th className="px-5 py-4">Total</th>
                 <th className="px-5 py-4 text-right">Aksi</th>
               </tr>
@@ -451,7 +802,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
               {salaries.map(s => {
                 const net = calculateTotal(s.baseSalary, s.bonus, s.penaltyLevel);
                 const isExec = s.deptName === 'Executive Office';
-                const isAuto = s.id && s.id.startsWith('auto-'); // Safeguard against null id
+                const isAuto = s.id && s.id.startsWith('auto-'); 
                 return (
                   <tr key={s.id} className={`hover:bg-white/[0.02] ${isExec ? 'bg-amber-500/5' : ''}`}>
                     <td className="px-5 py-4">
@@ -460,20 +811,37 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
                         {isAuto && <span className="text-blue-500" title="Data Otomatis">🤖</span>}
                         <div>
                           <p className="font-bold text-white truncate max-w-[120px]">{s.staffName}</p>
-                          <p className="text-[9px] text-slate-500 uppercase tracking-tighter truncate max-w-[120px]">{s.deptName}</p>
+                          <p className="text-[9px] text-slate-500 uppercase tracking-tighter truncate max-w-[120px]">{s.position}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-slate-300 font-mono">${s.baseSalary.toLocaleString()}</td>
                     <td className="px-5 py-4">
-                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold ${s.penaltyLevel === 'NONE' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}`}>
-                        {s.penaltyLevel === 'NONE' ? 'BERSIH' : s.penaltyLevel}
-                      </span>
+                       <input 
+                         type="number" 
+                         value={s.baseSalary} 
+                         onChange={(e) => updateRecord(s.id, 'baseSalary', Number(e.target.value))}
+                         className="bg-transparent border-b border-transparent hover:border-white/20 text-slate-300 font-mono w-20 outline-none text-xs focus:border-amber-500 transition-all"
+                       />
+                    </td>
+                    <td className="px-5 py-4">
+                       <input 
+                         type="number" 
+                         value={s.bonus} 
+                         onChange={(e) => updateRecord(s.id, 'bonus', Number(e.target.value))}
+                         className="bg-transparent border-b border-transparent hover:border-white/20 text-green-400 font-mono w-16 outline-none text-xs focus:border-green-500 transition-all"
+                       />
                     </td>
                     <td className="px-5 py-4">
                       <span className="text-xs md:text-sm font-black text-amber-500 font-mono">${net.toLocaleString()}</span>
                     </td>
                     <td className="px-5 py-4 text-right space-x-2">
+                      <button 
+                        onClick={() => setEditingRecord(s)}
+                        className="bg-slate-800 hover:bg-slate-700 text-amber-500 p-1.5 rounded border border-white/5 transition-all"
+                        title="Edit Detail"
+                      >
+                        ✏️
+                      </button>
                       <button 
                         onClick={() => setSelectedSlip(s)}
                         className="bg-white/5 hover:bg-white/10 text-white text-[9px] font-bold px-3 py-1.5 rounded uppercase tracking-widest border border-white/10"

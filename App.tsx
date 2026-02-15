@@ -91,47 +91,50 @@ const App: React.FC = () => {
   const syncData = async (fullSync = false) => {
     setIsSyncing(true);
     
-    // Prioritas 1: Data yang sering berubah (News & Carousel)
-    const [cloudNews, cloudCarousel] = await Promise.all([
-        fetchFromDatabase('NEWS'),
-        fetchFromDatabase('CAROUSEL')
-    ]);
-
-    if (cloudNews && Array.isArray(cloudNews)) {
-        setNews(cloudNews);
+    // FETCH CAROUSEL INDEPENDENTLY (Priority)
+    try {
+      const cloudCarousel = await fetchFromDatabase('CAROUSEL');
+      if (cloudCarousel && Array.isArray(cloudCarousel)) {
+          console.log("Carousel Synced:", cloudCarousel.length, "items");
+          setCarouselSlides(cloudCarousel);
+      } else if (cloudCarousel && Array.isArray(cloudCarousel) && cloudCarousel.length === 0) {
+          // If empty array returned, clear slides (User deleted all)
+          setCarouselSlides([]);
+      }
+    } catch (e) {
+      console.warn("Failed to sync carousel");
     }
-    
-    // LOGIC BARU: Pastikan Carousel dari DB selalu dipakai jika ada
-    if (cloudCarousel && Array.isArray(cloudCarousel)) {
-        // Jika DB kosong, kita biarkan kosong (jangan pakai placeholder) agar admin sadar
-        setCarouselSlides(cloudCarousel);
-    } else {
-        // Jika fetch gagal (null), baru pakai default
-        console.warn("Gagal load Carousel, menggunakan fallback.");
+
+    // FETCH NEWS INDEPENDENTLY
+    try {
+      const cloudNews = await fetchFromDatabase('NEWS');
+      if (cloudNews && Array.isArray(cloudNews)) {
+          setNews(cloudNews);
+      }
+    } catch (e) {
+      console.warn("Failed to sync news");
     }
 
     // Prioritas 2: Full Sync (Hanya saat load pertama atau refresh manual)
     if (fullSync) {
-        const cloudDepts = await fetchFromDatabase('DEPTS');
-        if (cloudDepts) setDepts(cloudDepts);
+        // Parallel fetch for other configs
+        const results = await Promise.allSettled([
+            fetchFromDatabase('DEPTS'),
+            fetchFromDatabase('LEADERSHIP'),
+            fetchFromDatabase('DOCS'),
+            fetchFromDatabase('FORMS'),
+            fetchFromDatabase('TERMS'),
+            fetchFromDatabase('RECRUITMENT'),
+            fetchFromDatabase('PERMISSIONS')
+        ]);
 
-        const cloudLeadership = await fetchFromDatabase('LEADERSHIP');
-        if (cloudLeadership) setLeadership(cloudLeadership);
-
-        const cloudDocs = await fetchFromDatabase('DOCS');
-        if (cloudDocs) setDocs(cloudDocs);
-
-        const cloudForms = await fetchFromDatabase('FORMS');
-        if (cloudForms) setForms(cloudForms);
-
-        const cloudTerms = await fetchFromDatabase('TERMS');
-        if (cloudTerms) setTermsContent(cloudTerms);
-
-        const cloudRecruitment = await fetchFromDatabase('RECRUITMENT');
-        if (cloudRecruitment) setRecruitmentConfig(cloudRecruitment);
-
-        const cloudPermissions = await fetchFromDatabase('PERMISSIONS');
-        if (cloudPermissions) setPermissionConfig(cloudPermissions);
+        if (results[0].status === 'fulfilled' && results[0].value) setDepts(results[0].value);
+        if (results[1].status === 'fulfilled' && results[1].value) setLeadership(results[1].value);
+        if (results[2].status === 'fulfilled' && results[2].value) setDocs(results[2].value);
+        if (results[3].status === 'fulfilled' && results[3].value) setForms(results[3].value);
+        if (results[4].status === 'fulfilled' && results[4].value) setTermsContent(results[4].value);
+        if (results[5].status === 'fulfilled' && results[5].value) setRecruitmentConfig(results[5].value);
+        if (results[6].status === 'fulfilled' && results[6].value) setPermissionConfig(results[6].value);
     }
 
     setLastSyncTime(new Date().toLocaleTimeString('id-ID'));
@@ -144,11 +147,11 @@ const App: React.FC = () => {
     syncData(true);
 
     // 2. Setup Interval Polling (Real-time Simulation)
-    // Cek update lebih cepat (setiap 10 detik) agar terasa real-time
+    // Cek update lebih cepat (setiap 5 detik) agar terasa real-time
     const intervalId = setInterval(() => {
         // Silent sync (background update)
         syncData(false); 
-    }, 10000); // 10 Detik
+    }, 5000); // 5 Detik
 
     return () => clearInterval(intervalId);
   }, []);

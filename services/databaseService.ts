@@ -75,19 +75,15 @@ const csvToJson = (csv: string) => {
  */
 export const fetchFromDatabase = async (type: ConfigType, customSheetName?: string) => {
   // KHUSUS ATTENDANCE (READ): Gunakan CSV URL jika tersedia untuk Treasury Admin
-  // Note: CSV URL statis biasanya hanya membaca 1 sheet (gid=0), jadi fitur bulanan mungkin tidak jalan dengan CSV statis
-  // kecuali URL-nya dinamis. Untuk amannya, jika customSheetName ada, kita paksa lewat Script URL (JSON).
   if (type === 'ATTENDANCE' && ATTENDANCE_CSV_URL && !customSheetName) {
       try {
           const response = await fetch(ATTENDANCE_CSV_URL, { cache: 'no-store' });
           if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
           const text = await response.text();
-          // Validasi sederhana jika CSV kosong atau error HTML
           if(text.trim().startsWith('<') || text.trim().length === 0) throw new Error("Format CSV Invalid");
           return csvToJson(text);
       } catch (error) {
           console.warn(`[Offline/Error] Gagal load CSV Absensi. Mencoba fallback ke Script URL.`, error);
-          // JANGAN return null, biarkan lanjut ke logic Script di bawah (Fallback)
       }
   }
 
@@ -98,29 +94,35 @@ export const fetchFromDatabase = async (type: ConfigType, customSheetName?: stri
 
   if (!targetUrl) return null;
   
-  // Gunakan customSheetName jika ada, jika tidak gunakan default dari mapping
   const sheetName = customSheetName || SHEET_MAPPING[type];
 
   try {
-    // Tambahkan sheetName ke parameter GET agar script tahu tab mana yang dibaca
-    // Redirect 'follow' memastikan fetch mengikuti redirect Google Script ke content JSON
-    // Added: cache: 'no-store' untuk mencegah caching browser yang agresif
+    // KOREKSI: Menghapus custom headers untuk menghindari CORS Preflight Error pada Google Apps Script
+    // Menggunakan timestamp (_t) saja sudah cukup untuk bypass cache browser
     const response = await fetch(`${targetUrl}?action=GET&sheetName=${sheetName}&type=${type}&_t=${Date.now()}`, {
         method: 'GET',
-        redirect: 'follow',
-        cache: 'no-store', // FORCE NETWORK FETCH
-        headers: {
-            'Pragma': 'no-cache',
-            'Cache-Control': 'no-cache'
-        }
+        redirect: 'follow'
     });
     
     if (!response.ok) throw new Error("Gagal mengambil data");
     
-    const json = await response.json();
+    // IMPORTANT: Parse as text first to check for HTML errors (Google Error Pages)
+    const text = await response.text();
     
-    // Support format return yang berbeda (langsung array atau object {data: ...})
-    return Array.isArray(json) ? json : (json.data || []);
+    // Check if response is HTML (Error page)
+    if (text.trim().startsWith('<')) {
+        console.error(`[Database Error] Server returned HTML instead of JSON for ${sheetName}. Possible reasons: Script Error, Wrong Sheet Name, or Auth Issue.`);
+        return null; 
+    }
+
+    try {
+        const json = JSON.parse(text);
+        return Array.isArray(json) ? json : (json.data || []);
+    } catch (parseError) {
+        console.error(`[Database Error] Invalid JSON format from ${sheetName}:`, text.substring(0, 100));
+        return null;
+    }
+
   } catch (error) {
     console.warn(`[Offline/Error] Gagal load ${type} dari server (${sheetName}).`, error);
     return null;
@@ -132,7 +134,6 @@ export const fetchFromDatabase = async (type: ConfigType, customSheetName?: stri
  * Menggunakan Content-Type text/plain dan menyertakan sheetName.
  */
 export const saveToDatabase = async (type: ConfigType, data: any) => {
-  // KHUSUS ATTENDANCE: Gunakan Script URL terpisah jika tipe ATTENDANCE
   const targetUrl = (type === 'ATTENDANCE' && ATTENDANCE_SCRIPT_URL) 
     ? ATTENDANCE_SCRIPT_URL 
     : DATABASE_SCRIPT_URL;
@@ -154,14 +155,13 @@ export const saveToDatabase = async (type: ConfigType, data: any) => {
       body: JSON.stringify({
         action: 'SAVE',
         type: type,
-        sheetName: sheetName, // PERBAIKAN: Mengirim nama sheet secara eksplisit
+        sheetName: sheetName,
         data: data
       })
     });
     return true;
   } catch (error) {
     console.error(`Gagal menyimpan ${type}:`, error);
-    // alert("Gagal terhubung ke server. Periksa internet Anda.");
     return false;
   }
 };

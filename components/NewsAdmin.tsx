@@ -9,7 +9,7 @@ import RecruitmentBuilder from './RecruitmentBuilder';
 import PermissionManager from './PermissionManager';
 import StaffPermissionPortal from './StaffPermissionPortal';
 import SecretaryPortal from './SecretaryPortal';
-import { saveToDatabase } from '../services/databaseService';
+import { saveToDatabase, fetchFromDatabase } from '../services/databaseService';
 
 interface NewsAdminProps {
   news: NewsItem[];
@@ -131,56 +131,61 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
   };
 
   // --- CAROUSEL MANAGEMENT (EDITABLE) ---
+  const checkCarouselDB = async () => {
+      const data = await fetchFromDatabase('CAROUSEL');
+      if (Array.isArray(data)) {
+          alert(`✅ KONEKSI SUKSES!\n\nTab 'Database_Carousel' ditemukan.\nJumlah Slide di Database: ${data.length}\n\nData valid dan bisa dibaca.`);
+      } else {
+          alert("❌ KONEKSI GAGAL / TAB TIDAK DITEMUKAN.\n\nSistem tidak menerima array JSON dari 'Database_Carousel'.\nPastikan Tab sudah dibuat persis: Database_Carousel");
+      }
+  };
+
   const handleAddSlide = async () => {
     if (!newSlideTitle || !newSlideImage) return alert("Judul dan URL Gambar wajib diisi!");
     
+    let updatedSlides = [...carouselSlides];
+
     // UPDATE MODE
     if (editingSlideId) {
-        const updated = carouselSlides.map(s => s.id === editingSlideId ? {
+        updatedSlides = carouselSlides.map(s => s.id === editingSlideId ? {
             ...s,
             title: newSlideTitle,
             subtitle: newSlideSubtitle,
             imageUrl: newSlideImage
         } : s);
-        
-        setCarouselSlides(updated);
-        setIsSaving(true);
-        // Explicitly calling Database Save
-        const success = await saveToDatabase('CAROUSEL', updated);
-        setIsSaving(false);
-        
-        if (success) {
-            handleCancelEditSlide();
-            alert("✅ Slide berhasil diperbarui di DATABASE!");
-        } else {
-            alert("❌ Gagal menyimpan ke Database. Cek koneksi atau Tab 'Database_Carousel'.");
-        }
-        return;
-    }
-
+    } 
     // CREATE MODE
-    const newSlide: CarouselItem = {
-        id: `slide_${Date.now()}`,
-        imageUrl: newSlideImage,
-        title: newSlideTitle,
-        subtitle: newSlideSubtitle
-    };
-
-    const updated = [...carouselSlides, newSlide];
-    setCarouselSlides(updated);
-    
-    setIsSaving(true);
-    const success = await saveToDatabase('CAROUSEL', updated);
-    setIsSaving(false);
-
-    if (success) {
-        setNewSlideTitle('');
-        setNewSlideSubtitle('');
-        setNewSlideImage('');
-        alert("✅ Slide berhasil ditambahkan ke DATABASE!");
-    } else {
-        alert("❌ Gagal menyimpan ke Database. Pastikan tab 'Database_Carousel' ada di Google Sheet.");
+    else {
+        const newSlide: CarouselItem = {
+            id: `slide_${Date.now()}`,
+            imageUrl: newSlideImage,
+            title: newSlideTitle,
+            subtitle: newSlideSubtitle
+        };
+        updatedSlides = [newSlide, ...carouselSlides]; // Add to beginning
     }
+
+    // 1. Optimistic Update (Tampil duluan di layar admin)
+    setCarouselSlides(updatedSlides);
+    setIsSaving(true);
+
+    // 2. Send to Database
+    await saveToDatabase('CAROUSEL', updatedSlides);
+
+    // 3. Verification Logic (Read after Write)
+    setTimeout(async () => {
+        const cloudData = await fetchFromDatabase('CAROUSEL');
+        setIsSaving(false);
+
+        if (cloudData && Array.isArray(cloudData) && cloudData.length === updatedSlides.length) {
+             // Jika jumlah data sama, anggap sukses
+             alert("✅ SUKSES: Data Terverifikasi Tersimpan di Database Cloud!");
+             handleCancelEditSlide();
+        } else {
+             // Jika gagal fetch atau jumlah beda
+             alert("⚠️ PERINGATAN: Data tersimpan LOKAL, namun GAGAL terverifikasi di Cloud.\n\nKemungkinan Penyebab:\n1. Tab 'Database_Carousel' TIDAK ADA di Google Sheet.\n2. Koneksi Internet Buruk.\n3. Script Google Apps Error.");
+        }
+    }, 2000); // Tunggu 2 detik agar Google Sheet memproses update
   };
 
   const handleEditSlide = (slide: CarouselItem) => {
@@ -202,12 +207,25 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
 
   const handleDeleteSlide = async (id: string) => {
       if(!confirm("Hapus slide ini secara permanen dari Database?")) return;
+      
       const updated = carouselSlides.filter(s => s.id !== id);
       setCarouselSlides(updated);
       setIsSaving(true);
+      
       await saveToDatabase('CAROUSEL', updated);
-      setIsSaving(false);
-      if (editingSlideId === id) handleCancelEditSlide();
+      
+      // Verification for Delete
+      setTimeout(async () => {
+          const cloudData = await fetchFromDatabase('CAROUSEL');
+          setIsSaving(false);
+          
+          if (cloudData && Array.isArray(cloudData) && cloudData.length === updated.length) {
+              // Verified
+              if (editingSlideId === id) handleCancelEditSlide();
+          } else {
+              alert("⚠️ Gagal verifikasi penghapusan di Cloud. Cek Database.");
+          }
+      }, 2000);
   };
   // ---------------------------
 
@@ -566,11 +584,16 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
 
                     {activeTab === 'carousel_mgmt' && (
                         <div className="space-y-6">
-                            <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl">
-                                <p className="text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">ℹ️ Info Database</p>
-                                <p className="text-[10px] text-slate-400">
-                                    Pastikan Tab <b>Database_Carousel</b> sudah dibuat di Google Sheet Anda. Jika belum, data tidak akan tersimpan permanen.
-                                </p>
+                            <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl flex justify-between items-center">
+                                <div>
+                                    <p className="text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">ℹ️ Info Database</p>
+                                    <p className="text-[10px] text-slate-400">
+                                        Pastikan Tab <b>Database_Carousel</b> sudah dibuat di Google Sheet Anda.
+                                    </p>
+                                </div>
+                                <button onClick={checkCarouselDB} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg text-[9px] font-bold uppercase">
+                                    Cek Koneksi
+                                </button>
                             </div>
 
                             <div id="carousel-form-top" className={`border p-5 rounded-2xl space-y-4 transition-all ${editingSlideId ? 'bg-amber-500/5 border-amber-500/30' : 'bg-slate-950 border-white/5'}`}>
@@ -601,7 +624,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                                     disabled={isSaving} 
                                     className={`w-full py-3 font-bold rounded-xl uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 ${editingSlideId ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/20' : 'bg-green-600 text-white hover:bg-green-500 shadow-green-600/20'}`}
                                 >
-                                    {isSaving ? 'MENYIMPAN KE DATABASE...' : (editingSlideId ? 'SIMPAN PERUBAHAN SLIDE' : '+ TAMBAH SLIDE')}
+                                    {isSaving ? 'MENYIMPAN & MEMVERIFIKASI...' : (editingSlideId ? 'SIMPAN PERUBAHAN SLIDE' : '+ TAMBAH SLIDE')}
                                 </button>
                             </div>
 
@@ -619,7 +642,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                                         </div>
                                     </div>
                                 ))}
-                                {carouselSlides.length === 0 && <p className="text-center text-slate-500 text-xs py-8">Belum ada slide carousel.</p>}
+                                {carouselSlides.length === 0 && <p className="text-center text-slate-500 text-xs py-8">Belum ada slide carousel. Tambahkan slide di atas.</p>}
                             </div>
                         </div>
                     )}

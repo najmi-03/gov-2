@@ -93,12 +93,12 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
                 <button 
                     onClick={onManualRefresh}
                     disabled={isSyncing}
-                    className="flex items-center gap-2 mt-4 text-[9px] text-slate-600 bg-white/5 px-3 py-1 rounded-full border border-white/5 hover:bg-white/10 hover:text-amber-500 transition-all active:scale-95"
+                    className={`flex items-center gap-2 mt-4 text-[9px] text-slate-600 bg-white/5 px-3 py-1 rounded-full border border-white/5 hover:bg-white/10 hover:text-amber-500 transition-all active:scale-95 ${isSyncing ? 'border-amber-500/50 text-amber-500' : ''}`}
                     title="Paksa sinkronisasi data dari server"
                 >
                     <span className={`text-xs ${isSyncing ? 'animate-spin' : ''}`}>🔄</span>
-                    <span>
-                        {isSyncing ? 'MENGAMBIL DATA...' : `LIVE SYNC: ${lastSyncTime || 'Pending'}`}
+                    <span className={isSyncing ? 'animate-pulse' : ''}>
+                        {isSyncing ? 'SYNCING DATABASE...' : `LIVE SYNC: ${lastSyncTime || 'Pending'}`}
                     </span>
                 </button>
             )}

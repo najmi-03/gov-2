@@ -30,8 +30,8 @@ interface NewsAdminProps {
   setForms: (forms: FormConfig[]) => void;
   recruitmentConfig: RecruitmentConfig; 
   permissionConfig: PermissionConfig[]; 
-  carouselSlides: CarouselItem[]; // NEW PROP
-  setCarouselSlides: (slides: CarouselItem[]) => void; // NEW PROP
+  carouselSlides: CarouselItem[]; 
+  setCarouselSlides: (slides: CarouselItem[]) => void; 
 }
 
 type AdminTab = 'news' | 'inventory' | 'structural' | 'salary' | 'legislative' | 'terms' | 'form_mgmt' | 'recruitment' | 'permission_mgmt' | 'permission_portal' | 'secretary_portal' | 'feedback_config' | 'carousel_mgmt';
@@ -41,6 +41,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
   recruitmentLink = "", setRecruitmentLink, forms, setForms, recruitmentConfig, permissionConfig, carouselSlides, setCarouselSlides
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false); 
   const [activeTab, setActiveTab] = useState<AdminTab>('news');
   const [isSaving, setIsSaving] = useState(false);
   const [showPresidentSwitch, setShowPresidentSwitch] = useState(false);
@@ -63,11 +64,13 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
   const [newNewsTitle, setNewNewsTitle] = useState('');
   const [newNewsSummary, setNewNewsSummary] = useState('');
   const [newNewsTag, setNewNewsTag] = useState('Umum');
+  const [editingNewsId, setEditingNewsId] = useState<string | null>(null); // State untuk Edit Berita
 
-  // Carousel State (New)
+  // Carousel State
   const [newSlideTitle, setNewSlideTitle] = useState('');
   const [newSlideSubtitle, setNewSlideSubtitle] = useState('');
   const [newSlideImage, setNewSlideImage] = useState('');
+  const [editingSlideId, setEditingSlideId] = useState<string | null>(null); // State untuk Edit Carousel
 
   const isSuperAdmin = userRole === 'SUPER_ADMIN';
   
@@ -117,7 +120,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
         saveToDatabase('TERMS', termsContent),
         saveToDatabase('RECRUITMENT', recruitmentConfig),
         saveToDatabase('PERMISSIONS', permissionConfig),
-        saveToDatabase('CAROUSEL', carouselSlides) // Added Carousel Sync
+        saveToDatabase('CAROUSEL', carouselSlides) 
       ]);
       alert("✅ MASTER SYNC BERHASIL!\n\nSeluruh konfigurasi sistem telah disamakan dengan data di layar Anda. Device lain akan update dalam 10 detik.");
     } catch (e) {
@@ -127,10 +130,29 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
     setIsSaving(false);
   };
 
-  // --- CAROUSEL MANAGEMENT ---
+  // --- CAROUSEL MANAGEMENT (EDITABLE) ---
   const handleAddSlide = async () => {
     if (!newSlideTitle || !newSlideImage) return alert("Judul dan URL Gambar wajib diisi!");
     
+    // UPDATE MODE
+    if (editingSlideId) {
+        const updated = carouselSlides.map(s => s.id === editingSlideId ? {
+            ...s,
+            title: newSlideTitle,
+            subtitle: newSlideSubtitle,
+            imageUrl: newSlideImage
+        } : s);
+        
+        setCarouselSlides(updated);
+        setIsSaving(true);
+        await saveToDatabase('CAROUSEL', updated);
+        setIsSaving(false);
+        handleCancelEditSlide(); // Reset Form
+        alert("Slide berhasil diperbarui!");
+        return;
+    }
+
+    // CREATE MODE
     const newSlide: CarouselItem = {
         id: `slide_${Date.now()}`,
         imageUrl: newSlideImage,
@@ -151,6 +173,23 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
     alert("Slide berhasil ditambahkan!");
   };
 
+  const handleEditSlide = (slide: CarouselItem) => {
+      setEditingSlideId(slide.id);
+      setNewSlideTitle(slide.title);
+      setNewSlideSubtitle(slide.subtitle);
+      setNewSlideImage(slide.imageUrl);
+      // Scroll to top of form
+      const formEl = document.getElementById('carousel-form-top');
+      if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleCancelEditSlide = () => {
+      setEditingSlideId(null);
+      setNewSlideTitle('');
+      setNewSlideSubtitle('');
+      setNewSlideImage('');
+  };
+
   const handleDeleteSlide = async (id: string) => {
       if(!confirm("Hapus slide ini?")) return;
       const updated = carouselSlides.filter(s => s.id !== id);
@@ -158,12 +197,33 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
       setIsSaving(true);
       await saveToDatabase('CAROUSEL', updated);
       setIsSaving(false);
+      if (editingSlideId === id) handleCancelEditSlide();
   };
   // ---------------------------
 
+  // --- NEWS MANAGEMENT (EDITABLE) ---
   const handleAddNews = async () => {
     if (!newNewsTitle || !newNewsSummary) return;
     setIsSaving(true);
+
+    // UPDATE MODE
+    if (editingNewsId) {
+        const updated = news.map(n => n.id === editingNewsId ? {
+            ...n,
+            title: newNewsTitle,
+            summary: newNewsSummary,
+            tag: newNewsTag
+        } : n);
+
+        setNews(updated);
+        await saveToDatabase('NEWS', updated);
+        setIsSaving(false);
+        handleCancelEditNews();
+        alert("Berita berhasil diperbarui!");
+        return;
+    }
+
+    // CREATE MODE
     const newItem: NewsItem = {
       id: Date.now().toString(),
       title: newNewsTitle,
@@ -180,6 +240,23 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
     setIsSaving(false);
     alert("Berita berhasil diterbitkan ke Database!");
   };
+
+  const handleEditNews = (item: NewsItem) => {
+      setEditingNewsId(item.id);
+      setNewNewsTitle(item.title);
+      setNewNewsSummary(item.summary);
+      setNewNewsTag(item.tag);
+      const formEl = document.getElementById('news-form-top');
+      if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleCancelEditNews = () => {
+      setEditingNewsId(null);
+      setNewNewsTitle('');
+      setNewNewsSummary('');
+      setNewNewsTag('Umum');
+  };
+  // ---------------------------
 
   const handleSaveStructural = async () => {
       setIsSaving(true);
@@ -212,7 +289,6 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
     alert("Konfigurasi Webhook Kritik & Saran tersimpan!");
   };
 
-  // ... (Other helper functions remain unchanged)
   const updateFormField = (formId: string, fieldId: string, label: string) => {
     const updated = forms.map(f => f.id === formId ? { ...f, fields: f.fields.map(field => field.id === fieldId ? { ...field, label } : field) } : f);
     setForms(updated);
@@ -318,7 +394,11 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
               animate={{ x: 0 }} 
               exit={{ x: '100%' }} 
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute top-0 right-0 bottom-0 w-full md:w-[85vw] lg:w-[70vw] max-w-5xl bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col"
+              className={`absolute top-0 right-0 bottom-0 bg-slate-900 shadow-2xl flex flex-col transition-all duration-300 ${
+                  isFullscreen 
+                  ? 'w-full border-none' 
+                  : 'w-full md:w-[85vw] lg:w-[70vw] max-w-5xl border-l border-white/10'
+              }`}
             >
               
               <div className="flex-shrink-0 p-5 md:p-8 border-b border-white/10 bg-slate-900 z-10 flex justify-between items-start">
@@ -333,7 +413,22 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                     </span>
                   </div>
                 </div>
-                <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-colors">✕</button>
+                <div className="flex items-center gap-3">
+                    {/* FULLSCREEN TOGGLE */}
+                    <button 
+                        onClick={() => setIsFullscreen(!isFullscreen)} 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isFullscreen ? 'bg-amber-500 text-slate-950' : 'bg-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}
+                        title={isFullscreen ? "Keluar Fullscreen" : "Fullscreen Mode"}
+                    >
+                        {isFullscreen ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10L4 5m0 0l5 5m-5-5v5m0-5h5m6 6l5 5m0 0l-5-5m5 5v-5m0 5h-5" /></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                        )}
+                    </button>
+                    {/* CLOSE BUTTON */}
+                    <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 transition-colors">✕</button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-8">
@@ -420,21 +515,58 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                 <div className="pb-20">
                     {activeTab === 'news' && (
                         <div className="space-y-6">
-                        <div className="bg-slate-950 border border-white/5 p-5 rounded-2xl space-y-4">
-                            <h3 className="text-xs font-bold text-white uppercase tracking-widest">Terbitkan Berita Baru</h3>
+                        <div id="news-form-top" className={`border p-5 rounded-2xl space-y-4 transition-all ${editingNewsId ? 'bg-amber-500/5 border-amber-500/30' : 'bg-slate-950 border-white/5'}`}>
+                            <div className="flex justify-between items-center">
+                                <h3 className={`text-xs font-bold uppercase tracking-widest ${editingNewsId ? 'text-amber-500' : 'text-white'}`}>
+                                    {editingNewsId ? 'Mode Edit Berita' : 'Terbitkan Berita Baru'}
+                                </h3>
+                                {editingNewsId && (
+                                    <button onClick={handleCancelEditNews} className="text-[9px] font-bold text-red-500 border border-red-500/30 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all uppercase">
+                                        Batal Edit
+                                    </button>
+                                )}
+                            </div>
                             <input type="text" placeholder="Judul Berita" value={newNewsTitle} onChange={(e) => setNewNewsTitle(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none transition-all" />
                             <textarea rows={4} placeholder="Isi Berita..." value={newNewsSummary} onChange={(e) => setNewNewsSummary(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none transition-all" />
                             <div className="flex gap-2 flex-wrap">{['Umum', 'Ekonomi', 'Kesehatan', 'Hukum', 'Politik'].map(tag => (<button key={tag} onClick={() => setNewNewsTag(tag)} className={`px-3 py-1 rounded text-[10px] uppercase font-bold border transition-colors ${newNewsTag === tag ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-transparent text-slate-500 border-white/10 hover:text-white'}`}>{tag}</button>))}</div>
-                            <button onClick={handleAddNews} disabled={isSaving} className="w-full py-3 bg-amber-500 text-slate-950 font-bold rounded-xl uppercase tracking-widest text-xs shadow-lg shadow-amber-500/20 hover:bg-amber-400 active:scale-95 transition-all">{isSaving ? 'Menyimpan...' : 'PUBLIKASIKAN BERITA'}</button>
+                            <button 
+                                onClick={handleAddNews} 
+                                disabled={isSaving} 
+                                className={`w-full py-3 font-bold rounded-xl uppercase tracking-widest text-xs shadow-lg transition-all active:scale-95 ${editingNewsId ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/20' : 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-amber-500/20'}`}
+                            >
+                                {isSaving ? 'Menyimpan...' : (editingNewsId ? 'SIMPAN PERUBAHAN' : 'PUBLIKASIKAN BERITA')}
+                            </button>
                         </div>
-                        <div className="space-y-4">{news.map((item) => (<div key={item.id} className="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-all"><div><h4 className="font-bold text-white text-sm">{item.title}</h4><p className="text-[10px] text-slate-500">{item.date}</p></div><button onClick={async () => { if(confirm("Hapus berita?")) { const updated = news.filter(n => n.id !== item.id); setNews(updated); await saveToDatabase('NEWS', updated); } }} className="text-red-500 hover:text-red-400 hover:scale-110 transition-transform">🗑️</button></div>))}</div>
+                        <div className="space-y-4">
+                            {news.map((item) => (
+                                <div key={item.id} className="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                                    <div className="flex-1 pr-4">
+                                        <h4 className="font-bold text-white text-sm">{item.title}</h4>
+                                        <p className="text-[10px] text-slate-500">{item.date} • {item.tag}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleEditNews(item)} className="bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition-all" title="Edit">✏️</button>
+                                        <button onClick={async () => { if(confirm("Hapus berita?")) { const updated = news.filter(n => n.id !== item.id); setNews(updated); await saveToDatabase('NEWS', updated); if(editingNewsId === item.id) handleCancelEditNews(); } }} className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-all" title="Hapus">🗑️</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                         </div>
                     )}
 
                     {activeTab === 'carousel_mgmt' && (
                         <div className="space-y-6">
-                            <div className="bg-slate-950 border border-white/5 p-5 rounded-2xl space-y-4">
-                                <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest">Tambah Slide Carousel</h3>
+                            <div id="carousel-form-top" className={`border p-5 rounded-2xl space-y-4 transition-all ${editingSlideId ? 'bg-amber-500/5 border-amber-500/30' : 'bg-slate-950 border-white/5'}`}>
+                                <div className="flex justify-between items-center">
+                                    <h3 className={`text-xs font-bold uppercase tracking-widest ${editingSlideId ? 'text-amber-500' : 'text-white'}`}>
+                                        {editingSlideId ? 'Mode Edit Slide' : 'Tambah Slide Carousel'}
+                                    </h3>
+                                    {editingSlideId && (
+                                        <button onClick={handleCancelEditSlide} className="text-[9px] font-bold text-red-500 border border-red-500/30 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all uppercase">
+                                            Batal Edit
+                                        </button>
+                                    )}
+                                </div>
                                 <div className="space-y-2">
                                     <label className="text-[9px] font-bold text-slate-500 uppercase">URL Gambar (Wajib)</label>
                                     <input type="text" placeholder="https://..." value={newSlideImage} onChange={(e) => setNewSlideImage(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none" />
@@ -447,7 +579,13 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                                     <label className="text-[9px] font-bold text-slate-500 uppercase">Sub-Judul / Deskripsi</label>
                                     <textarea rows={2} placeholder="Deskripsi singkat..." value={newSlideSubtitle} onChange={(e) => setNewSlideSubtitle(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none" />
                                 </div>
-                                <button onClick={handleAddSlide} disabled={isSaving} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl uppercase tracking-widest text-xs transition-all shadow-lg shadow-green-600/20">{isSaving ? 'Menyimpan...' : '+ TAMBAH SLIDE'}</button>
+                                <button 
+                                    onClick={handleAddSlide} 
+                                    disabled={isSaving} 
+                                    className={`w-full py-3 font-bold rounded-xl uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 ${editingSlideId ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/20' : 'bg-green-600 text-white hover:bg-green-500 shadow-green-600/20'}`}
+                                >
+                                    {isSaving ? 'Menyimpan...' : (editingSlideId ? 'SIMPAN PERUBAHAN SLIDE' : '+ TAMBAH SLIDE')}
+                                </button>
                             </div>
 
                             <div className="space-y-4">
@@ -458,7 +596,10 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                                             <h4 className="font-bold text-white text-xs">{slide.title}</h4>
                                             <p className="text-[10px] text-slate-500 truncate">{slide.subtitle}</p>
                                         </div>
-                                        <button onClick={() => handleDeleteSlide(slide.id)} className="text-red-500 hover:text-white bg-red-500/10 hover:bg-red-500 p-2 rounded-lg transition-all">🗑️</button>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => handleEditSlide(slide)} className="bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition-all" title="Edit">✏️</button>
+                                            <button onClick={() => handleDeleteSlide(slide.id)} className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-all" title="Hapus">🗑️</button>
+                                        </div>
                                     </div>
                                 ))}
                                 {carouselSlides.length === 0 && <p className="text-center text-slate-500 text-xs py-8">Belum ada slide carousel.</p>}

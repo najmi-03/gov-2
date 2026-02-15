@@ -8,9 +8,12 @@ interface FooterProps {
   auth: AuthState;
   onPrivacyClick: () => void;
   onTermsClick: () => void;
+  lastSyncTime?: string;
+  onManualRefresh?: () => void;
+  isSyncing?: boolean;
 }
 
-const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick, onTermsClick }) => {
+const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick, onTermsClick, lastSyncTime, onManualRefresh, isSyncing }) => {
   const [pin, setPin] = useState('');
   const [showLogin, setShowLogin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -84,6 +87,21 @@ const Footer: React.FC<FooterProps> = ({ onLogin, onLogout, auth, onPrivacyClick
                 </button>
               )}
             </div>
+            
+            {/* SYNC INDICATOR */}
+            {onManualRefresh && (
+                <button 
+                    onClick={onManualRefresh}
+                    disabled={isSyncing}
+                    className="flex items-center gap-2 mt-4 text-[9px] text-slate-600 bg-white/5 px-3 py-1 rounded-full border border-white/5 hover:bg-white/10 hover:text-amber-500 transition-all active:scale-95"
+                    title="Paksa sinkronisasi data dari server"
+                >
+                    <span className={`text-xs ${isSyncing ? 'animate-spin' : ''}`}>🔄</span>
+                    <span>
+                        {isSyncing ? 'MENGAMBIL DATA...' : `LIVE SYNC: ${lastSyncTime || 'Pending'}`}
+                    </span>
+                </button>
+            )}
           </div>
         </div>
 

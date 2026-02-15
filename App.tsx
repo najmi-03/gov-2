@@ -77,12 +77,14 @@ const App: React.FC = () => {
   const [termsContent, setTermsContent] = useState(DEFAULT_TERMS);
   const [recruitmentConfig, setRecruitmentConfig] = useState<RecruitmentConfig>(DEFAULT_RECRUITMENT_CONFIG);
   const [permissionConfig, setPermissionConfig] = useState<PermissionConfig[]>(DEFAULT_PERMISSIONS);
-  const [carouselSlides, setCarouselSlides] = useState<CarouselItem[]>(INITIAL_SLIDES); // NEW STATE
+  const [carouselSlides, setCarouselSlides] = useState<CarouselItem[]>(INITIAL_SLIDES); 
 
   const [selectedDept, setSelectedDept] = useState<DeptInfo | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [auth, setAuth] = useState<AuthState>({
     isAdmin: false,
@@ -90,49 +92,65 @@ const App: React.FC = () => {
     role: 'NONE'
   });
 
-  const syncData = async () => {
-    // 1. Departments
-    const cloudDepts = await fetchFromDatabase('DEPTS');
-    if (cloudDepts) setDepts(cloudDepts);
+  // Fungsi Sinkronisasi Data (Dipisahkan agar bisa dipanggil ulang)
+  const syncData = async (fullSync = false) => {
+    setIsSyncing(true);
+    
+    // Prioritas 1: Data yang sering berubah (News & Carousel)
+    const [cloudNews, cloudCarousel] = await Promise.all([
+        fetchFromDatabase('NEWS'),
+        fetchFromDatabase('CAROUSEL')
+    ]);
 
-    // 2. News
-    const cloudNews = await fetchFromDatabase('NEWS');
-    if (cloudNews) setNews(cloudNews);
-
-    // 3. Leadership
-    const cloudLeadership = await fetchFromDatabase('LEADERSHIP');
-    if (cloudLeadership) setLeadership(cloudLeadership);
-
-    // 4. Docs
-    const cloudDocs = await fetchFromDatabase('DOCS');
-    if (cloudDocs) setDocs(cloudDocs);
-
-    // 5. Forms
-    const cloudForms = await fetchFromDatabase('FORMS');
-    if (cloudForms) setForms(cloudForms);
-
-    // 6. Terms
-    const cloudTerms = await fetchFromDatabase('TERMS');
-    if (cloudTerms) setTermsContent(cloudTerms);
-
-    // 7. Recruitment
-    const cloudRecruitment = await fetchFromDatabase('RECRUITMENT');
-    if (cloudRecruitment) setRecruitmentConfig(cloudRecruitment);
-
-    // 8. Permissions
-    const cloudPermissions = await fetchFromDatabase('PERMISSIONS');
-    if (cloudPermissions) setPermissionConfig(cloudPermissions);
-
-    // 9. Carousel (New)
-    const cloudCarousel = await fetchFromDatabase('CAROUSEL');
+    if (cloudNews && Array.isArray(cloudNews)) setNews(cloudNews);
     if (cloudCarousel && Array.isArray(cloudCarousel)) setCarouselSlides(cloudCarousel);
+
+    // Prioritas 2: Full Sync (Hanya saat load pertama atau refresh manual)
+    if (fullSync) {
+        const cloudDepts = await fetchFromDatabase('DEPTS');
+        if (cloudDepts) setDepts(cloudDepts);
+
+        const cloudLeadership = await fetchFromDatabase('LEADERSHIP');
+        if (cloudLeadership) setLeadership(cloudLeadership);
+
+        const cloudDocs = await fetchFromDatabase('DOCS');
+        if (cloudDocs) setDocs(cloudDocs);
+
+        const cloudForms = await fetchFromDatabase('FORMS');
+        if (cloudForms) setForms(cloudForms);
+
+        const cloudTerms = await fetchFromDatabase('TERMS');
+        if (cloudTerms) setTermsContent(cloudTerms);
+
+        const cloudRecruitment = await fetchFromDatabase('RECRUITMENT');
+        if (cloudRecruitment) setRecruitmentConfig(cloudRecruitment);
+
+        const cloudPermissions = await fetchFromDatabase('PERMISSIONS');
+        if (cloudPermissions) setPermissionConfig(cloudPermissions);
+    }
+
+    setLastSyncTime(new Date().toLocaleTimeString('id-ID'));
+    setIsSyncing(false);
   };
 
-  // Sync data with cloud database on initialization ONLY (No Auto Refresh Interval)
+  // Sync data on initialization AND Setup Interval Polling
   useEffect(() => {
-    // Initial Load
-    syncData();
+    // 1. Initial Load (Full Data)
+    syncData(true);
+
+    // 2. Setup Interval Polling (Real-time Simulation)
+    // Cek update setiap 30 detik untuk Berita & Carousel
+    const intervalId = setInterval(() => {
+        console.log("Auto-syncing background data...");
+        syncData(false); // Partial sync (News & Carousel only)
+    }, 30000); // 30 Detik
+
+    return () => clearInterval(intervalId);
   }, []);
+
+  const handleManualRefresh = () => {
+      syncData(true);
+  };
 
   const handleNavClick = (sectionId: string) => {
     // Handle Page Switching
@@ -275,6 +293,9 @@ const App: React.FC = () => {
             auth={auth} 
             onPrivacyClick={() => setIsPrivacyOpen(true)}
             onTermsClick={() => setIsTermsOpen(true)}
+            lastSyncTime={lastSyncTime}
+            onManualRefresh={handleManualRefresh}
+            isSyncing={isSyncing}
           />
 
           {/* Administration Dashboard for authenticated staff */}

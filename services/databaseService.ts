@@ -79,7 +79,7 @@ export const fetchFromDatabase = async (type: ConfigType, customSheetName?: stri
   // kecuali URL-nya dinamis. Untuk amannya, jika customSheetName ada, kita paksa lewat Script URL (JSON).
   if (type === 'ATTENDANCE' && ATTENDANCE_CSV_URL && !customSheetName) {
       try {
-          const response = await fetch(ATTENDANCE_CSV_URL);
+          const response = await fetch(ATTENDANCE_CSV_URL, { cache: 'no-store' });
           if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
           const text = await response.text();
           // Validasi sederhana jika CSV kosong atau error HTML
@@ -104,9 +104,15 @@ export const fetchFromDatabase = async (type: ConfigType, customSheetName?: stri
   try {
     // Tambahkan sheetName ke parameter GET agar script tahu tab mana yang dibaca
     // Redirect 'follow' memastikan fetch mengikuti redirect Google Script ke content JSON
+    // Added: cache: 'no-store' untuk mencegah caching browser yang agresif
     const response = await fetch(`${targetUrl}?action=GET&sheetName=${sheetName}&type=${type}&_t=${Date.now()}`, {
         method: 'GET',
-        redirect: 'follow'
+        redirect: 'follow',
+        cache: 'no-store', // FORCE NETWORK FETCH
+        headers: {
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache'
+        }
     });
     
     if (!response.ok) throw new Error("Gagal mengambil data");

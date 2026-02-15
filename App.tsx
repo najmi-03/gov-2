@@ -46,18 +46,13 @@ Setiap warga yang berinteraksi dengan layanan pemerintah San Andreas wajib memat
 Warga diharapkan menjaga integritas dan ketertiban umum. Segala bentuk pelanggaran hukum akan diproses melalui sistem peradilan San Andreas yang berlaku.
 `;
 
+// Placeholder awal (akan tertimpa database jika koneksi sukses)
 const INITIAL_SLIDES: CarouselItem[] = [
   {
-    id: 'slide_1',
+    id: 'slide_default',
     imageUrl: "https://blogger.googleusercontent.com/img/a/AVvXsEjaXIjnkB3jrrHYq0gTWWZwzEBlvj3q4tR9RWxppWhLLbDh6UcoH1tUPsyJcRKstJtuddulcnjJ8ZXhp4QvVuA9aXYFlcq522L9P2KWJ_j9VpkQFAZzaLx7IqDpaCmtKAryBFW_CS73run7Ah9GLZKqcFbrnKqdiyRZX1M5t9zClMbMt-iuNzJCQHJxXd3I",
-    title: "Visi Masa Depan",
-    subtitle: "Membangun infrastruktur yang berkelanjutan untuk generasi mendatang di Los Santos."
-  },
-  {
-    id: 'slide_2',
-    imageUrl: "https://blogger.googleusercontent.com/img/a/AVvXsEglh6sjEsTdQCjEHUYOdDRqd8fBkvki-GH2ixxjtTOiXPRoagtlQULiZXPcSNV8cBbGVAZa3uFRzY4Y7d0oUrNSYaz7L8ExRoWIUhlDZ_nIfa4N7G2RCpb7oI6LWsw6_5sx_xls57PUDqng7qhDUQHZz1pNj4ufjL3Dtl0VCwTXxaiWukbjh37UKPlPZhuw",
-    title: "Dedikasi Tanpa Batas",
-    subtitle: "Otoritas pemerintahan yang bekerja tanpa henti demi keamanan dan kenyamanan publik."
+    title: "Sistem Sedang Memuat...",
+    subtitle: "Menghubungkan ke Database Pusat San Andreas..."
   }
 ];
 
@@ -102,8 +97,18 @@ const App: React.FC = () => {
         fetchFromDatabase('CAROUSEL')
     ]);
 
-    if (cloudNews && Array.isArray(cloudNews)) setNews(cloudNews);
-    if (cloudCarousel && Array.isArray(cloudCarousel)) setCarouselSlides(cloudCarousel);
+    if (cloudNews && Array.isArray(cloudNews)) {
+        setNews(cloudNews);
+    }
+    
+    // LOGIC BARU: Pastikan Carousel dari DB selalu dipakai jika ada
+    if (cloudCarousel && Array.isArray(cloudCarousel)) {
+        // Jika DB kosong, kita biarkan kosong (jangan pakai placeholder) agar admin sadar
+        setCarouselSlides(cloudCarousel);
+    } else {
+        // Jika fetch gagal (null), baru pakai default
+        console.warn("Gagal load Carousel, menggunakan fallback.");
+    }
 
     // Prioritas 2: Full Sync (Hanya saat load pertama atau refresh manual)
     if (fullSync) {
@@ -139,11 +144,11 @@ const App: React.FC = () => {
     syncData(true);
 
     // 2. Setup Interval Polling (Real-time Simulation)
-    // Cek update setiap 30 detik untuk Berita & Carousel
+    // Cek update lebih cepat (setiap 10 detik) agar terasa real-time
     const intervalId = setInterval(() => {
-        console.log("Auto-syncing background data...");
-        syncData(false); // Partial sync (News & Carousel only)
-    }, 30000); // 30 Detik
+        // Silent sync (background update)
+        syncData(false); 
+    }, 10000); // 10 Detik
 
     return () => clearInterval(intervalId);
   }, []);

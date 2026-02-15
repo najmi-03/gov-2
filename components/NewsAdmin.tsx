@@ -145,10 +145,16 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
         
         setCarouselSlides(updated);
         setIsSaving(true);
-        await saveToDatabase('CAROUSEL', updated);
+        // Explicitly calling Database Save
+        const success = await saveToDatabase('CAROUSEL', updated);
         setIsSaving(false);
-        handleCancelEditSlide(); // Reset Form
-        alert("Slide berhasil diperbarui!");
+        
+        if (success) {
+            handleCancelEditSlide();
+            alert("✅ Slide berhasil diperbarui di DATABASE!");
+        } else {
+            alert("❌ Gagal menyimpan ke Database. Cek koneksi atau Tab 'Database_Carousel'.");
+        }
         return;
     }
 
@@ -164,13 +170,17 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
     setCarouselSlides(updated);
     
     setIsSaving(true);
-    await saveToDatabase('CAROUSEL', updated);
+    const success = await saveToDatabase('CAROUSEL', updated);
     setIsSaving(false);
 
-    setNewSlideTitle('');
-    setNewSlideSubtitle('');
-    setNewSlideImage('');
-    alert("Slide berhasil ditambahkan!");
+    if (success) {
+        setNewSlideTitle('');
+        setNewSlideSubtitle('');
+        setNewSlideImage('');
+        alert("✅ Slide berhasil ditambahkan ke DATABASE!");
+    } else {
+        alert("❌ Gagal menyimpan ke Database. Pastikan tab 'Database_Carousel' ada di Google Sheet.");
+    }
   };
 
   const handleEditSlide = (slide: CarouselItem) => {
@@ -191,7 +201,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
   };
 
   const handleDeleteSlide = async (id: string) => {
-      if(!confirm("Hapus slide ini?")) return;
+      if(!confirm("Hapus slide ini secara permanen dari Database?")) return;
       const updated = carouselSlides.filter(s => s.id !== id);
       setCarouselSlides(updated);
       setIsSaving(true);
@@ -556,6 +566,13 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
 
                     {activeTab === 'carousel_mgmt' && (
                         <div className="space-y-6">
+                            <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl">
+                                <p className="text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">ℹ️ Info Database</p>
+                                <p className="text-[10px] text-slate-400">
+                                    Pastikan Tab <b>Database_Carousel</b> sudah dibuat di Google Sheet Anda. Jika belum, data tidak akan tersimpan permanen.
+                                </p>
+                            </div>
+
                             <div id="carousel-form-top" className={`border p-5 rounded-2xl space-y-4 transition-all ${editingSlideId ? 'bg-amber-500/5 border-amber-500/30' : 'bg-slate-950 border-white/5'}`}>
                                 <div className="flex justify-between items-center">
                                     <h3 className={`text-xs font-bold uppercase tracking-widest ${editingSlideId ? 'text-amber-500' : 'text-white'}`}>
@@ -584,7 +601,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                                     disabled={isSaving} 
                                     className={`w-full py-3 font-bold rounded-xl uppercase tracking-widest text-xs transition-all shadow-lg active:scale-95 ${editingSlideId ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/20' : 'bg-green-600 text-white hover:bg-green-500 shadow-green-600/20'}`}
                                 >
-                                    {isSaving ? 'Menyimpan...' : (editingSlideId ? 'SIMPAN PERUBAHAN SLIDE' : '+ TAMBAH SLIDE')}
+                                    {isSaving ? 'MENYIMPAN KE DATABASE...' : (editingSlideId ? 'SIMPAN PERUBAHAN SLIDE' : '+ TAMBAH SLIDE')}
                                 </button>
                             </div>
 

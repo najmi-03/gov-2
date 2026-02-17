@@ -43,6 +43,10 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
   const [showRateModal, setShowRateModal] = useState(false);
   const [roleRates, setRoleRates] = useState<Record<string, number>>({});
   const [defaultRate, setDefaultRate] = useState(2500);
+  
+  // State untuk Edit Nama Jabatan (Rate Modal)
+  const [editingRoleKey, setEditingRoleKey] = useState<string | null>(null);
+  const [tempRoleName, setTempRoleName] = useState('');
 
   // State untuk Preview Statistik
   const [previewStats, setPreviewStats] = useState<CalculatedStat[]>([]);
@@ -79,16 +83,23 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
     return list;
   }, [leadership, depts]);
 
-  // Extract unique roles for Rate Settings
+  // Extract unique roles for Rate Settings (Active Staff + Custom Saved Rates)
   const availableRoles = useMemo(() => {
     const roles = new Set<string>();
+    
+    // 1. Dari Staff Aktif
     allEmployees.forEach(e => roles.add(e.role));
-    // Tambahkan role umum manual
+    
+    // 2. Dari Database Rate yang tersimpan (agar custom role muncul)
+    Object.keys(roleRates).forEach(r => roles.add(r));
+
+    // 3. Default Roles
     roles.add('Staff');
     roles.add('Magang');
     roles.add('Security');
+    
     return Array.from(roles).sort();
-  }, [allEmployees]);
+  }, [allEmployees, roleRates]);
 
   const filteredEmployees = allEmployees.filter(e => 
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -146,6 +157,36 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
     const updated = { ...roleRates, [role]: amount };
     setRoleRates(updated);
     localStorage.setItem('ls_gov_salary_rates', JSON.stringify(updated));
+  };
+
+  const handleDeleteRate = (role: string) => {
+    if(confirm(`Hapus konfigurasi gaji untuk "${role}"?`)) {
+        const updated = { ...roleRates };
+        delete updated[role];
+        setRoleRates(updated);
+        localStorage.setItem('ls_gov_salary_rates', JSON.stringify(updated));
+    }
+  };
+
+  const startEditingRole = (role: string) => {
+      setEditingRoleKey(role);
+      setTempRoleName(role);
+  };
+
+  const saveRoleName = (oldRole: string) => {
+      if (!tempRoleName.trim() || tempRoleName === oldRole) {
+          setEditingRoleKey(null);
+          return;
+      }
+
+      // Copy old rate to new key, delete old key
+      const currentRate = roleRates[oldRole] || defaultRate;
+      const updated = { ...roleRates, [tempRoleName]: currentRate };
+      delete updated[oldRole];
+      
+      setRoleRates(updated);
+      localStorage.setItem('ls_gov_salary_rates', JSON.stringify(updated));
+      setEditingRoleKey(null);
   };
 
   const calculateTotal = (base: number, bonus: number, penalty: string) => {
@@ -644,8 +685,39 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
 
                         {/* List Jabatan */}
                         {availableRoles.map(role => (
-                            <div key={role} className="flex justify-between items-center group">
-                                <span className="text-[10px] font-bold text-white uppercase truncate max-w-[60%]">{role}</span>
+                            <div key={role} className="flex justify-between items-center group py-1">
+                                {editingRoleKey === role ? (
+                                    <div className="flex gap-2 flex-1 mr-2">
+                                        <input 
+                                            autoFocus
+                                            type="text" 
+                                            value={tempRoleName}
+                                            onChange={(e) => setTempRoleName(e.target.value)}
+                                            className="w-full bg-slate-800 border border-amber-500/50 rounded px-2 py-1 text-xs text-white"
+                                        />
+                                        <button onClick={() => saveRoleName(role)} className="text-green-500 hover:text-white px-1">✓</button>
+                                        <button onClick={() => setEditingRoleKey(null)} className="text-red-500 hover:text-white px-1">✕</button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 flex-1 overflow-hidden">
+                                        <span className="text-[10px] font-bold text-white uppercase truncate max-w-[150px] md:max-w-[200px]" title={role}>{role}</span>
+                                        <button 
+                                            onClick={() => startEditingRole(role)}
+                                            className="text-[9px] text-slate-600 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Edit Nama Jabatan"
+                                        >
+                                            ✎
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeleteRate(role)}
+                                            className="text-[9px] text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Hapus Konfigurasi"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                )}
+                                
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-slate-500">$</span>
                                     <input 

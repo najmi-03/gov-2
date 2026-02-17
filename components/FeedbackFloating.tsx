@@ -65,7 +65,7 @@ const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth }) => {
         <span className="text-xl md:text-2xl group-hover:animate-bounce">💬</span>
         {/* Label on Hover (Desktop) */}
         <span className="absolute right-full mr-3 bg-slate-900 text-white text-[10px] px-2 py-1 rounded border border-white/10 uppercase font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none hidden md:block shadow-xl">
-          Kotak Saran
+          Kritik & Saran
         </span>
       </button>
 
@@ -90,7 +90,7 @@ const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth }) => {
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-lg font-serif font-bold text-white">
-                    {isStaff ? 'Suara Internal' : 'Kotak Saran'}
+                    Kritik & Saran
                   </h3>
                   <p className="text-[10px] text-amber-500 uppercase tracking-widest font-bold">
                     {isStaff ? `Logged as: ${auth.staffName}` : 'Layanan Publik'}

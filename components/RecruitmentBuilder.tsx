@@ -55,8 +55,21 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
     setLocalConfig(prev => ({ ...prev, questions: newQuestions }));
   };
 
-  const handleReset = () => {
-    if (confirm("Reset konfigurasi ke default (termasuk URL script terbaru)?")) {
+  // AMAN: Hanya mereset layout pertanyaan, tapi mempertahankan Link Database
+  const handleSoftReset = () => {
+    if (confirm("Hapus semua pertanyaan dan kembali ke template dasar? (Link Database TIDAK akan dihapus)")) {
+        setLocalConfig(prev => ({
+            ...prev,
+            questions: DEFAULT_RECRUITMENT_CONFIG.questions,
+            title: DEFAULT_RECRUITMENT_CONFIG.title,
+            description: DEFAULT_RECRUITMENT_CONFIG.description
+        }));
+    }
+  };
+
+  // BAHAYA: Mereset total ke pengaturan pabrik
+  const handleHardReset = () => {
+    if (confirm("⚠️ PERINGATAN: Ini akan menghapus Link Database, Nama Sheet, dan semua Pertanyaan ke pengaturan awal developer. Lanjutkan?")) {
         setLocalConfig(DEFAULT_RECRUITMENT_CONFIG);
     }
   };
@@ -119,16 +132,34 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
             value={localConfig.targetSheetName}
             onChange={e => setLocalConfig({...localConfig, targetSheetName: e.target.value})}
             className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-sm text-amber-400 focus:border-amber-500/50 outline-none"
-            placeholder="Contoh: Batch_Mei_2026"
+            placeholder="Contoh: Batch_6"
+          />
+          <p className="text-[8px] text-slate-500">Jika nama sheet belum ada di Excel, sistem akan mencoba membuatnya otomatis.</p>
+        </div>
+
+        {/* Description Field */}
+        <div className="bg-slate-900 p-5 rounded-xl border border-white/10 space-y-4 md:col-span-2">
+          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Deskripsi / Persyaratan</label>
+          <textarea 
+            rows={3}
+            value={localConfig.description || ''}
+            onChange={e => setLocalConfig({...localConfig, description: e.target.value})}
+            className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-amber-500/50 outline-none"
+            placeholder="Jelaskan persyaratan umum atau informasi tambahan..."
           />
         </div>
 
         <div className="bg-slate-900 p-5 rounded-xl border border-white/10 space-y-4 md:col-span-2">
           <div className="flex justify-between items-center">
              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Google Apps Script Web App URL</label>
-             <button onClick={handleReset} className="text-[9px] font-black text-red-500 border border-red-500/30 px-2 py-1 rounded hover:bg-red-500 hover:text-white transition-all uppercase">
-                🔄 Reset Config Default
-             </button>
+             <div className="flex gap-2">
+                <button onClick={handleSoftReset} className="text-[9px] font-bold text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded hover:bg-blue-600 hover:text-white transition-all uppercase" title="Hanya reset pertanyaan">
+                    ↺ Reset Pertanyaan
+                </button>
+                <button onClick={handleHardReset} className="text-[9px] font-bold text-red-500 border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500 hover:text-white transition-all uppercase" title="Reset Total (Bahaya)">
+                    ⚠ Factory Reset
+                </button>
+             </div>
           </div>
           <input 
             type="text" 
@@ -166,16 +197,18 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
 
         <div className="md:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
-                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Daftar Pertanyaan</h4>
+                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Daftar Pertanyaan ({localConfig.questions.length})</h4>
                 <button onClick={addQuestion} className="bg-amber-500 text-slate-950 px-3 py-2 md:px-4 rounded-lg text-[10px] font-bold uppercase hover:bg-amber-400">
                     + Tambah
                 </button>
             </div>
 
-            <div className="space-y-4">
+            {/* SCROLLABLE AREA UNTUK BANYAK PERTANYAAN */}
+            <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2 border border-white/5 rounded-xl p-2">
                 {localConfig.questions.map((q, idx) => (
                     <div key={q.id} className="bg-slate-900 border border-white/10 p-3 md:p-4 rounded-xl flex flex-col md:flex-row gap-4 items-start group">
                         <div className="flex flex-row md:flex-col gap-2 md:gap-1 pt-1 w-full md:w-auto justify-between md:justify-start">
+                            <span className="text-[9px] font-bold text-slate-500 md:hidden">#{idx + 1}</span>
                             <div className="flex gap-2">
                                 <button onClick={() => moveQuestion(idx, 'up')} disabled={idx === 0} className="text-slate-500 hover:text-white disabled:opacity-20 px-2 py-1 bg-white/5 rounded">▲</button>
                                 <button onClick={() => moveQuestion(idx, 'down')} disabled={idx === localConfig.questions.length - 1} className="text-slate-500 hover:text-white disabled:opacity-20 px-2 py-1 bg-white/5 rounded">▼</button>
@@ -190,7 +223,7 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
                                     value={q.label}
                                     onChange={e => updateQuestion(q.id, 'label', e.target.value)}
                                     className={`flex-1 bg-slate-950 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-amber-500/50 outline-none ${q.isBold ? 'font-bold' : ''}`}
-                                    placeholder="Teks Pertanyaan..."
+                                    placeholder={`Pertanyaan #${idx + 1}...`}
                                 />
                                 <select 
                                     value={q.type}

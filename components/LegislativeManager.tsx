@@ -13,26 +13,57 @@ const LegislativeManager: React.FC<LegislativeManagerProps> = ({ docs, setDocs }
     setDocs(updated);
   };
 
+  const addNewDoc = () => {
+    const newDoc: LegislativeDocument = {
+      id: `doc-${Date.now()}`,
+      title: 'Dokumen Baru',
+      icon: '📜',
+      desc: 'Deskripsi singkat...',
+      link: '#'
+    };
+    setDocs([...docs, newDoc]);
+  };
+
+  const deleteDoc = (id: string) => {
+    if (confirm("Hapus dokumen ini dari daftar?")) {
+      setDocs(docs.filter(d => d.id !== id));
+    }
+  };
+
   return (
     <div className="space-y-8 pb-20">
-      <div className="bg-slate-950 p-6 rounded-2xl border border-white/5 border-l-4 border-amber-500">
-        <h3 className="text-sm font-black text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-          <span>⚖️</span> Manajemen Dokumen Legislatif
-        </h3>
-        <p className="text-[10px] text-slate-500 leading-relaxed uppercase tracking-widest">
-          Bagian ini mengontrol 4 kartu sorotan yang muncul di section "Sorotan Legislatif & Hukum". 
-          Pastikan link dokumen adalah URL yang valid (Google Drive/Docs).
-        </p>
+      <div className="bg-slate-950 p-6 rounded-2xl border border-white/5 border-l-4 border-amber-500 flex justify-between items-center">
+        <div>
+            <h3 className="text-sm font-black text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+            <span>⚖️</span> Manajemen Dokumen Legislatif
+            </h3>
+            <p className="text-[10px] text-slate-500 leading-relaxed uppercase tracking-widest">
+            Atur kartu sorotan yang muncul di section "Sorotan Legislatif & Hukum". 
+            Pastikan link dokumen adalah URL yang valid (Google Drive/Docs).
+            </p>
+        </div>
+        <button onClick={addNewDoc} className="bg-amber-500 text-slate-950 px-4 py-2 rounded-xl text-[10px] font-bold uppercase shadow-lg hover:bg-amber-400 transition-all">
+            + Tambah Dokumen
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
+        {docs.length === 0 && (
+            <p className="text-center text-slate-500 text-xs py-10">Belum ada dokumen legislatif.</p>
+        )}
+
         {docs.map((doc, idx) => (
           <div key={doc.id} className="bg-slate-950 border border-white/5 rounded-2xl overflow-hidden p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-               <h4 className="text-[10px] font-black text-white tracking-widest uppercase">KARTU #{idx + 1}</h4>
-               <div className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-lg">
-                 {doc.icon.startsWith('http') ? <img src={doc.icon} alt="icon" className="w-5 h-5 object-contain" /> : doc.icon}
+               <div className="flex items-center gap-3">
+                   <h4 className="text-[10px] font-black text-white tracking-widest uppercase">KARTU #{idx + 1}</h4>
+                   <div className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-lg">
+                     {doc.icon.startsWith('http') ? <img src={doc.icon} alt="icon" className="w-5 h-5 object-contain" /> : doc.icon}
+                   </div>
                </div>
+               <button onClick={() => deleteDoc(doc.id)} className="text-[9px] font-bold text-red-500 hover:text-white bg-red-500/10 px-3 py-1.5 rounded uppercase transition-colors">
+                   Hapus
+               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

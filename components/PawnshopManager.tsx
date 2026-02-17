@@ -153,12 +153,15 @@ const InventoryRow: React.FC<{
 };
 
 const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }) => {
-  const availableTabs = userRole === 'PAWN_ADMIN' 
+  // Allow TREASURY_ADMIN to access all tabs same as PAWN_ADMIN
+  const isFullAdmin = userRole === 'PAWN_ADMIN' || userRole === 'TREASURY_ADMIN' || userRole === 'SUPER_ADMIN';
+
+  const availableTabs = isFullAdmin 
     ? ['UMUM', 'HITAM', 'PAWNSHOP'] as const
     : ['UMUM', 'HITAM'] as const;
 
   const [activeTab, setActiveTab] = useState<'UMUM' | 'HITAM' | 'PAWNSHOP'>(
-    userRole === 'PAWN_ADMIN' ? 'PAWNSHOP' : 'UMUM'
+    isFullAdmin ? 'PAWNSHOP' : 'UMUM'
   );
   
   const [commonItems, setCommonItems] = useState<SimpleItem[]>([]);
@@ -198,9 +201,14 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
 
   const refreshCloudData = async () => {
     const cloudPawn = await fetchFromDatabase('PAWN');
-    if (cloudPawn && Array.isArray(cloudPawn)) {
+    if (cloudPawn && Array.isArray(cloudPawn) && cloudPawn.length > 0) {
         setPawnItems(cloudPawn);
         localStorage.setItem('ls_gov_pawn_market', JSON.stringify(cloudPawn));
+    } else {
+        // Fallback jika cloud kosong (misal baru reset), load default agar tidak blank
+        if (!cloudPawn || cloudPawn.length === 0) {
+            setPawnItems(INITIAL_PAWN_DATA);
+        }
     }
 
     const cloudCommon = await fetchFromDatabase('INVENTORY_COMMON');
@@ -412,7 +420,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
         </div>
       </div>
       
-      {activeTab === 'PAWNSHOP' && userRole === 'PAWN_ADMIN' ? (
+      {activeTab === 'PAWNSHOP' && isFullAdmin ? (
         <div className="space-y-6">
           <div className="bg-slate-950 border border-white/10 p-5 rounded-2xl">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
@@ -453,7 +461,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                     localStorage.setItem('ls_gov_pawn_webhook', e.target.value);
                   }} 
                   placeholder="https://discord.com/api/webhooks/..." 
-                  className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none focus:border-amber-500/50 focus:shadow-inner transition-all" 
+                  className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none focus:border-amber-500/50 focus:shadow-inner transition-all" 
                 />
               </div>
           </div>

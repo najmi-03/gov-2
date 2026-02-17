@@ -13,7 +13,8 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick, auth }) => {
   const baseMenuItems = [
     { label: 'Departemen', id: 'departments' },
     { label: 'Struktural', id: 'structural' },
-    { label: 'Layanan Form', id: 'citizen-form' }, 
+    { label: 'Layanan Form', id: 'citizen-form' },
+    { label: 'Pasar Kota', id: 'pawnshop' }, // Added Menu Item
     { label: 'Informasi', id: 'information' },
     { label: 'Rekrutmen', id: 'recruitment' }
   ];

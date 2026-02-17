@@ -27,29 +27,44 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
         // Tambahkan Timestamp Manual
         dynamicData["Waktu Submit"] = new Date().toLocaleString('id-ID');
 
-        for (const q of config.questions) {
-            // Ambil jawaban teks
-            dynamicData[q.label] = answers[q.id] || "";
-        }
+        // Pastikan nama sheet bersih dari spasi berlebih
+        const cleanSheetName = (config.targetSheetName || "Rekrutmen_Responses").trim();
 
+        // Loop semua pertanyaan untuk menyusun data JSON
+        // Menggunakan label sebagai key agar di Google Sheet header-nya sesuai label
+        config.questions.forEach(q => {
+            const answer = answers[q.id] || "-";
+            dynamicData[q.label] = answer;
+        });
+
+        // Struktur Payload yang Benar untuk Script Google Apps Generic
         const payload = {
-            sheetName: config.targetSheetName || "Rekrutmen_Batch_1",
+            sheetName: cleanSheetName,
+            action: "submit_form", // Flag opsional untuk script tertentu
             data: dynamicData
         };
 
+        // Debugging di Console
+        console.log("Mengirim ke Sheet:", cleanSheetName, payload);
+
         await fetch(config.scriptUrl, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            mode: 'no-cors', // Penting untuk bypass CORS Google Script
+            headers: { 
+                'Content-Type': 'application/json' // Ubah ke JSON agar script lebih mudah parsing
+            },
             body: JSON.stringify(payload)
         });
 
-        alert("✅ Pendaftaran Berhasil! Data Anda telah dikirim ke database.");
+        // Karena mode no-cors, kita asumsikan sukses jika tidak ada network error
+        alert(`✅ Pendaftaran Berhasil!\n\nData Anda telah dikirim ke database: ${cleanSheetName}.\nTerima kasih telah mendaftar.`);
+        
         setAnswers({});
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
     } catch (error) {
         console.error("Script Error", error);
-        alert("❌ Gagal mengirim data. Pastikan koneksi internet stabil.");
+        alert("❌ Gagal mengirim data. Pastikan koneksi internet stabil atau hubungi admin jika masalah berlanjut.");
     }
     
     setIsSubmitting(false);
@@ -71,9 +86,24 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
                 "{config.title}"
               </p>
             </div>
+            
+            {config.description && (
+                <div className="mb-4 p-4 bg-slate-950/50 rounded-xl border border-white/5">
+                    <h4 className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-2">Persyaratan & Informasi</h4>
+                    <p className="text-slate-400 text-xs leading-relaxed whitespace-pre-wrap">
+                        {config.description}
+                    </p>
+                </div>
+            )}
+
             <p className="text-slate-400 text-sm leading-relaxed mb-4">
-              Silakan lengkapi formulir di samping dengan data yang jujur dan valid. Data Anda akan masuk ke database <b>{config.targetSheetName.replace(/_/g, ' ')}</b>.
+              Silakan lengkapi formulir di samping dengan data yang jujur dan valid. Data Anda akan masuk ke database <b>{config.targetSheetName?.replace(/_/g, ' ') || 'Pusat'}</b>.
             </p>
+            <div className="text-[10px] text-slate-500 mt-4 border-t border-white/5 pt-4">
+                <p>Info Teknis:</p>
+                <p>Status Form: {config.isOpen ? '🟢 Dibuka' : '🔴 Ditutup'}</p>
+                <p>Total Pertanyaan: {config.questions.length}</p>
+            </div>
           </div>
           
           <div className="md:w-2/3 w-full bg-slate-950 border border-white/10 rounded-2xl p-6 relative z-10 hover:border-white/20 transition-all duration-300">

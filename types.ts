@@ -56,6 +56,7 @@ export interface RecruitmentQuestion {
 export interface RecruitmentConfig {
   isOpen: boolean;
   title: string;
+  description?: string; // New description field
   targetSheetName: string; // Nama Tab di Spreadsheet, misal: 'Batch 1'
   scriptUrl: string; // URL Google Apps Script Web App
   spreadsheetUrl?: string; // URL Link View Spreadsheet

@@ -31,6 +31,7 @@ export const DEFAULT_MASTER_SCRIPT_URL = DATABASE_SCRIPT_URL; // Backward compat
 export const DEFAULT_RECRUITMENT_CONFIG: RecruitmentConfig = {
   isOpen: true,
   title: "Penerimaan Calon Pegawai Pemerintah",
+  description: "Harap membaca persyaratan berikut sebelum mendaftar:\n1. Warga Negara San Andreas yang sah.\n2. Tidak memiliki catatan kriminal berat.\n3. Siap bekerja di bawah tekanan dan profesional.",
   targetSheetName: "Rekrutmen_Batch_1",
   scriptUrl: RESPONSES_SCRIPT_URL, 
   spreadsheetUrl: "", 
@@ -418,7 +419,7 @@ export const DEPARTMENTS: DeptInfo[] = [
       { role: 'Spesialis Pelatihan', name: 'Linda Belcher', level: 3 },
       { role: 'Analis Performa', name: 'James Moriarty', level: 3 }
     ]
-  }
+  },
 ];
 
 export const NEWS: NewsItem[] = [

@@ -4,11 +4,30 @@ import { motion } from 'framer-motion';
 import { PawnItem, PawnStatus, PawnCategory } from '../types';
 import { INITIAL_PAWN_DATA, getStatusFromStock } from '../constants';
 
-const PawnshopMarket: React.FC = () => {
-  const [items, setItems] = useState<PawnItem[]>(INITIAL_PAWN_DATA);
+interface PawnshopMarketProps {
+  items: PawnItem[];
+}
+
+const PawnshopMarket: React.FC<PawnshopMarketProps> = ({ items: propItems }) => {
+  const [items, setItems] = useState<PawnItem[]>(propItems || INITIAL_PAWN_DATA);
   const [lastUpdate, setLastUpdate] = useState<string>('Default');
 
+  // Update local state when props change
+  useEffect(() => {
+    if (propItems) {
+      setItems(propItems);
+      setLastUpdate(new Date().toLocaleTimeString('id-ID'));
+    }
+  }, [propItems]);
+
   const loadData = () => {
+    // If we have propItems, we use them. Otherwise fallback to localStorage
+    if (propItems) {
+      setItems(propItems);
+      setLastUpdate(new Date().toLocaleTimeString('id-ID'));
+      return;
+    }
+    
     const saved = localStorage.getItem('ls_gov_pawn_market');
     if (saved) {
       setItems(JSON.parse(saved));
@@ -36,7 +55,7 @@ const PawnshopMarket: React.FC = () => {
   const categories: PawnCategory[] = ['PERTANIAN', 'PERTAMBANGAN', 'PERHIASAN', 'ALKOHOL', 'HUNTING', 'RONGSOK'];
 
   return (
-    <section id="pawnshop-market" className="py-16 md:py-24 px-4 bg-slate-950 relative overflow-hidden min-h-screen">
+    <section id="pawnshop-market" className="py-16 md:py-24 px-4 bg-transparent relative overflow-hidden min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 md:mb-16">
           <div className="max-w-2xl px-2">

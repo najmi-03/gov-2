@@ -11,7 +11,7 @@ interface NewsArchiveProps {
 
 const NewsArchive: React.FC<NewsArchiveProps> = ({ news, onNewsClick }) => {
   return (
-    <section className="min-h-screen bg-slate-950 pt-24 pb-12 px-4 relative">
+    <section className="min-h-screen bg-transparent pt-24 pb-12 px-4 relative">
        {/* Background Decor */}
        <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-amber-500/5 blur-[120px] rounded-full pointer-events-none"></div>
        <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>

@@ -5,23 +5,17 @@ import { PermissionConfig, FormField } from '../types';
 interface PermissionManagerProps {
   permissions: PermissionConfig[];
   setPermissions: (permissions: PermissionConfig[]) => void;
+  webhooks: Record<string, string>;
 }
 
-const PermissionManager: React.FC<PermissionManagerProps> = ({ permissions, setPermissions }) => {
+const PermissionManager: React.FC<PermissionManagerProps> = ({ permissions, setPermissions, webhooks }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [permIdToDelete, setPermIdToDelete] = useState<string | null>(null);
 
   const updatePermission = (id: string, field: keyof PermissionConfig, value: any) => {
     const updated = permissions.map(p => p.id === id ? { ...p, [field]: value } : p);
     setPermissions(updated);
-    
-    // Save webhook directly if it's the field being edited
-    if (field === 'webhookKey' && value) {
-        localStorage.setItem(value, localStorage.getItem(value) || '');
-    }
   };
-
-  const getWebhookUrl = (key: string) => localStorage.getItem(key) || '';
-  const setWebhookUrl = (key: string, url: string) => localStorage.setItem(key, url);
 
   const addNewPermission = () => {
     const newPerm: PermissionConfig = {
@@ -40,10 +34,9 @@ const PermissionManager: React.FC<PermissionManagerProps> = ({ permissions, setP
   };
 
   const deletePermission = (id: string) => {
-    if (confirm("Hapus jenis izin ini secara permanen?")) {
-      setPermissions(permissions.filter(p => p.id !== id));
-      if (editingId === id) setEditingId(null);
-    }
+    setPermissions(permissions.filter(p => p.id !== id));
+    if (editingId === id) setEditingId(null);
+    setPermIdToDelete(null);
   };
 
   // --- FIELD MANAGEMENT ---
@@ -114,7 +107,15 @@ const PermissionManager: React.FC<PermissionManagerProps> = ({ permissions, setP
                     >
                         {editingId === perm.id ? 'Tutup' : 'Edit'}
                     </button>
-                    <button onClick={() => deletePermission(perm.id)} className="text-slate-600 hover:text-red-500 px-2">✕</button>
+                    
+                    {permIdToDelete === perm.id ? (
+                        <div className="flex gap-1 items-center">
+                            <button onClick={() => setPermIdToDelete(null)} className="text-[8px] text-slate-500 uppercase">Batal</button>
+                            <button onClick={() => deletePermission(perm.id)} className="text-[8px] text-red-500 font-bold uppercase animate-pulse">Hapus?</button>
+                        </div>
+                    ) : (
+                        <button onClick={() => setPermIdToDelete(perm.id)} className="text-slate-600 hover:text-red-500 px-2">✕</button>
+                    )}
                  </div>
              </div>
              
@@ -142,16 +143,19 @@ const PermissionManager: React.FC<PermissionManagerProps> = ({ permissions, setP
                         </div>
                     </div>
 
-                    {/* Webhook */}
+                    {/* Webhook (Read Only here, edit in Webhooks tab) */}
                     <div className="bg-slate-950 p-3 rounded-lg border border-blue-500/20">
-                        <label className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block mb-1">Webhook Discord URL</label>
-                        <input 
-                            type="text" 
-                            value={getWebhookUrl(perm.webhookKey)}
-                            onChange={(e) => setWebhookUrl(perm.webhookKey, e.target.value)} // Update LS directly
-                            placeholder="https://discord.com/api/webhooks/..."
-                            className="w-full bg-slate-900 border border-white/10 rounded px-2 py-2 text-[10px] text-white outline-none focus:border-blue-500/50"
-                        />
+                        <label className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block mb-1">Webhook Discord URL (Centralized)</label>
+                        <div className="flex gap-2 items-center">
+                            <input 
+                                type="text" 
+                                readOnly
+                                value={webhooks[perm.webhookKey] || 'Belum dikonfigurasi di Database'}
+                                className="flex-1 bg-slate-900/50 border border-white/5 rounded px-2 py-2 text-[10px] text-slate-400 outline-none"
+                            />
+                            <span className="text-[8px] font-mono text-slate-600 uppercase">{perm.webhookKey}</span>
+                        </div>
+                        <p className="text-[8px] text-slate-600 mt-1 uppercase tracking-tighter">Edit URL ini di tab "WEBHOOKS" menggunakan key di atas.</p>
                     </div>
 
                     {/* Custom Fields Builder */}

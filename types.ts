@@ -89,7 +89,7 @@ export interface LeadershipMember {
 
 export interface DeptInfo {
   id: string;
-  name: Department;
+  name: Department | string;
   icon: string;
   shortDescription: string;
   longDescription: string;
@@ -151,5 +151,16 @@ export interface AttendanceLog {
   staffName: string;
   role: string;
   action: string;
+  timestamp: string;
+}
+
+export interface PermissionLog {
+  id?: number;
+  staff_name: string;
+  type: string;
+  start_date: string;
+  end_date: string;
+  reason: string;
+  status: string;
   timestamp: string;
 }

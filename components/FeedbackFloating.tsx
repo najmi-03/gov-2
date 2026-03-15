@@ -6,9 +6,10 @@ import { AuthState } from '../types';
 
 interface FeedbackFloatingProps {
   auth: AuthState;
+  webhooks: Record<string, string>;
 }
 
-const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth }) => {
+const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth, webhooks }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState('Saran');
@@ -21,7 +22,7 @@ const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth }) => {
     
     // Tentukan Webhook berdasarkan status login
     const webhookKey = isStaff ? 'ls_gov_feedback_staff' : 'ls_gov_feedback_public';
-    const webhookUrl = localStorage.getItem(webhookKey);
+    const webhookUrl = webhooks[webhookKey];
 
     if (!webhookUrl) {
       alert("Sistem Aspirasi belum dikonfigurasi oleh Departemen Social Affairs.");

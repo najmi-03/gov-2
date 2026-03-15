@@ -15,6 +15,9 @@ interface SimpleItem {
 interface PawnshopManagerProps {
   staffName?: string | null;
   userRole?: AdminRole;
+  pawnItems: PawnItem[];
+  setPawnItems: (items: PawnItem[]) => void;
+  webhooks: Record<string, string>;
 }
 
 // Helper untuk menghitung sisa waktu
@@ -39,7 +42,8 @@ const InventoryRow: React.FC<{
   onRecordLog: (name: string, type: 'DEPOSIT' | 'WITHDRAW', amount: number) => void;
   categoryName: string;
   setEditing: (isEditing: boolean) => void;
-}> = ({ item, onUpdate, onDelete, onRecordLog, setEditing }) => {
+  isFullAdmin: boolean;
+}> = ({ item, onUpdate, onDelete, onRecordLog, setEditing, isFullAdmin }) => {
   const [action, setAction] = useState<'DEPOSIT' | 'WITHDRAW'>('DEPOSIT');
   const [amount, setAmount] = useState<string>('');
   
@@ -76,15 +80,18 @@ const InventoryRow: React.FC<{
                 onFocus={() => setEditing(true)}
                 onBlur={() => setEditing(false)}
                 onChange={e => onUpdate(item.id, 'name', e.target.value)}
-                className="bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white w-full outline-none focus:border-amber-500/50 transition-all placeholder:text-slate-600 focus:shadow-[0_0_10px_rgba(245,158,11,0.2)]"
+                disabled={!isFullAdmin}
+                className={`bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-white w-full outline-none transition-all placeholder:text-slate-600 ${isFullAdmin ? 'focus:border-amber-500/50 focus:shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'opacity-80 cursor-not-allowed'}`}
                 placeholder="Nama Item..."
               />
-              <button 
-                onClick={() => onDelete(item.id)}
-                className="w-10 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95"
-              >
-                🗑️
-              </button>
+              {isFullAdmin && (
+                <button 
+                  onClick={() => onDelete(item.id)}
+                  className="w-10 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95"
+                >
+                  🗑️
+                </button>
+              )}
              </div>
              {/* Tampilan Durasi / Expired */}
              {expiryInfo && (
@@ -152,7 +159,7 @@ const InventoryRow: React.FC<{
   );
 };
 
-const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }) => {
+const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole, pawnItems, setPawnItems, webhooks }) => {
   // Allow TREASURY_ADMIN to access all tabs same as PAWN_ADMIN
   const isFullAdmin = userRole === 'PAWN_ADMIN' || userRole === 'TREASURY_ADMIN' || userRole === 'SUPER_ADMIN';
 
@@ -166,16 +173,15 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
   
   const [commonItems, setCommonItems] = useState<SimpleItem[]>([]);
   const [blackItems, setBlackItems] = useState<SimpleItem[]>([]);
-  const [pawnItems, setPawnItems] = useState<PawnItem[]>(INITIAL_PAWN_DATA);
   
   const [isEditing, setIsEditing] = useState(false);
   const [sessionLogs, setSessionLogs] = useState<string[]>([]);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemDuration, setNewItemDuration] = useState('0'); // 0 = Permanen
+  const [newItemCategory, setNewItemCategory] = useState<PawnCategory>('PERTANIAN');
+  const [newItemPrice, setNewItemPrice] = useState('10');
 
-  const [pawnWebhookUrl, setPawnWebhookUrl] = useState('');
-  const [lockerWebhookUrl, setLockerWebhookUrl] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
   // State untuk Upload Gambar Loker
@@ -188,12 +194,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     loadLocalData();
     refreshCloudData();
 
-    const savedPawnUrl = localStorage.getItem('ls_gov_pawn_webhook');
-    const savedLockerUrl = localStorage.getItem('ls_gov_locker_webhook');
     const savedLogs = localStorage.getItem('ls_gov_session_logs');
-    
-    if (savedPawnUrl) setPawnWebhookUrl(savedPawnUrl);
-    if (savedLockerUrl) setLockerWebhookUrl(savedLockerUrl);
     if (savedLogs) setSessionLogs(JSON.parse(savedLogs));
 
     // Interval removed per request (user refreshes page to get updates)
@@ -204,11 +205,6 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     if (cloudPawn && Array.isArray(cloudPawn) && cloudPawn.length > 0) {
         setPawnItems(cloudPawn);
         localStorage.setItem('ls_gov_pawn_market', JSON.stringify(cloudPawn));
-    } else {
-        // Fallback jika cloud kosong (misal baru reset), load default agar tidak blank
-        if (!cloudPawn || cloudPawn.length === 0) {
-            setPawnItems(INITIAL_PAWN_DATA);
-        }
     }
 
     const cloudCommon = await fetchFromDatabase('INVENTORY_COMMON');
@@ -243,11 +239,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
   const loadLocalData = () => {
     const savedCommon = localStorage.getItem('ls_gov_inv_common');
     const savedBlack = localStorage.getItem('ls_gov_inv_black');
-    const savedPawn = localStorage.getItem('ls_gov_pawn_market');
     
-    if (savedPawn) setPawnItems(JSON.parse(savedPawn));
-    else setPawnItems(INITIAL_PAWN_DATA);
-
     const safeParse = (json: string): SimpleItem[] => {
       try {
         const parsed = JSON.parse(json);
@@ -326,13 +318,38 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
 
     if (activeTab === 'UMUM') {
       saveCommon([...commonItems, newItem]);
-    } else {
+    } else if (activeTab === 'HITAM') {
       saveBlack([...blackItems, newItem]);
+    } else {
+      // Logic for adding to PAWNSHOP
+      const newPawn: PawnItem = {
+        id: `p-${Date.now()}`,
+        name: newItemName,
+        category: newItemCategory,
+        basePrice: parseInt(newItemPrice) || 10,
+        stock: 0,
+        status: 'BLUE'
+      };
+      savePawn([...pawnItems, newPawn]);
     }
 
     setNewItemName('');
     setNewItemDuration('0');
+    setNewItemPrice('10');
     setIsAddingItem(false);
+  };
+
+  const handleResetPawn = () => {
+    if (window.confirm("Apakah Anda yakin ingin mereset data Pawnshop ke pengaturan awal? Semua stok saat ini akan kembali ke default.")) {
+      savePawn(INITIAL_PAWN_DATA);
+      alert("Data Pawnshop telah direset ke default.");
+    }
+  };
+
+  const deletePawnItem = (id: string) => {
+    if (window.confirm("Hapus item ini dari daftar harga?")) {
+      savePawn(pawnItems.filter(i => i.id !== id));
+    }
   };
 
   const updatePawnStock = (id: string, stock: number) => {
@@ -358,12 +375,14 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
     let data: any[] = [];
     
     if (activeTab === 'PAWNSHOP') {
-      if (!pawnWebhookUrl) return alert("Masukkan Webhook Market Price!");
-      targetWebhook = pawnWebhookUrl;
+      const webhookUrl = webhooks['ls_gov_pawn_webhook'];
+      if (!webhookUrl) return alert("Webhook Market Price belum diatur di Database!");
+      targetWebhook = webhookUrl;
       data = pawnItems;
     } else {
-      if (!lockerWebhookUrl) return alert("Webhook Loker belum diatur oleh Admin!");
-      targetWebhook = lockerWebhookUrl;
+      const webhookUrl = webhooks['ls_gov_locker_webhook'];
+      if (!webhookUrl) return alert("Webhook Loker belum diatur di Database!");
+      targetWebhook = webhookUrl;
       data = activeTab === 'UMUM' ? commonItems : blackItems;
     }
 
@@ -447,22 +466,13 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                 </div>
              </div>
              
-             <button onClick={handleSyncDiscord} disabled={isSyncing} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 shadow-lg shadow-amber-500/20 mb-4 hover:shadow-amber-500/40 hover:-translate-y-1 active:scale-95">
-                {isSyncing ? 'MENGIRIM LAPORAN...' : '📢 KIRIM LAPORAN HARGA KE DISCORD'}
-             </button>
-
-             <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5">
-                <label className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-2 block">Webhook Market Price</label>
-                <input 
-                  type="text" 
-                  value={pawnWebhookUrl} 
-                  onChange={e => {
-                    setPawnWebhookUrl(e.target.value);
-                    localStorage.setItem('ls_gov_pawn_webhook', e.target.value);
-                  }} 
-                  placeholder="https://discord.com/api/webhooks/..." 
-                  className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none focus:border-amber-500/50 focus:shadow-inner transition-all" 
-                />
+              <div className="flex gap-2 mb-4">
+                <button onClick={handleSyncDiscord} disabled={isSyncing} className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-1 active:scale-95">
+                    {isSyncing ? 'MENGIRIM LAPORAN...' : '📢 KIRIM LAPORAN HARGA KE DISCORD'}
+                </button>
+                <button onClick={handleResetPawn} className="px-4 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[10px] font-black hover:bg-red-500 hover:text-white transition-all">
+                  RESET DEFAULT
+                </button>
               </div>
           </div>
 
@@ -497,18 +507,85 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                             <button onClick={() => updatePawnStock(item.id, item.stock + 1000)} className="w-6 h-6 flex items-center justify-center bg-white/5 rounded text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-90">+</button>
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-right">
+                        <td className="px-5 py-4 text-right flex items-center justify-end gap-3">
                           <span className={`font-black ${statusConfig[item.status].color}`}>
                              {item.status === 'BLACK' ? 'CLOSED' : `$${(item.basePrice * statusConfig[item.status].multiplier).toFixed(0)}`}
                           </span>
+                          <button onClick={() => deletePawnItem(item.id)} className="text-red-500 opacity-30 hover:opacity-100 transition-opacity">🗑️</button>
                         </td>
                       </tr>
                     ))}
+                    {pawnItems.filter(i => i.category === cat).length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-5 py-8 text-center text-slate-600 uppercase text-[9px] font-bold tracking-widest">
+                          Belum ada item di kategori ini
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           ))}
+
+          {/* ADD ITEM FOR PAWNSHOP */}
+          <div className="bg-slate-950 p-4 rounded-2xl border border-white/5">
+             {!isAddingItem ? (
+                <button 
+                  onClick={() => setIsAddingItem(true)} 
+                  className="w-full py-4 border-2 border-dashed border-white/10 text-slate-500 hover:border-amber-500 hover:text-amber-500 transition-all rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900"
+                >
+                  + Tambah Item Baru ke Pasar
+                </button>
+             ) : (
+                <div className="bg-slate-900 p-5 rounded-xl border border-amber-500/30 space-y-4">
+                   <div className="flex justify-between items-center">
+                      <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Tambah Item Pasar</h4>
+                      <button onClick={() => setIsAddingItem(false)} className="text-slate-500 hover:text-white">✕</button>
+                   </div>
+                   
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-slate-500 font-bold uppercase">Nama Barang</label>
+                        <input 
+                          type="text" 
+                          value={newItemName}
+                          onChange={e => setNewItemName(e.target.value)}
+                          placeholder="Misal: Whiskey, Kulit Rusa"
+                          className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-slate-500 font-bold uppercase">Kategori</label>
+                        <select 
+                          value={newItemCategory}
+                          onChange={e => setNewItemCategory(e.target.value as PawnCategory)}
+                          className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
+                        >
+                          {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-slate-500 font-bold uppercase">Harga Dasar ($)</label>
+                        <input 
+                          type="number" 
+                          value={newItemPrice}
+                          onChange={e => setNewItemPrice(e.target.value)}
+                          className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <button 
+                          onClick={handleAddItem}
+                          className="w-full bg-green-500 hover:bg-green-400 text-slate-950 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                        >
+                          SIMPAN KE PASAR
+                        </button>
+                      </div>
+                   </div>
+                </div>
+             )}
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -573,6 +650,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
                         onRecordLog={recordLog}
                         categoryName={`LOKER ${activeTab}`}
                         setEditing={setIsEditing}
+                        isFullAdmin={isFullAdmin}
                       />
                    ))}
                    {(activeTab === 'UMUM' ? commonItems : blackItems).length === 0 && (
@@ -586,63 +664,65 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole }
               </table>
               
               {/* UI TAMBAH ITEM */}
-              <div className="p-4 bg-white/[0.02] border-t border-white/5">
-                 {!isAddingItem ? (
-                   <button 
-                     onClick={() => setIsAddingItem(true)} 
-                     className="w-full py-3 border-2 border-dashed border-white/10 text-slate-500 hover:border-amber-500 hover:text-amber-500 transition-all rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900"
-                   >
-                      + Tambah Item Baru
-                   </button>
-                 ) : (
-                   <div className="bg-slate-900 p-4 rounded-xl border border-amber-500/30 space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Item Baru</h4>
-                        <button onClick={() => setIsAddingItem(false)} className="text-slate-500 hover:text-white transition-colors">✕</button>
-                      </div>
-                      
-                      <div className="space-y-3">
-                         <input 
-                           type="text" 
-                           value={newItemName}
-                           onChange={e => setNewItemName(e.target.value)}
-                           placeholder="Nama Item (misal: Radio, Borgol)"
-                           className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none transition-all"
-                         />
-                         
-                         <div className="flex items-center gap-3">
-                           <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest whitespace-nowrap">Durasi / Expired:</label>
-                           <select 
-                             value={newItemDuration}
-                             onChange={e => setNewItemDuration(e.target.value)}
-                             className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none transition-all"
+              {isFullAdmin && (
+                <div className="p-4 bg-white/[0.02] border-t border-white/5">
+                   {!isAddingItem ? (
+                     <button 
+                       onClick={() => setIsAddingItem(true)} 
+                       className="w-full py-3 border-2 border-dashed border-white/10 text-slate-500 hover:border-amber-500 hover:text-amber-500 transition-all rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900"
+                     >
+                        + Tambah Item Baru
+                     </button>
+                   ) : (
+                     <div className="bg-slate-900 p-4 rounded-xl border border-amber-500/30 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Item Baru</h4>
+                          <button onClick={() => setIsAddingItem(false)} className="text-slate-500 hover:text-white transition-colors">✕</button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                           <input 
+                             type="text" 
+                             value={newItemName}
+                             onChange={e => setNewItemName(e.target.value)}
+                             placeholder="Nama Item (misal: Radio, Borgol)"
+                             className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none transition-all"
+                           />
+                           
+                           <div className="flex items-center gap-3">
+                             <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest whitespace-nowrap">Durasi / Expired:</label>
+                             <select 
+                               value={newItemDuration}
+                               onChange={e => setNewItemDuration(e.target.value)}
+                               className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-amber-500/50 outline-none transition-all"
+                             >
+                               <option value="0">♾️ Permanen (Selamanya)</option>
+                               <option value="1">⏳ 1 Hari</option>
+                               <option value="3">⏳ 3 Hari</option>
+                               <option value="7">⏳ 7 Hari</option>
+                               <option value="30">⏳ 30 Hari</option>
+                             </select>
+                           </div>
+                        </div>
+  
+                        <div className="flex gap-3">
+                           <button 
+                             onClick={handleAddItem}
+                             className="flex-1 bg-green-500 hover:bg-green-400 text-slate-950 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
                            >
-                             <option value="0">♾️ Permanen (Selamanya)</option>
-                             <option value="1">⏳ 1 Hari</option>
-                             <option value="3">⏳ 3 Hari</option>
-                             <option value="7">⏳ 7 Hari</option>
-                             <option value="30">⏳ 30 Hari</option>
-                           </select>
-                         </div>
-                      </div>
-
-                      <div className="flex gap-3">
-                         <button 
-                           onClick={handleAddItem}
-                           className="flex-1 bg-green-500 hover:bg-green-400 text-slate-950 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
-                         >
-                           SIMPAN
-                         </button>
-                         <button 
-                           onClick={() => setIsAddingItem(false)}
-                           className="flex-1 bg-white/5 hover:bg-white/10 text-slate-400 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:text-white"
-                         >
-                           BATAL
-                         </button>
-                      </div>
-                   </div>
-                 )}
-              </div>
+                             SIMPAN
+                           </button>
+                           <button 
+                             onClick={() => setIsAddingItem(false)}
+                             className="flex-1 bg-white/5 hover:bg-white/10 text-slate-400 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:text-white"
+                           >
+                             BATAL
+                           </button>
+                        </div>
+                     </div>
+                   )}
+                </div>
+              )}
            </div>
         </div>
       )}

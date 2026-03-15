@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { RecruitmentConfig } from '../types';
+import { saveToDatabase } from '../services/databaseService';
 
 interface RegistrationFormProps {
   config: RecruitmentConfig; // Sekarang wajib menerima config dari App.tsx
@@ -12,53 +13,47 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!config.scriptUrl) {
-      alert("Sistem Rekrutmen Sedang Offline (Admin belum mengatur Script URL).");
-      return;
-    }
+    console.log("handleSubmit called");
     
     setIsSubmitting(true);
 
     try {
         // Persiapkan Data Payload Dinamis
-        // Kunci object adalah LABEL PERTANYAAN
         const dynamicData: Record<string, string> = {};
         
         // Tambahkan Timestamp Manual
         dynamicData["Waktu Submit"] = new Date().toLocaleString('id-ID');
 
-        // Pastikan nama sheet bersih dari spasi berlebih
-        const cleanSheetName = (config.targetSheetName || "Rekrutmen_Responses").trim();
-
         // Loop semua pertanyaan untuk menyusun data JSON
-        // Menggunakan label sebagai key agar di Google Sheet header-nya sesuai label
         config.questions.forEach(q => {
             const answer = answers[q.id] || "-";
             dynamicData[q.label] = answer;
         });
-
-        // Struktur Payload yang Benar untuk Script Google Apps Generic
-        const payload = {
-            sheetName: cleanSheetName,
-            action: "submit_form", // Flag opsional untuk script tertentu
-            data: dynamicData
-        };
-
-        // Debugging di Console
-        console.log("Mengirim ke Sheet:", cleanSheetName, payload);
-
-        await fetch(config.scriptUrl, {
-            method: 'POST',
-            mode: 'no-cors', // Penting untuk bypass CORS Google Script
-            headers: { 
-                'Content-Type': 'application/json' // Ubah ke JSON agar script lebih mudah parsing
-            },
-            body: JSON.stringify(payload)
-        });
-
-        // Karena mode no-cors, kita asumsikan sukses jika tidak ada network error
-        alert(`✅ Pendaftaran Berhasil!\n\nData Anda telah dikirim ke database: ${cleanSheetName}.\nTerima kasih telah mendaftar.`);
         
+        console.log("Data to save:", dynamicData);
+
+        /* 
+        // 1. Kirim ke Google Apps Script (DINONAKTIFKAN)
+        if (config.scriptUrl) {
+            const formData = new URLSearchParams();
+            Object.entries(dynamicData).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            await fetch(config.scriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: formData
+            });
+        }
+        */
+
+        // 2. Simpan ke Turso
+        console.log("Calling saveToDatabase...");
+        const success = await saveToDatabase('RESPONSES', { data: dynamicData, batch_name: config.targetSheetName });
+        console.log("saveToDatabase result:", success);
+
+        alert(`✅ Pendaftaran Berhasil!\n\nData Anda telah dikirim ke database pusat.\nTerima kasih telah mendaftar.`);
         setAnswers({});
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -71,7 +66,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
   };
 
   return (
-    <section id="recruitment" className="py-24 px-4 bg-slate-950">
+    <section id="recruitment" className="py-24 px-4 bg-transparent">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row gap-12 items-start bg-slate-900/40 p-6 md:p-12 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden transition-all duration-500 hover:border-amber-500/20">
           

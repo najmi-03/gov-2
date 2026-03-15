@@ -3,7 +3,7 @@ import { DATABASE_SCRIPT_URL, ATTENDANCE_SCRIPT_URL, ATTENDANCE_CSV_URL } from '
 
 // Tipe data yang bisa dikirim
 // Ditambahkan: CAROUSEL agar slide bisa diatur admin
-type ConfigType = 'NEWS' | 'DEPTS' | 'LEADERSHIP' | 'DOCS' | 'RECRUITMENT' | 'PAWN' | 'TERMS' | 'FORMS' | 'ATTENDANCE' | 'INVENTORY_COMMON' | 'INVENTORY_BLACK' | 'PERMISSIONS' | 'CAROUSEL';
+type ConfigType = 'NEWS' | 'DEPTS' | 'LEADERSHIP' | 'DOCS' | 'RECRUITMENT' | 'PAWN' | 'TERMS' | 'FORMS' | 'ATTENDANCE' | 'INVENTORY_COMMON' | 'INVENTORY_BLACK' | 'PERMISSIONS' | 'CAROUSEL' | 'RESPONSES' | 'WEBHOOKS';
 
 // MAPPING PENTING: Menentukan nama Tab/Sheet di Google Spreadsheet tujuan.
 // Admin WAJIB membuat Tab dengan nama-nama ini di Spreadsheet Database.
@@ -20,7 +20,9 @@ const SHEET_MAPPING: Record<ConfigType, string> = {
   INVENTORY_COMMON: 'Database_Loker_Umum',
   INVENTORY_BLACK: 'Database_Loker_Hitam',
   PERMISSIONS: 'Database_Config_Izin',
-  CAROUSEL: 'Database_Carousel' // Tab baru
+  CAROUSEL: 'Database_Carousel',
+  RESPONSES: 'Database_Responses',
+  WEBHOOKS: 'Database_Webhooks'
 };
 
 // Helper untuk parsing CSV text menjadi Array of Object (JSON)
@@ -70,98 +72,60 @@ const csvToJson = (csv: string) => {
 };
 
 /**
- * Mengambil data terbaru dari Google Sheet (Load)
- * customSheetName (opsional): Untuk override nama sheet target (misal: Absensi_Februari_2026)
+ * Mengambil data terbaru dari Database (Turso via Express API)
  */
-export const fetchFromDatabase = async (type: ConfigType, customSheetName?: string) => {
-  // KHUSUS ATTENDANCE (READ): Gunakan CSV URL jika tersedia untuk Treasury Admin
-  if (type === 'ATTENDANCE' && ATTENDANCE_CSV_URL && !customSheetName) {
-      try {
-          const response = await fetch(ATTENDANCE_CSV_URL, { cache: 'no-store' });
-          if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-          const text = await response.text();
-          if(text.trim().startsWith('<') || text.trim().length === 0) throw new Error("Format CSV Invalid");
-          return csvToJson(text);
-      } catch (error) {
-          console.warn(`[Offline/Error] Gagal load CSV Absensi. Mencoba fallback ke Script URL.`, error);
-      }
-  }
-
-  // KHUSUS ATTENDANCE (FALLBACK/DYNAMIC): Gunakan Script URL terpisah
-  const targetUrl = (type === 'ATTENDANCE' && ATTENDANCE_SCRIPT_URL) 
-    ? ATTENDANCE_SCRIPT_URL 
-    : DATABASE_SCRIPT_URL;
-
-  if (!targetUrl) return null;
-  
-  const sheetName = customSheetName || SHEET_MAPPING[type];
-
+export const fetchFromDatabase = async (type: ConfigType, params?: any) => {
   try {
-    // KOREKSI: Menghapus custom headers untuk menghindari CORS Preflight Error pada Google Apps Script
-    // Menggunakan timestamp (_t) saja sudah cukup untuk bypass cache browser
-    const response = await fetch(`${targetUrl}?action=GET&sheetName=${sheetName}&type=${type}&_t=${Date.now()}`, {
-        method: 'GET',
-        redirect: 'follow'
-    });
+    let url = `/api/${type.toLowerCase()}`;
     
+    // Special mapping for generic configs
+    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS'];
+    if (genericConfigs.includes(type)) {
+      url = `/api/config/${type}`;
+    } else if (type === 'RESPONSES') {
+      url = '/api/responses';
+      if (params?.batch) {
+        url += `?batch=${encodeURIComponent(params.batch)}`;
+      }
+    }
+
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Gagal mengambil data");
-    
-    // IMPORTANT: Parse as text first to check for HTML errors (Google Error Pages)
-    const text = await response.text();
-    
-    // Check if response is HTML (Error page)
-    if (text.trim().startsWith('<')) {
-        console.error(`[Database Error] Server returned HTML instead of JSON for ${sheetName}. Possible reasons: Script Error, Wrong Sheet Name, or Auth Issue.`);
-        return null; 
-    }
-
-    try {
-        const json = JSON.parse(text);
-        return Array.isArray(json) ? json : (json.data || []);
-    } catch (parseError) {
-        console.error(`[Database Error] Invalid JSON format from ${sheetName}:`, text.substring(0, 100));
-        return null;
-    }
-
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.warn(`[Offline/Error] Gagal load ${type} dari server (${sheetName}).`, error);
+    console.warn(`[Database Error] Gagal load ${type} dari Turso.`, error);
     return null;
   }
 };
 
 /**
- * Menyimpan data ke Google Sheet (Save)
- * Menggunakan Content-Type text/plain dan menyertakan sheetName.
+ * Menyimpan data ke Database (Turso via Express API)
  */
 export const saveToDatabase = async (type: ConfigType, data: any) => {
-  const targetUrl = (type === 'ATTENDANCE' && ATTENDANCE_SCRIPT_URL) 
-    ? ATTENDANCE_SCRIPT_URL 
-    : DATABASE_SCRIPT_URL;
-
-  if (!targetUrl) {
-    alert("Database URL belum disetting!");
-    return false;
-  }
-
-  const sheetName = SHEET_MAPPING[type];
-
   try {
-    await fetch(targetUrl, {
+    let url = `/api/${type.toLowerCase()}`;
+    let payload = data;
+
+    // Special mapping for generic configs
+    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS'];
+    if (genericConfigs.includes(type)) {
+      url = `/api/config/${type}`;
+      payload = { value: data };
+    } else if (type === 'RESPONSES') {
+      url = '/api/responses';
+    }
+
+    const response = await fetch(url, {
       method: 'POST',
-      mode: 'no-cors', 
       headers: {
-        'Content-Type': 'text/plain;charset=utf-8', 
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        action: 'SAVE',
-        type: type,
-        sheetName: sheetName,
-        data: data
-      })
+      body: JSON.stringify(payload)
     });
-    return true;
+    return response.ok;
   } catch (error) {
-    console.error(`Gagal menyimpan ${type}:`, error);
+    console.error(`Gagal menyimpan ${type} ke Turso:`, error);
     return false;
   }
 };

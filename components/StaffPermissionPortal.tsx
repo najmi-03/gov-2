@@ -6,9 +6,10 @@ import { sendToDiscord } from '../services/discordService';
 interface StaffPermissionPortalProps {
   permissions: PermissionConfig[];
   staffName: string;
+  webhooks: Record<string, string>;
 }
 
-const StaffPermissionPortal: React.FC<StaffPermissionPortalProps> = ({ permissions, staffName }) => {
+const StaffPermissionPortal: React.FC<StaffPermissionPortalProps> = ({ permissions, staffName, webhooks }) => {
   const [selectedPerm, setSelectedPerm] = useState<PermissionConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [startDate, setStartDate] = useState('');
@@ -26,9 +27,9 @@ const StaffPermissionPortal: React.FC<StaffPermissionPortalProps> = ({ permissio
     e.preventDefault();
     if (!selectedPerm) return;
 
-    const webhookUrl = localStorage.getItem(selectedPerm.webhookKey);
+    const webhookUrl = webhooks[selectedPerm.webhookKey];
     if (!webhookUrl) {
-      alert("Sistem error: Webhook belum dikonfigurasi HR.");
+      alert("Sistem error: Webhook belum dikonfigurasi HR di Database.");
       return;
     }
 
@@ -72,6 +73,23 @@ const StaffPermissionPortal: React.FC<StaffPermissionPortalProps> = ({ permissio
     const success = await sendToDiscord(webhookUrl, payload);
     
     if (success) {
+        // Save to Database as well
+        try {
+            await fetch('/api/permissions/logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    staff_name: staffName,
+                    type: selectedPerm.title,
+                    start_date: startDate,
+                    end_date: endDate,
+                    reason: JSON.stringify(formData)
+                })
+            });
+        } catch (e) {
+            console.error("Failed to log permission to DB", e);
+        }
+
         alert("Pengajuan izin berhasil dikirim!");
         setSelectedPerm(null);
     } else {

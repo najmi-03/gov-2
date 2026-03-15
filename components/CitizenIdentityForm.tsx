@@ -6,9 +6,10 @@ import { FormConfig } from '../types';
 
 interface CitizenIdentityFormProps {
   forms: FormConfig[];
+  webhooks: Record<string, string>;
 }
 
-const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) => {
+const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webhooks }) => {
   const [selectedForm, setSelectedForm] = useState<FormConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
@@ -49,9 +50,9 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms }) =>
     if (!selectedForm) return;
 
     // AMBIL WEBHOOK SPESIFIK BERDASARKAN KUNCI FORM YANG DIPILIH
-    const webhookUrl = localStorage.getItem(selectedForm.webhookKey);
+    const webhookUrl = webhooks[selectedForm.webhookKey];
     if (!webhookUrl) {
-      alert(`Layanan ${selectedForm.title} sedang tidak aktif (Webhook belum diatur oleh Departemen Home Affairs).`);
+      alert(`Layanan ${selectedForm.title} sedang tidak aktif (Webhook belum diatur di Database).`);
       return;
     }
 

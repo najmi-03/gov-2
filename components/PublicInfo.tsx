@@ -12,7 +12,7 @@ interface PublicInfoProps {
 
 const PublicInfo: React.FC<PublicInfoProps> = ({ newsData, docs, onNewsClick, onArchiveClick }) => {
   return (
-    <section id="information" className="py-24 px-4 bg-slate-950 relative">
+    <section id="information" className="py-24 px-4 bg-transparent relative">
       {/* Background Decor */}
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-amber-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 

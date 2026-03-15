@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface SalaryManagerProps {
   leadership: LeadershipMember[];
   depts: DeptInfo[];
+  webhooks: Record<string, string>;
 }
 
 interface FlatEmployee {
@@ -25,7 +26,7 @@ interface CalculatedStat {
     salary: number;
 }
 
-const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
+const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhooks }) => {
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -34,7 +35,6 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
   // State untuk Edit Full
   const [editingRecord, setEditingRecord] = useState<SalaryRecord | null>(null);
 
-  const [webhookUrl, setWebhookUrl] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHrDropdown, setShowHrDropdown] = useState(false);
@@ -51,6 +51,8 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
   // State untuk Preview Statistik
   const [previewStats, setPreviewStats] = useState<CalculatedStat[]>([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<string | null>(null);
+  const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
 
   // === SOURCE SHEET SELECTOR ===
   const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -110,9 +112,6 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
     const saved = localStorage.getItem('ls_gov_salaries');
     if (saved) setSalaries(JSON.parse(saved));
 
-    const savedUrl = localStorage.getItem('ls_discord_webhook');
-    if (savedUrl) setWebhookUrl(savedUrl);
-
     // Load Saved Rates
     const savedRates = localStorage.getItem('ls_gov_salary_rates');
     if (savedRates) setRoleRates(JSON.parse(savedRates));
@@ -160,12 +159,11 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
   };
 
   const handleDeleteRate = (role: string) => {
-    if(confirm(`Hapus konfigurasi gaji untuk "${role}"?`)) {
-        const updated = { ...roleRates };
-        delete updated[role];
-        setRoleRates(updated);
-        localStorage.setItem('ls_gov_salary_rates', JSON.stringify(updated));
-    }
+    const updated = { ...roleRates };
+    delete updated[role];
+    setRoleRates(updated);
+    localStorage.setItem('ls_gov_salary_rates', JSON.stringify(updated));
+    setRoleToDelete(null);
   };
 
   const startEditingRole = (role: string) => {
@@ -245,18 +243,24 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
               return acc;
           }, {} as any);
           
-          const name = keys['namapegawai'] || keys['nama'] || keys['name'] || keys['0'] || 'Unknown';
-          const role = keys['jabatan'] || keys['role'] || keys['posisi'] || keys['1'] || 'Staff';
-          const action = keys['clockstatus'] || keys['statusabsensi'] || keys['status'] || keys['action'] || keys['aksi'] || keys['2'] || 'INFO';
+          const name = keys['staffname'] || keys['namapegawai'] || keys['nama'] || keys['name'] || keys['0'] || 'Unknown';
+          const role = keys['role'] || keys['jabatan'] || keys['posisi'] || keys['1'] || 'Staff';
+          const action = keys['action'] || keys['clockstatus'] || keys['statusabsensi'] || keys['status'] || keys['aksi'] || keys['2'] || 'INFO';
           const timestamp = keys['timestamp'] || keys['waktu'] || keys['date'] || keys['3'] || new Date().toISOString();
 
           return {
-              staffName: name,
-              role: role,
+              staffName: name ? name.toString().trim() : 'Unknown',
+              role: role ? role.toString().trim() : 'Staff',
               action: action ? action.toString().toUpperCase().trim() : 'UNKNOWN',
               timestamp: timestamp
           };
-      }).filter(log => log.staffName && log.action && !log.staffName.toLowerCase().includes('nama')); 
+      }).filter(log => {
+          if (!log.staffName || !log.action) return false;
+          const lowerName = log.staffName.toLowerCase().trim();
+          // Filter out header rows, but don't filter out real names like "Purnama"
+          if (lowerName === 'nama' || lowerName === 'namapegawai' || lowerName === 'staffname' || lowerName === 'staff_name' || lowerName === 'name') return false;
+          return true;
+      });
 
       // 2. Filter Date Range
       const startTs = new Date(startDate).setHours(0, 0, 0, 0);
@@ -370,6 +374,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
 
   const deleteRecord = (id: string) => {
     saveSalaries(salaries.filter(s => s.id !== id));
+    setRecordToDelete(null);
   };
 
   const updateRecord = (id: string, field: keyof SalaryRecord, value: any) => {
@@ -378,14 +383,15 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
   };
 
   const handleSendToDiscord = async (salary: SalaryRecord) => {
-    if (!webhookUrl) return alert("Silakan masukkan Discord Webhook di bagian bawah panel!");
+    const webhookUrl = webhooks['ls_gov_salary_webhook'] || webhooks['ls_discord_webhook'];
+    if (!webhookUrl) return alert("Webhook Discord belum dikonfigurasi di Database (Menu Webhooks)!");
     setIsSending(true);
     const success = await sendToDiscord(webhookUrl, formatSalarySlipEmbed(salary));
     if (success) {
       alert(`Slip Gaji ${salary.staffName} berhasil dikirim ke Discord!`);
       setSelectedSlip(null);
     } else {
-      alert("Gagal mengirim slip. Periksa Webhook URL Anda.");
+      alert("Gagal mengirim slip. Periksa Webhook URL di Database.");
     }
     setIsSending(false);
   };
@@ -708,13 +714,21 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
                                         >
                                             ✎
                                         </button>
-                                        <button 
-                                            onClick={() => handleDeleteRate(role)}
-                                            className="text-[9px] text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            title="Hapus Konfigurasi"
-                                        >
-                                            🗑️
-                                        </button>
+                                        
+                                        {roleToDelete === role ? (
+                                            <div className="flex gap-1">
+                                                <button onClick={() => setRoleToDelete(null)} className="text-[8px] text-slate-500 uppercase">Batal</button>
+                                                <button onClick={() => handleDeleteRate(role)} className="text-[8px] text-red-500 font-bold uppercase animate-pulse">Hapus?</button>
+                                            </div>
+                                        ) : (
+                                            <button 
+                                                onClick={() => setRoleToDelete(role)}
+                                                className="text-[9px] text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                title="Hapus Konfigurasi"
+                                            >
+                                                🗑️
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                                 
@@ -920,7 +934,14 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
                       >
                         SLIP
                       </button>
-                      <button onClick={() => deleteRecord(s.id)} className="text-slate-600 hover:text-red-500 p-1">✕</button>
+                      {recordToDelete === s.id ? (
+                        <div className="flex gap-1 items-center">
+                            <button onClick={() => setRecordToDelete(null)} className="text-[8px] text-slate-500 uppercase">Batal</button>
+                            <button onClick={() => deleteRecord(s.id)} className="text-[8px] text-red-500 font-bold uppercase animate-pulse">Hapus?</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setRecordToDelete(s.id)} className="text-slate-600 hover:text-red-500 p-1">✕</button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -935,20 +956,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts }) => {
         </div>
       </div>
 
-      {/* Webhook Settings */}
-      <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5">
-        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Discord Webhook</label>
-        <input 
-          type="text" 
-          value={webhookUrl} 
-          onChange={e => {
-            setWebhookUrl(e.target.value);
-            localStorage.setItem('ls_discord_webhook', e.target.value);
-          }} 
-          placeholder="https://discord.com/api/webhooks/..." 
-          className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-3 text-[10px] text-white outline-none" 
-        />
-      </div>
+      {/* Main Table */}
 
       {/* Slip Gaji Modal */}
       <AnimatePresence>

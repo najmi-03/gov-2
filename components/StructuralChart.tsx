@@ -21,7 +21,7 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
   };
 
   return (
-    <section id="structural" className="py-16 md:py-24 px-4 bg-slate-950 relative overflow-hidden min-h-screen">
+    <section id="structural" className="py-16 md:py-24 px-4 bg-transparent relative overflow-hidden min-h-screen">
       {/* Visual Lines Decor - Only for Desktop */}
       <div className="absolute inset-0 opacity-10 pointer-events-none hidden lg:block">
         <div className="h-full w-px bg-amber-500/50 absolute left-1/2 -translate-x-1/2"></div>

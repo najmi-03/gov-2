@@ -18,10 +18,14 @@ import TermsModal from './components/TermsModal';
 import FeedbackFloating from './components/FeedbackFloating';
 import NewsArchive from './components/NewsArchive';
 import AttendancePage from './components/AttendancePage';
+import DonationPage from './components/DonationPage';
+import ParticlesBackground from './components/ParticlesBackground';
+import PublicInventory from './components/PublicInventory';
 import { DEPARTMENTS as INITIAL_DEPARTMENTS, NEWS as INITIAL_NEWS, DEFAULT_FORMS, DEFAULT_RECRUITMENT_CONFIG, DEFAULT_PERMISSIONS } from './constants';
-import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument, FormConfig, RecruitmentConfig, PermissionConfig, CarouselItem } from './types';
-import { loginWithSpreadsheet } from './services/authService';
+import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument, FormConfig, RecruitmentConfig, PermissionConfig, CarouselItem, PawnItem } from './types';
+import { loginWithSpreadsheet, signupUser } from './services/authService';
 import { fetchFromDatabase } from './services/databaseService';
+import { INITIAL_PAWN_DATA } from './constants';
 
 // Initialize default leadership data
 const INITIAL_LEADERSHIP: LeadershipMember[] = [
@@ -56,7 +60,7 @@ const INITIAL_SLIDES: CarouselItem[] = [
   }
 ];
 
-type ViewState = 'home' | 'structural' | 'pawnshop' | 'news_archive' | 'attendance';
+type ViewState = 'home' | 'structural' | 'pawnshop' | 'loker' | 'news_archive' | 'attendance' | 'donation';
 
 /**
  * Main App Component
@@ -73,6 +77,8 @@ const App: React.FC = () => {
   const [recruitmentConfig, setRecruitmentConfig] = useState<RecruitmentConfig>(DEFAULT_RECRUITMENT_CONFIG);
   const [permissionConfig, setPermissionConfig] = useState<PermissionConfig[]>(DEFAULT_PERMISSIONS);
   const [carouselSlides, setCarouselSlides] = useState<CarouselItem[]>(INITIAL_SLIDES); 
+  const [pawnItems, setPawnItems] = useState<PawnItem[]>(INITIAL_PAWN_DATA);
+  const [webhooks, setWebhooks] = useState<Record<string, string>>({});
 
   const [selectedDept, setSelectedDept] = useState<DeptInfo | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
@@ -115,6 +121,18 @@ const App: React.FC = () => {
       console.warn("Failed to sync news");
     }
 
+    // FETCH PAWN INDEPENDENTLY
+    try {
+      const cloudPawn = await fetchFromDatabase('PAWN');
+      if (cloudPawn && Array.isArray(cloudPawn)) {
+          setPawnItems(cloudPawn);
+          // Update localStorage for components that still use it
+          localStorage.setItem('ls_gov_pawn_market', JSON.stringify(cloudPawn));
+      }
+    } catch (e) {
+      console.warn("Failed to sync pawn data");
+    }
+
     // Prioritas 2: Full Sync (Hanya saat load pertama atau refresh manual)
     if (fullSync) {
         // Parallel fetch for other configs
@@ -125,7 +143,8 @@ const App: React.FC = () => {
             fetchFromDatabase('FORMS'),
             fetchFromDatabase('TERMS'),
             fetchFromDatabase('RECRUITMENT'),
-            fetchFromDatabase('PERMISSIONS')
+            fetchFromDatabase('PERMISSIONS'),
+            fetchFromDatabase('WEBHOOKS')
         ]);
 
         if (results[0].status === 'fulfilled' && results[0].value) setDepts(results[0].value);
@@ -135,6 +154,7 @@ const App: React.FC = () => {
         if (results[4].status === 'fulfilled' && results[4].value) setTermsContent(results[4].value);
         if (results[5].status === 'fulfilled' && results[5].value) setRecruitmentConfig(results[5].value);
         if (results[6].status === 'fulfilled' && results[6].value) setPermissionConfig(results[6].value);
+        if (results[7].status === 'fulfilled' && results[7].value) setWebhooks(results[7].value);
     }
 
     setLastSyncTime(new Date().toLocaleTimeString('id-ID'));
@@ -174,6 +194,12 @@ const App: React.FC = () => {
       return;
     }
 
+    if (sectionId === 'loker') {
+      setCurrentView('loker');
+      window.scrollTo(0, 0);
+      return;
+    }
+
     if (sectionId === 'news_archive') {
       setCurrentView('news_archive');
       window.scrollTo(0, 0);
@@ -182,6 +208,12 @@ const App: React.FC = () => {
 
     if (sectionId === 'attendance') {
       setCurrentView('attendance');
+      return;
+    }
+
+    if (sectionId === 'donation') {
+      setCurrentView('donation');
+      window.scrollTo(0, 0);
       return;
     }
 
@@ -204,8 +236,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = async (pin: string) => {
-    const result = await loginWithSpreadsheet(pin);
+  const handleLogin = async (username: string, password: string) => {
+    const result = await loginWithSpreadsheet(username, password);
     if (result) {
       setAuth(result);
       return true;
@@ -217,8 +249,13 @@ const App: React.FC = () => {
     setAuth({ isAdmin: false, staffName: null, role: 'NONE' });
   };
 
+  const handleSignup = async (pin: string, icName: string, requestedRole: string, requestedDepartment: string) => {
+    return await signupUser(pin, icName, requestedRole, requestedDepartment);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div className="min-h-screen text-slate-200 relative">
+      <ParticlesBackground />
       {/* Jika di halaman Absensi, tampilkan overlay full screen, sembunyikan navigasi utama */}
       {currentView === 'attendance' ? (
         <AttendancePage onBack={() => handleNavClick('home')} auth={auth} />
@@ -254,7 +291,7 @@ const App: React.FC = () => {
                   </div>
                 </section>
 
-                <CitizenIdentityForm forms={forms} />
+                <CitizenIdentityForm forms={forms} webhooks={webhooks} />
 
                 <PublicInfo 
                   newsData={news} 
@@ -270,7 +307,7 @@ const App: React.FC = () => {
 
             {/* VIEW: STRUCTURAL PAGE */}
             {currentView === 'structural' && (
-              <div className="min-h-screen pt-24 bg-slate-950">
+              <div className="min-h-screen pt-24 bg-transparent">
                 <StructuralChart 
                     depts={depts} 
                     leadershipData={leadership} 
@@ -280,8 +317,25 @@ const App: React.FC = () => {
 
             {/* VIEW: PAWNSHOP PAGE */}
             {currentView === 'pawnshop' && (
-              <div className="min-h-screen pt-24 bg-slate-950">
-                  <PawnshopMarket />
+              <div className="min-h-screen pt-24 bg-transparent">
+                  <PawnshopMarket items={pawnItems} />
+              </div>
+            )}
+
+            {/* VIEW: PUBLIC INVENTORY PAGE */}
+            {currentView === 'loker' && (
+              <div className="min-h-screen pt-24 bg-transparent">
+                {auth.isLoggedIn ? (
+                  <PublicInventory />
+                ) : (
+                  <div className="flex items-center justify-center h-[60vh]">
+                    <div className="bg-slate-900/80 backdrop-blur-md p-8 rounded-2xl border border-rose-500/30 text-center max-w-md mx-4">
+                      <div className="text-4xl mb-4">🔒</div>
+                      <h2 className="text-2xl font-bold text-rose-500 mb-2">Akses Ditolak</h2>
+                      <p className="text-slate-300 text-sm">Anda harus login terlebih dahulu untuk melihat informasi Loker Umum & Hitam.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -293,14 +347,21 @@ const App: React.FC = () => {
               />
             )}
 
+            {/* VIEW: DONATION PAGE */}
+            {currentView === 'donation' && (
+              <DonationPage />
+            )}
+
           </main>
 
           <Footer 
             onLogin={handleLogin} 
             onLogout={handleLogout} 
+            onSignup={handleSignup}
             auth={auth} 
             onPrivacyClick={() => setIsPrivacyOpen(true)}
             onTermsClick={() => setIsTermsOpen(true)}
+            onDonationClick={() => handleNavClick('donation')}
             lastSyncTime={lastSyncTime}
             onManualRefresh={handleManualRefresh}
             isSyncing={isSyncing}
@@ -309,26 +370,30 @@ const App: React.FC = () => {
           {/* Administration Dashboard for authenticated staff */}
           {/* SEMUA CONFIG DI-PASS KE SINI AGAR SAAT ADMIN UPDATE, DATABASE TERUPDATE */}
           {auth.isAdmin && (
-            <NewsAdmin 
-              news={news}
-              setNews={setNews}
-              userRole={auth.role}
-              staffName={auth.staffName}
-              depts={depts}
-              setDepts={setDepts}
-              leadership={leadership}
-              setLeadership={setLeadership}
-              docs={docs}
-              setDocs={setDocs}
-              termsContent={termsContent}
-              setTermsContent={setTermsContent}
-              forms={forms}
-              setForms={setForms}
-              recruitmentConfig={recruitmentConfig} 
-              permissionConfig={permissionConfig}   
-              carouselSlides={carouselSlides} // PASS TO ADMIN
-              setCarouselSlides={setCarouselSlides} // PASS TO ADMIN
-            />
+              <NewsAdmin 
+                news={news}
+                setNews={setNews}
+                userRole={auth.role}
+                staffName={auth.staffName}
+                depts={depts}
+                setDepts={setDepts}
+                leadership={leadership}
+                setLeadership={setLeadership}
+                docs={docs}
+                setDocs={setDocs}
+                termsContent={termsContent}
+                setTermsContent={setTermsContent}
+                forms={forms}
+                setForms={setForms}
+                recruitmentConfig={recruitmentConfig} 
+                permissionConfig={permissionConfig}   
+                carouselSlides={carouselSlides} // PASS TO ADMIN
+                setCarouselSlides={setCarouselSlides} // PASS TO ADMIN
+                pawnItems={pawnItems}
+                setPawnItems={setPawnItems}
+                webhooks={webhooks}
+                setWebhooks={setWebhooks}
+              />
           )}
 
           {/* Modals and Overlays */}
@@ -354,7 +419,7 @@ const App: React.FC = () => {
             content={termsContent}
           />
 
-          <FeedbackFloating auth={auth} />
+          <FeedbackFloating auth={auth} webhooks={webhooks} />
         </>
       )}
     </div>

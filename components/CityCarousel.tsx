@@ -50,7 +50,7 @@ const CityCarousel: React.FC<CityCarouselProps> = ({ slides }) => {
   // Jika slide kosong atau undefined, tampilkan placeholder agar web TIDAK BLACK SCREEN
   if (!slides || slides.length === 0) {
     return (
-        <section className="relative w-full h-[500px] md:h-[700px] overflow-hidden bg-slate-950 flex items-center justify-center">
+        <section className="relative w-full h-[500px] md:h-[700px] overflow-hidden bg-transparent flex items-center justify-center">
             <div className="absolute inset-0 bg-slate-900">
                 <img 
                     src="https://blogger.googleusercontent.com/img/a/AVvXsEjaXIjnkB3jrrHYq0gTWWZwzEBlvj3q4tR9RWxppWhLLbDh6UcoH1tUPsyJcRKstJtuddulcnjJ8ZXhp4QvVuA9aXYFlcq522L9P2KWJ_j9VpkQFAZzaLx7IqDpaCmtKAryBFW_CS73run7Ah9GLZKqcFbrnKqdiyRZX1M5t9zClMbMt-iuNzJCQHJxXd3I" 
@@ -76,7 +76,7 @@ const CityCarousel: React.FC<CityCarouselProps> = ({ slides }) => {
   if (!currentItem) return null;
 
   return (
-    <section className="relative w-full h-[500px] md:h-[700px] overflow-hidden bg-slate-950 group">
+    <section className="relative w-full h-[500px] md:h-[700px] overflow-hidden bg-transparent group">
       <AnimatePresence initial={false}>
         <motion.div
           key={currentItem.id || safeIndex}

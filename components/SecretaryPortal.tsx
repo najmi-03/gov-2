@@ -6,11 +6,11 @@ import { AdminRole } from '../types';
 interface SecretaryPortalProps {
   staffName: string;
   role: AdminRole;
+  webhooks: Record<string, string>;
 }
 
-const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role }) => {
+const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role, webhooks }) => {
   const [activeTab, setActiveTab] = useState<'AGENDA' | 'EVALUASI' | 'CATATAN'>('AGENDA');
-  const [webhookUrl, setWebhookUrl] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   // Form States
@@ -18,19 +18,10 @@ const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role }) =>
   const [evalData, setEvalData] = useState({ dept: '', topic: '', result: '', improvement: '' });
   const [note, setNote] = useState({ subject: '', content: '' });
 
-  useEffect(() => {
-    const savedWebhook = localStorage.getItem('ls_gov_sec_webhook');
-    if (savedWebhook) setWebhookUrl(savedWebhook);
-  }, []);
-
-  const handleConfigSave = (url: string) => {
-    setWebhookUrl(url);
-    localStorage.setItem('ls_gov_sec_webhook', url);
-  };
-
   const handleAgendaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!webhookUrl) return alert("Webhook belum diatur oleh Secretary of State!");
+    const webhookUrl = webhooks['ls_gov_sec_webhook'];
+    if (!webhookUrl) return alert("Webhook belum diatur di Database (Menu Webhooks)!");
     setIsSending(true);
 
     const embed = {
@@ -60,6 +51,7 @@ const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role }) =>
 
   const handleEvalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const webhookUrl = webhooks['ls_gov_sec_webhook'];
     if (!webhookUrl) return alert("Webhook belum diatur!");
     setIsSending(true);
 
@@ -89,6 +81,7 @@ const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role }) =>
 
   const handleNoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const webhookUrl = webhooks['ls_gov_sec_webhook'];
     if (!webhookUrl) return alert("Webhook belum diatur!");
     setIsSending(true);
 
@@ -127,18 +120,6 @@ const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role }) =>
             Selamat datang, <b>{staffName}</b>. Kelola administrasi negara di sini.
             </p>
         </div>
-        {isSecState && (
-            <div className="bg-slate-900 p-3 rounded-xl border border-amber-500/20 w-full md:w-auto">
-                <label className="text-[8px] font-bold text-amber-500 uppercase tracking-widest block mb-1">Konfigurasi Webhook (Secretary of State)</label>
-                <input 
-                    type="text" 
-                    value={webhookUrl}
-                    onChange={(e) => handleConfigSave(e.target.value)}
-                    placeholder="https://discord.com/api/webhooks/..."
-                    className="w-full bg-slate-950 border border-white/10 rounded px-2 py-1 text-[10px] text-white outline-none focus:border-amber-500/50"
-                />
-            </div>
-        )}
       </div>
 
       {/* Tabs */}

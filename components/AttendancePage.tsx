@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { Calendar, RefreshCw, Clock, Users, Database } from 'lucide-react';
 import { ATTENDANCE_SCRIPT_URL } from '../constants';
 import { AuthState, AttendanceLog } from '../types'; 
-import { fetchFromDatabase } from '../services/databaseService'; 
+import { fetchFromDatabase, saveToDatabase } from '../services/databaseService'; 
 
 interface AttendancePageProps {
   onBack: () => void;
@@ -12,6 +13,8 @@ interface AttendancePageProps {
 interface StaffSummary {
   name: string;
   role: string;
+  dept: string;
+  nip?: string;
   totalHours: number;
   daysPresent: number;
   lastSeen: string;
@@ -35,6 +38,7 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
 
   // Data Logs State
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
 
   // === NEW: MONTHLY SELECTOR STATES ===
@@ -52,7 +56,9 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
   const canAccessAdmin = auth.role === 'SUPER_ADMIN' || auth.role === 'HR_ADMIN';
   const isLoggedIn = !!auth.staffName; 
 
+  // Sync data on initialization AND Setup Interval Polling
   useEffect(() => {
+    handleFetchLogs();
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -122,25 +128,29 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
     const chronoLogs = [...filteredLogs].reverse(); 
 
     chronoLogs.forEach(log => {
-      const name = log.staffName;
+      const name = log.staffName.trim();
       if (!grouped[name]) grouped[name] = [];
       grouped[name].push(log);
     });
 
-    const summaries: StaffSummary[] = Object.keys(grouped).map(name => {
-      const userLogs = grouped[name];
+    // Combine names from Database and Logs to ensure sync
+    const allNames = new Set([
+      ...allUsers.map(u => u.ic_name.trim()),
+      ...Object.keys(grouped)
+    ]);
+
+    const summaries: StaffSummary[] = Array.from(allNames).map(name => {
+      const userInDb = allUsers.find(u => u.ic_name.trim() === name);
+      const userLogs = grouped[name] || [];
       const recentLogs = userLogs; 
 
-      // 2. Calculate Days Present
+      // 2. Calculate Days Present (Hitung hari unik di mana ada aktivitas apa pun)
       const uniqueDays = new Set<string>();
       recentLogs.forEach(l => {
-        const act = l.action.toUpperCase();
-        if (act.includes('MASUK') || act.includes('IN')) {
-          const d = new Date(l.timestamp);
-          if (!isNaN(d.getTime())) {
-             const dayStr = d.toLocaleDateString('id-ID');
-             uniqueDays.add(dayStr);
-          }
+        const d = new Date(l.timestamp);
+        if (!isNaN(d.getTime())) {
+           const dayStr = d.toLocaleDateString('id-ID');
+           uniqueDays.add(dayStr);
         }
       });
 
@@ -172,123 +182,67 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
       
       return {
         name: name,
-        role: lastLog?.role || '-',
+        role: userInDb?.role || lastLog?.role || '-',
+        dept: userInDb?.department_id || 'Umum',
+        nip: userInDb?.nip,
         totalHours: totalMs / (1000 * 60 * 60),
         daysPresent: uniqueDays.size,
         lastSeen: lastLog?.timestamp || '',
-        status: lastLog?.action || ''
+        status: lastLog?.action || 'OFFLINE'
       };
     });
 
-    return summaries.sort((a, b) => b.totalHours - a.totalHours);
-  }, [logs, filterStartDate, filterEndDate]);
+    return summaries
+      .filter(s => {
+        const r = s.role.toUpperCase().trim();
+        const name = s.name.toLowerCase();
+        
+        // Pengecualian Khusus: Selalu tampilkan "Minja" jika ada datanya
+        if (name.includes('minja')) return true;
+
+        // Hanya kecualikan role admin utama, biarkan role staff lainnya masuk
+        const adminRoles = ['SUPER_ADMIN', 'HR_ADMIN', 'NEWS_ADMIN', 'PAWN_ADMIN', 'TREASURY_ADMIN', 'DHA_ADMIN', 'SECRETARY_ADMIN', 'SECRETARY_OF_STATE'];
+        return !adminRoles.includes(r);
+      })
+      .sort((a, b) => b.totalHours - a.totalHours);
+  }, [logs, allUsers, filterStartDate, filterEndDate]);
 
   const showAlert = (message: string, type: 'success' | 'error') => {
     setAlertData({ message, type });
     setTimeout(() => setAlertData(null), 5000);
   };
 
-  const sendRequest = async (action: string, payload: any) => {
-    if (!ATTENDANCE_SCRIPT_URL) {
-      showAlert("System Error: URL Database Absensi belum dikonfigurasi.", 'error');
-      return null;
-    }
-
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append('action', action);
-      Object.keys(payload).forEach(key => {
-        params.append(key, payload[key]);
-      });
-
-      await fetch(ATTENDANCE_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
-      });
-
-      setIsLoading(false);
-      return { success: true, message: "DATA TERKIRIM KE SERVER" };
-    } catch (error) {
-      console.error("Fetch Error:", error);
-      setIsLoading(false);
-      showAlert("Gagal terhubung ke server.", 'error');
-      return null;
-    }
-  };
-
-  const handleInitDatabase = async () => {
-    const targetName = `${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
-    if (!confirm(`⚠️ Buat Database Baru untuk periode: ${targetName}?\n\nLakukan ini jika data bulan tersebut belum ada / belum bisa dibaca.`)) return;
-
-    setIsLoading(true);
-    try {
-        const params = new URLSearchParams();
-        params.append('action', 'initSheet');
-        params.append('monthIndex', selectedMonth.toString());
-        params.append('year', selectedYear.toString());
-
-        await fetch(ATTENDANCE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params.toString()
-        });
-
-        setTimeout(() => {
-            setIsLoading(false);
-            showAlert(`Database ${targetName} berhasil dibuat/diperbarui!`, 'success');
-            handleFetchLogs(); 
-        }, 1500);
-
-    } catch (error) {
-        setIsLoading(false);
-        showAlert("Gagal inisialisasi database.", 'error');
-    }
-  };
+  // Remove sendRequest and handleInitDatabase
 
   const handleFetchLogs = async () => {
     setIsFetchingLogs(true);
     try {
-      const targetSheetName = `Absensi_${MONTH_NAMES[selectedMonth]}_${selectedYear}`;
-      console.log(`Fetching Attendance from Sheet: ${targetSheetName}`);
-
-      const rawData = await fetchFromDatabase('ATTENDANCE', targetSheetName);
+      // Fetch Logs
+      const rawData = await fetchFromDatabase('ATTENDANCE');
       
       if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
         setLogs([]);
-        if (rawData && rawData.length === 0) {
-            showAlert("Data log kosong.", 'error');
-        }
       } else {
         const formattedLogs: AttendanceLog[] = rawData.map((row: any) => {
-            // Normalize keys to support various script versions
-            const keys = Object.keys(row).reduce((acc, k) => {
-                acc[k.toLowerCase().replace(/[^a-z0-9]/g, "")] = row[k];
-                return acc;
-            }, {} as any);
-
-            const name = keys['namapegawai'] || keys['nama'] || keys['name'] || keys['0'] || 'Unknown';
-            const role = keys['jabatan'] || keys['role'] || keys['posisi'] || keys['1'] || '-';
-            // CRITICAL FIX: Add 'clockstatus' key mapping
-            const status = keys['clockstatus'] || keys['statusabsensi'] || keys['status'] || keys['action'] || keys['2'] || 'INFO';
-            const rawTime = keys['timestamp'] || keys['waktu'] || keys['date'] || keys['3'] || new Date().toISOString();
-
             return {
-                staffName: name,
-                role: role,
-                action: status,
-                timestamp: rawTime
+                staffName: row.staff_name || row.staffName || 'Unknown',
+                role: row.role || '-',
+                action: row.action || row.status || 'INFO',
+                timestamp: row.timestamp || new Date().toISOString()
             };
-        }).reverse(); 
+        }); 
 
         setLogs(formattedLogs);
-        if(formattedLogs.length > 0) {
-            showAlert(`Data ${MONTH_NAMES[selectedMonth]} dimuat (${formattedLogs.length} baris).`, 'success');
-        }
       }
+
+      // Fetch All Users to sync KPI
+      const usersRes = await fetch('/api/users');
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setAllUsers(usersData);
+      }
+
+      showAlert("Data berhasil diperbarui.", 'success');
     } catch (error) {
       console.error(error);
       showAlert("Gagal menarik data log.", "error");
@@ -304,37 +258,52 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
     if (!finalId) return showAlert("IDENTITAS TIDAK TERDETEKSI!", 'error');
     
     const payload = { 
-        staffName: finalName, 
-        id: finalId, 
+        staff_name: finalName, 
         role: finalRole,
-        status: status, 
-        device: navigator.userAgent.includes('Mobile') ? 'HP/Mobile' : 'PC/Desktop',
-        clientTime: new Date().toLocaleString('id-ID')
+        action: status, 
+        notes: `Device: ${navigator.userAgent.includes('Mobile') ? 'HP/Mobile' : 'PC/Desktop'}`
     };
     
-    const res = await sendRequest('prosesAbsensi', payload);
-    if (res) {
+    setIsLoading(true);
+    const success = await saveToDatabase('ATTENDANCE', payload);
+    setIsLoading(false);
+
+    if (success) {
         showAlert(`Berhasil: ${status} - ${finalName}`, 'success');
         if (!isLoggedIn) setManualId(''); 
+        handleFetchLogs(); // Refresh logs after attendance
+    } else {
+        showAlert("Gagal menyimpan absensi.", 'error');
     }
   };
 
   const handleRegister = async () => {
     if (!adminId.trim() || !adminName.trim()) return showAlert("LENGKAPI DATA PEGAWAI!", 'error');
     const payload = { 
-        id: adminId, 
-        staffName: adminName,
-        role: 'PEGAWAI BARU',
-        status: 'REGISTRASI MANUAL',
-        device: 'Admin Panel'
+        username: adminId, 
+        ic_name: adminName,
+        role: 'STAFF',
+        password: 'password123'
     };
-    const res = await sendRequest('tambahPegawai', payload);
-    if (res) {
-        showAlert("Pegawai Manual Terdaftar", 'success');
-        if (res.success) {
+    
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        setIsLoading(false);
+        if (response.ok) {
+            showAlert("Pegawai Berhasil Didaftarkan ke Database", 'success');
             setAdminId('');
             setAdminName('');
+        } else {
+            showAlert("Gagal mendaftarkan pegawai.", 'error');
         }
+    } catch (error) {
+        setIsLoading(false);
+        showAlert("Gagal terhubung ke server.", 'error');
     }
   };
 
@@ -354,15 +323,17 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
         <div className="flex gap-6 text-[11px] font-bold uppercase tracking-widest text-gray-400">
             <button 
                 onClick={() => setActiveTab('user')} 
-                className={`hover:text-white py-2 transition border-b-2 ${activeTab === 'user' ? 'text-orange-500 border-orange-500' : 'border-transparent'}`}
+                className={`hover:text-white py-2 transition border-b-2 flex items-center gap-2 ${activeTab === 'user' ? 'text-orange-500 border-orange-500' : 'border-transparent'}`}
             >
+                <Clock className="w-3 h-3" />
                 Absensi
             </button>
             {canAccessAdmin && (
               <button 
                   onClick={() => setActiveTab('admin')} 
-                  className={`hover:text-white py-2 transition border-b-2 ${activeTab === 'admin' ? 'text-orange-500 border-orange-500' : 'border-transparent'}`}
+                  className={`hover:text-white py-2 transition border-b-2 flex items-center gap-2 ${activeTab === 'admin' ? 'text-orange-500 border-orange-500' : 'border-transparent'}`}
               >
+                  <Users className="w-3 h-3" />
                   Panel HRD
               </button>
             )}
@@ -384,14 +355,15 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                     <p className="text-gray-400 text-lg border-l-4 border-orange-500 pl-4 italic">
                         Sistem Pencatatan Kehadiran Aparatur Sipil Negara.
                     </p>
-                    <div className="flex gap-4">
-                        <div className="bg-white/5 border border-white/10 p-4 rounded-2xl w-32 text-center">
-                            <p className="text-[10px] text-gray-500 uppercase mb-1">Status DB</p>
-                            <p className={`font-bold text-xs uppercase ${ATTENDANCE_SCRIPT_URL ? 'text-green-500' : 'text-red-500'}`}>
-                                {ATTENDANCE_SCRIPT_URL ? 'Connected' : 'No Config'}
-                            </p>
-                        </div>
-                    </div>
+                            <div className="flex gap-4">
+                                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl w-32 text-center flex flex-col items-center gap-1">
+                                    <Database className="w-4 h-4 text-orange-500" />
+                                    <p className="text-[10px] text-gray-500 uppercase">Status DB</p>
+                                    <p className={`font-bold text-[9px] uppercase text-green-500`}>
+                                        Turso Cloud
+                                    </p>
+                                </div>
+                            </div>
                 </div>
             )}
 
@@ -447,8 +419,14 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                             )}
 
                             <div className="grid grid-cols-2 gap-4 pt-2">
-                                <button onClick={() => handleAbsen('MASUK')} className="bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-orange-500/20 active:scale-95 transition-all">CLOCK IN</button>
-                                <button onClick={() => handleAbsen('PULANG')} className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95">CLOCK OUT</button>
+                                <button onClick={() => handleAbsen('MASUK')} className="bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                                    <Clock className="w-4 h-4" />
+                                    CLOCK IN
+                                </button>
+                                <button onClick={() => handleAbsen('PULANG')} className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                    <Clock className="w-4 h-4" />
+                                    CLOCK OUT
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -458,8 +436,14 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                     <div className={`space-y-6 animate-fade-in-up ${adminViewMode === 'LOGS' ? 'h-full flex flex-col' : ''}`}>
                         
                         <div className={`flex items-center justify-center gap-2 ${adminViewMode === 'LOGS' ? 'p-6 pb-0' : ''}`}>
-                            <button onClick={() => setAdminViewMode('LOGS')} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${adminViewMode === 'LOGS' ? 'bg-orange-500 text-slate-950' : 'bg-white/5 text-slate-400 hover:text-white'}`}>📜 Data Log</button>
-                            <button onClick={() => setAdminViewMode('MANUAL')} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${adminViewMode === 'MANUAL' ? 'bg-orange-500 text-slate-950' : 'bg-white/5 text-slate-400 hover:text-white'}`}>✍️ Input Manual</button>
+                            <button onClick={() => setAdminViewMode('LOGS')} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${adminViewMode === 'LOGS' ? 'bg-orange-500 text-slate-950' : 'bg-white/5 text-slate-400 hover:text-white'}`}>
+                                <Database className="w-3 h-3" />
+                                Data Log
+                            </button>
+                            <button onClick={() => setAdminViewMode('MANUAL')} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${adminViewMode === 'MANUAL' ? 'bg-orange-500 text-slate-950' : 'bg-white/5 text-slate-400 hover:text-white'}`}>
+                                <Clock className="w-3 h-3" />
+                                Input Manual
+                            </button>
                         </div>
 
                         {adminViewMode === 'LOGS' && (
@@ -494,26 +478,28 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                                                 
                                                 {/* FILTER TANGGAL (MINGGUAN) */}
                                                 <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                                                    <div className="flex gap-2 items-center">
+                                                    <div className="flex gap-2 items-center bg-slate-950 border border-white/10 rounded-lg px-2 py-1">
+                                                        <Calendar className="w-3 h-3 text-orange-500" />
                                                         <input 
                                                             type="date" 
                                                             value={filterStartDate}
                                                             onChange={(e) => setFilterStartDate(e.target.value)}
-                                                            className="bg-slate-950 border border-white/10 text-white text-[10px] font-bold uppercase px-2 py-1 rounded outline-none focus:border-blue-500"
+                                                            className="bg-transparent text-white text-[10px] font-bold uppercase outline-none focus:text-orange-500 transition-colors"
                                                         />
                                                         <span className="text-slate-500 text-[10px]">-</span>
                                                         <input 
                                                             type="date" 
                                                             value={filterEndDate}
                                                             onChange={(e) => setFilterEndDate(e.target.value)}
-                                                            className="bg-slate-950 border border-white/10 text-white text-[10px] font-bold uppercase px-2 py-1 rounded outline-none focus:border-blue-500"
+                                                            className="bg-transparent text-white text-[10px] font-bold uppercase outline-none focus:text-orange-500 transition-colors"
                                                         />
                                                     </div>
                                                     <button 
                                                         onClick={handleSetThisWeek}
-                                                        className="bg-white/5 hover:bg-white/10 text-amber-500 px-3 py-1 rounded text-[9px] font-bold uppercase tracking-widest border border-amber-500/20 transition-all"
+                                                        className="bg-white/5 hover:bg-white/10 text-amber-500 px-3 py-1 rounded text-[9px] font-bold uppercase tracking-widest border border-amber-500/20 transition-all flex items-center gap-1"
                                                     >
-                                                        📅 Minggu Ini
+                                                        <Calendar className="w-3 h-3" />
+                                                        Minggu Ini
                                                     </button>
                                                 </div>
                                             </div>
@@ -521,20 +507,12 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                                         
                                         <div className="flex gap-2">
                                             <button 
-                                                onClick={handleInitDatabase}
-                                                disabled={isFetchingLogs || isLoading}
-                                                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-white/10 transition-all flex items-center gap-2 h-fit"
-                                                title="Klik jika data tidak muncul / Sheet belum ada"
-                                            >
-                                                📁 Init DB
-                                            </button>
-
-                                            <button 
                                                 onClick={handleFetchLogs}
                                                 disabled={isFetchingLogs}
                                                 className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-white/10 transition-all flex items-center gap-2 h-fit"
                                             >
-                                                {isFetchingLogs ? 'Memuat...' : '🔄 Refresh'}
+                                                <RefreshCw className={`w-3 h-3 ${isFetchingLogs ? 'animate-spin' : ''}`} />
+                                                {isFetchingLogs ? 'Memuat...' : 'Refresh'}
                                             </button>
                                         </div>
                                     </div>
@@ -594,10 +572,7 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                                                     ) : (
                                                         <tr>
                                                             <td colSpan={4} className="px-6 py-12 text-center text-slate-500 italic">
-                                                                <p className="mb-2">Data log tidak ditemukan / sheet belum dibuat.</p>
-                                                                <p className="text-[9px] text-amber-500 font-bold">
-                                                                    Klik tombol "📁 Init DB" di atas untuk inisialisasi sheet bulan ini.
-                                                                </p>
+                                                                <p className="mb-2">Data log tidak ditemukan.</p>
                                                             </td>
                                                         </tr>
                                                     )}
@@ -610,6 +585,7 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                                             <table className="w-full text-left text-[11px]">
                                                 <thead className="bg-white/5 text-slate-400 font-bold uppercase tracking-widest sticky top-0 backdrop-blur-md z-10">
                                                     <tr>
+                                                        <th className="px-4 py-3">NIP</th>
                                                         <th className="px-4 py-3">Nama Pegawai</th>
                                                         <th className="px-4 py-3">Kehadiran (Hari)</th>
                                                         <th className="px-4 py-3">Total Jam</th>
@@ -620,6 +596,9 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                                                     {weeklyStats.length > 0 ? (
                                                         weeklyStats.map((stat, i) => (
                                                             <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                                                                <td className="px-4 py-3">
+                                                                    <div className="font-mono text-amber-500/80">{stat.nip || '-'}</div>
+                                                                </td>
                                                                 <td className="px-4 py-3">
                                                                     <div className="font-bold text-white">{stat.name}</div>
                                                                     <div className="text-[9px] text-slate-500 uppercase">{stat.role}</div>
@@ -643,7 +622,7 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={4} className="px-6 py-12 text-center text-slate-500 italic">
+                                                            <td colSpan={5} className="px-6 py-12 text-center text-slate-500 italic">
                                                                 Belum ada data statistik untuk periode tanggal ini.
                                                             </td>
                                                         </tr>
@@ -672,7 +651,10 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                                         <label className="block text-[10px] font-bold text-gray-500 uppercase ml-1 text-left">Nama Lengkap *</label>
                                         <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} className="w-full bg-slate-800/50 border border-white/10 text-white py-4 px-6 rounded-2xl text-sm outline-none focus:border-orange-500 transition-colors placeholder:text-slate-600" placeholder="Nama sesuai KTP..." />
                                     </div>
-                                    <button onClick={handleRegister} className="w-full bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] mt-2 shadow-lg shadow-orange-500/20 active:scale-95 transition-all">Simpan Database</button>
+                                    <button onClick={handleRegister} className="w-full bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] mt-2 shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                                        <Database className="w-4 h-4" />
+                                        Simpan Database
+                                    </button>
                                 </div>
                             </div>
                         )}

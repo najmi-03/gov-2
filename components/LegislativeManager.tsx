@@ -8,6 +8,8 @@ interface LegislativeManagerProps {
 }
 
 const LegislativeManager: React.FC<LegislativeManagerProps> = ({ docs, setDocs }) => {
+  const [docIdToDelete, setDocIdToDelete] = React.useState<string | null>(null);
+
   const updateDoc = (id: string, field: keyof LegislativeDocument, value: string) => {
     const updated = docs.map(doc => doc.id === id ? { ...doc, [field]: value } : doc);
     setDocs(updated);
@@ -25,9 +27,8 @@ const LegislativeManager: React.FC<LegislativeManagerProps> = ({ docs, setDocs }
   };
 
   const deleteDoc = (id: string) => {
-    if (confirm("Hapus dokumen ini dari daftar?")) {
-      setDocs(docs.filter(d => d.id !== id));
-    }
+    setDocs(docs.filter(d => d.id !== id));
+    setDocIdToDelete(null);
   };
 
   return (
@@ -61,9 +62,16 @@ const LegislativeManager: React.FC<LegislativeManagerProps> = ({ docs, setDocs }
                      {doc.icon.startsWith('http') ? <img src={doc.icon} alt="icon" className="w-5 h-5 object-contain" /> : doc.icon}
                    </div>
                </div>
-               <button onClick={() => deleteDoc(doc.id)} className="text-[9px] font-bold text-red-500 hover:text-white bg-red-500/10 px-3 py-1.5 rounded uppercase transition-colors">
-                   Hapus
-               </button>
+               {docIdToDelete === doc.id ? (
+                   <div className="flex gap-2">
+                       <button onClick={() => setDocIdToDelete(null)} className="text-[9px] font-bold text-slate-500 uppercase">Batal</button>
+                       <button onClick={() => deleteDoc(doc.id)} className="text-[9px] font-bold text-red-500 uppercase animate-pulse">Yakin Hapus?</button>
+                   </div>
+               ) : (
+                   <button onClick={() => setDocIdToDelete(doc.id)} className="text-[9px] font-bold text-red-500 hover:text-white bg-red-500/10 px-3 py-1.5 rounded uppercase transition-colors">
+                       Hapus
+                   </button>
+               )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

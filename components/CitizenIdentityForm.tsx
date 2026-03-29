@@ -50,7 +50,8 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webh
     if (!selectedForm) return;
 
     // AMBIL WEBHOOK SPESIFIK BERDASARKAN KUNCI FORM YANG DIPILIH
-    const webhookUrl = webhooks[selectedForm.webhookKey];
+    const mappedKey = webhooks[`map_form_${selectedForm.id}`] || selectedForm.webhookKey;
+    const webhookUrl = webhooks[mappedKey] || webhooks[selectedForm.webhookKey];
     if (!webhookUrl) {
       alert(`Layanan ${selectedForm.title} sedang tidak aktif (Webhook belum diatur di Database).`);
       return;

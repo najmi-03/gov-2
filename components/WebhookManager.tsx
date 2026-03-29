@@ -3,10 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { fetchWebhooks, saveWebhooks } from '../services/webhookService';
 import { motion } from 'framer-motion';
 
-const WebhookManager: React.FC = () => {
-  const [webhooks, setWebhooks] = useState<Record<string, string>>({});
+interface WebhookManagerProps {
+  webhooks: Record<string, string>;
+  setWebhooks: (webhooks: Record<string, string>) => void;
+}
+
+const WebhookManager: React.FC<WebhookManagerProps> = ({ webhooks, setWebhooks }) => {
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [webhookKeyToDelete, setWebhookKeyToDelete] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
@@ -43,7 +47,9 @@ const WebhookManager: React.FC = () => {
   };
 
   useEffect(() => {
-    loadWebhooks();
+    if (Object.keys(webhooks).length === 0) {
+      loadWebhooks();
+    }
   }, []);
 
   const handleSave = async () => {
@@ -85,16 +91,35 @@ const WebhookManager: React.FC = () => {
   }
 
   // Group webhooks for better UI
+  const availableKeys = Object.keys(webhooks).filter(k => !k.startsWith('map_'));
+  
   const groups = {
-    'Layanan Warga (Form)': Object.keys(webhooks).filter(k => k.startsWith('ls_gov_webhook_')),
-    'Internal Staff & Gaji': Object.keys(webhooks).filter(k => k.includes('sec') || k.includes('salary') || k.includes('discord') || k.includes('feedback')),
-    'Pawnshop & Locker': Object.keys(webhooks).filter(k => k.includes('pawn') || k.includes('locker')),
-    'Lainnya': Object.keys(webhooks).filter(k => 
+    'Layanan Warga (Form)': availableKeys.filter(k => k.startsWith('ls_gov_webhook_')),
+    'Internal Staff & Gaji': availableKeys.filter(k => k.includes('sec') || k.includes('salary') || k.includes('discord') || k.includes('feedback')),
+    'Pawnshop & Locker': availableKeys.filter(k => k.includes('pawn') || k.includes('locker')),
+    'Lainnya': availableKeys.filter(k => 
       !k.startsWith('ls_gov_webhook_') && 
       !k.includes('sec') && !k.includes('salary') && !k.includes('discord') && !k.includes('feedback') &&
       !k.includes('pawn') && !k.includes('locker')
     )
   };
+
+  const FEATURE_MAPPINGS = [
+    { id: 'map_pawnshop', label: 'Pawnshop Market Price', defaultKey: 'ls_gov_pawn_webhook' },
+    { id: 'map_locker', label: 'Loker & Inventory', defaultKey: 'ls_gov_locker_webhook' },
+    { id: 'map_salary', label: 'Slip Gaji & Keuangan', defaultKey: 'ls_gov_salary_webhook' },
+    { id: 'map_secretary', label: 'Secretary Portal', defaultKey: 'ls_gov_sec_webhook' },
+    { id: 'map_feedback_public', label: 'Feedback Warga (Public)', defaultKey: 'ls_gov_feedback_public' },
+    { id: 'map_feedback_staff', label: 'Feedback Pegawai (Staff)', defaultKey: 'ls_gov_feedback_staff' },
+  ];
+
+  // Dynamically add mappings for permissions if they exist in webhooks
+  const permissionKeys = Object.keys(webhooks).filter(k => k.startsWith('map_permission_'));
+  permissionKeys.forEach(k => {
+      if (!FEATURE_MAPPINGS.find(m => m.id === k)) {
+          FEATURE_MAPPINGS.push({ id: k, label: `Izin: ${k.replace('map_permission_', '')}`, defaultKey: '' });
+      }
+  });
 
   return (
     <div className="space-y-8">
@@ -104,7 +129,7 @@ const WebhookManager: React.FC = () => {
             <span>🔗</span> Centralized Webhook Management
           </h3>
           <p className="text-[10px] text-slate-500 leading-relaxed uppercase tracking-widest">
-            Manage all Discord Webhook URLs in one place. These settings overwrite local storage.
+            Manage all Discord Webhook URLs and Feature Mappings in one place.
           </p>
         </div>
         <div className="flex gap-2">
@@ -117,6 +142,28 @@ const WebhookManager: React.FC = () => {
           <button onClick={handleSave} disabled={isSaving} className="bg-amber-500 text-slate-950 px-6 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20">
             {isSaving ? 'Saving...' : '💾 Save to Database'}
           </button>
+        </div>
+      </div>
+
+      {/* FEATURE MAPPING SECTION */}
+      <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 space-y-4">
+        <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest border-b border-white/5 pb-2">Feature to Webhook Mapping</h4>
+        <p className="text-[10px] text-slate-400 mb-4">Pilih Key Webhook mana yang akan digunakan oleh masing-masing fitur di bawah ini.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {FEATURE_MAPPINGS.map(feature => (
+            <div key={feature.id} className="bg-slate-950 p-4 rounded-xl border border-white/5 space-y-2">
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{feature.label}</label>
+              <select 
+                value={webhooks[feature.id] || feature.defaultKey}
+                onChange={(e) => updateWebhook(feature.id, e.target.value)}
+                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white outline-none focus:border-amber-500/50"
+              >
+                {availableKeys.map(key => (
+                  <option key={key} value={key}>{key}</option>
+                ))}
+              </select>
+            </div>
+          ))}
         </div>
       </div>
 

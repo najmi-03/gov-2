@@ -150,10 +150,10 @@ const PermissionManager: React.FC<PermissionManagerProps> = ({ permissions, setP
                             <input 
                                 type="text" 
                                 readOnly
-                                value={webhooks[perm.webhookKey] || 'Belum dikonfigurasi di Database'}
+                                value={webhooks[`map_permission_${perm.id}`] ? webhooks[webhooks[`map_permission_${perm.id}`]] : (webhooks[perm.webhookKey] || 'Belum dikonfigurasi di Database')}
                                 className="flex-1 bg-slate-900/50 border border-white/5 rounded px-2 py-2 text-[10px] text-slate-400 outline-none"
                             />
-                            <span className="text-[8px] font-mono text-slate-600 uppercase">{perm.webhookKey}</span>
+                            <span className="text-[8px] font-mono text-slate-600 uppercase">{webhooks[`map_permission_${perm.id}`] || perm.webhookKey}</span>
                         </div>
                         <p className="text-[8px] text-slate-600 mt-1 uppercase tracking-tighter">Edit URL ini di tab "WEBHOOKS" menggunakan key di atas.</p>
                     </div>

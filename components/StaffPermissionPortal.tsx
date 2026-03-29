@@ -27,7 +27,8 @@ const StaffPermissionPortal: React.FC<StaffPermissionPortalProps> = ({ permissio
     e.preventDefault();
     if (!selectedPerm) return;
 
-    const webhookUrl = webhooks[selectedPerm.webhookKey];
+    const mappedKey = webhooks[`map_permission_${selectedPerm.id}`] || selectedPerm.webhookKey;
+    const webhookUrl = webhooks[mappedKey] || webhooks[selectedPerm.webhookKey];
     if (!webhookUrl) {
       alert("Sistem error: Webhook belum dikonfigurasi HR di Database.");
       return;

@@ -383,7 +383,8 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
   };
 
   const handleSendToDiscord = async (salary: SalaryRecord) => {
-    const webhookUrl = webhooks['ls_gov_salary_webhook'] || webhooks['ls_discord_webhook'];
+    const webhookKey = webhooks['map_salary'] || 'ls_gov_salary_webhook';
+    const webhookUrl = webhooks[webhookKey] || webhooks['ls_discord_webhook'];
     if (!webhookUrl) return alert("Webhook Discord belum dikonfigurasi di Database (Menu Webhooks)!");
     setIsSending(true);
     const success = await sendToDiscord(webhookUrl, formatSalarySlipEmbed(salary));

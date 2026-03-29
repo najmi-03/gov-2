@@ -701,7 +701,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                     {activeTab === 'permission_mgmt' && <PermissionManager permissions={localPermissions} setPermissions={savePermissions} webhooks={webhooks} />}
                     
                     {/* WEBHOOK MANAGER */}
-                    {activeTab === 'webhooks' && <WebhookManager />}
+                    {activeTab === 'webhooks' && <WebhookManager webhooks={webhooks} setWebhooks={setWebhooks} />}
 
                     {/* KPI MANAGER */}
                     {activeTab === 'kpi_mgmt' && <KPIManager leadership={leadership} depts={depts} />}

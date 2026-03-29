@@ -21,7 +21,9 @@ const FeedbackFloating: React.FC<FeedbackFloatingProps> = ({ auth, webhooks }) =
     e.preventDefault();
     
     // Tentukan Webhook berdasarkan status login
-    const webhookKey = isStaff ? 'ls_gov_feedback_staff' : 'ls_gov_feedback_public';
+    const defaultKey = isStaff ? 'ls_gov_feedback_staff' : 'ls_gov_feedback_public';
+    const mappedKey = isStaff ? webhooks['map_feedback_staff'] : webhooks['map_feedback_public'];
+    const webhookKey = mappedKey || defaultKey;
     const webhookUrl = webhooks[webhookKey];
 
     if (!webhookUrl) {

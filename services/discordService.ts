@@ -1,15 +1,20 @@
 
-export const sendToDiscord = async (webhookUrl: string, content: any) => {
+export const sendToDiscord = async (webhookUrl: string, content: any, threadName?: string) => {
   if (!webhookUrl) {
     console.warn("Discord Webhook URL tidak dikonfigurasi.");
     return;
   }
 
   try {
+    const payload = { ...content };
+    if (threadName) {
+      payload.thread_name = threadName;
+    }
+
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(content),
+      body: JSON.stringify(payload),
     });
     return response.ok;
   } catch (error) {
@@ -18,13 +23,28 @@ export const sendToDiscord = async (webhookUrl: string, content: any) => {
   }
 };
 
-export const sendFileToDiscord = async (webhookUrl: string, formData: FormData) => {
+export const sendFileToDiscord = async (webhookUrl: string, formData: FormData, threadName?: string) => {
   if (!webhookUrl) {
     console.warn("Discord Webhook URL tidak dikonfigurasi.");
     return;
   }
 
   try {
+    if (threadName) {
+      if (formData.has('payload_json')) {
+        try {
+          const payloadStr = formData.get('payload_json') as string;
+          const payload = JSON.parse(payloadStr);
+          payload.thread_name = threadName;
+          formData.set('payload_json', JSON.stringify(payload));
+        } catch (e) {
+          console.error("Failed to parse payload_json", e);
+        }
+      } else {
+        formData.append('payload_json', JSON.stringify({ thread_name: threadName }));
+      }
+    }
+
     const response = await fetch(webhookUrl, {
       method: 'POST',
       body: formData, // Browser otomatis mengatur Content-Type: multipart/form-data

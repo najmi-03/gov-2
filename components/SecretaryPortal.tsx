@@ -20,7 +20,8 @@ const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role, webh
 
   const handleAgendaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const webhookUrl = webhooks['ls_gov_sec_webhook'];
+    const webhookKey = webhooks['map_secretary'] || 'ls_gov_sec_webhook';
+    const webhookUrl = webhooks[webhookKey];
     if (!webhookUrl) return alert("Webhook belum diatur di Database (Menu Webhooks)!");
     setIsSending(true);
 
@@ -51,7 +52,8 @@ const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role, webh
 
   const handleEvalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const webhookUrl = webhooks['ls_gov_sec_webhook'];
+    const webhookKey = webhooks['map_secretary'] || 'ls_gov_sec_webhook';
+    const webhookUrl = webhooks[webhookKey];
     if (!webhookUrl) return alert("Webhook belum diatur!");
     setIsSending(true);
 
@@ -81,7 +83,8 @@ const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role, webh
 
   const handleNoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const webhookUrl = webhooks['ls_gov_sec_webhook'];
+    const webhookKey = webhooks['map_secretary'] || 'ls_gov_sec_webhook';
+    const webhookUrl = webhooks[webhookKey];
     if (!webhookUrl) return alert("Webhook belum diatur!");
     setIsSending(true);
 

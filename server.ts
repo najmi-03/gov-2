@@ -668,12 +668,19 @@ async function startServer() {
   });
 
   app.post("/api/attendance", async (req, res) => {
-    const { staff_name, role, action, notes } = req.body;
+    const { staff_name, role, action, notes, timestamp } = req.body;
     try {
-      await client.execute({
-        sql: "INSERT INTO attendance (staff_name, role, action, notes) VALUES (?, ?, ?, ?)",
-        args: [staff_name, role, action, notes || ""]
-      });
+      if (timestamp) {
+        await client.execute({
+          sql: "INSERT INTO attendance (staff_name, role, action, notes, timestamp) VALUES (?, ?, ?, ?, ?)",
+          args: [staff_name, role, action, notes || "", timestamp]
+        });
+      } else {
+        await client.execute({
+          sql: "INSERT INTO attendance (staff_name, role, action, notes) VALUES (?, ?, ?, ?)",
+          args: [staff_name, role, action, notes || ""]
+        });
+      }
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: "Failed to save attendance" });

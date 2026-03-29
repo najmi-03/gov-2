@@ -375,12 +375,14 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole, 
     let data: any[] = [];
     
     if (activeTab === 'PAWNSHOP') {
-      const webhookUrl = webhooks['ls_gov_pawn_webhook'];
+      const webhookKey = webhooks['map_pawnshop'] || 'ls_gov_pawn_webhook';
+      const webhookUrl = webhooks[webhookKey];
       if (!webhookUrl) return alert("Webhook Market Price belum diatur di Database!");
       targetWebhook = webhookUrl;
       data = pawnItems;
     } else {
-      const webhookUrl = webhooks['ls_gov_locker_webhook'];
+      const webhookKey = webhooks['map_locker'] || 'ls_gov_locker_webhook';
+      const webhookUrl = webhooks[webhookKey];
       if (!webhookUrl) return alert("Webhook Loker belum diatur di Database!");
       targetWebhook = webhookUrl;
       data = activeTab === 'UMUM' ? commonItems : blackItems;

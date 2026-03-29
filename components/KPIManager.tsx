@@ -36,6 +36,17 @@ const KPIManager: React.FC<KPIManagerProps> = ({ leadership, depts }) => {
     const [selectedStaff, setSelectedStaff] = useState<string | null>(null);
     const reportRef = useRef<HTMLDivElement>(null);
 
+    // Manual Input State
+    const [showManualInput, setShowManualInput] = useState(false);
+    const [manualForm, setManualForm] = useState({
+        staffName: '',
+        date: new Date().toISOString().split('T')[0],
+        inTime: '08:00:00',
+        outTime: '17:00:00',
+        notes: ''
+    });
+    const [isSubmittingManual, setIsSubmittingManual] = useState(false);
+
     const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const YEARS = [2025, 2026, 2027, 2028];
 
@@ -301,6 +312,67 @@ const KPIManager: React.FC<KPIManagerProps> = ({ leadership, depts }) => {
         }, 100);
     };
 
+    const handleSubmitManual = async () => {
+        if (!manualForm.staffName || !manualForm.date || !manualForm.inTime || !manualForm.outTime) {
+            alert("Mohon lengkapi semua data!");
+            return;
+        }
+
+        setIsSubmittingManual(true);
+        try {
+            const user = allUsers.find(u => u.ic_name === manualForm.staffName);
+            const role = user?.role || 'STAFF';
+            
+            // Convert to ISO strings
+            const inTimestamp = new Date(`${manualForm.date}T${manualForm.inTime}`).toISOString();
+            const outTimestamp = new Date(`${manualForm.date}T${manualForm.outTime}`).toISOString();
+            
+            const notes = `[MANUAL INPUT] ${manualForm.notes}`.trim();
+
+            // Submit Clock In
+            await fetch('/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    staff_name: manualForm.staffName,
+                    role: role,
+                    action: 'MASUK (Manual)',
+                    notes: notes,
+                    timestamp: inTimestamp
+                })
+            });
+
+            // Submit Clock Out
+            await fetch('/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    staff_name: manualForm.staffName,
+                    role: role,
+                    action: 'PULANG (Manual)',
+                    notes: notes,
+                    timestamp: outTimestamp
+                })
+            });
+
+            alert("Data absensi manual berhasil disimpan!");
+            setShowManualInput(false);
+            setManualForm({
+                staffName: '',
+                date: new Date().toISOString().split('T')[0],
+                inTime: '08:00:00',
+                outTime: '17:00:00',
+                notes: ''
+            });
+            fetchData(); // Refresh data
+        } catch (error) {
+            console.error("Failed to submit manual attendance", error);
+            alert("Gagal menyimpan data absensi manual.");
+        } finally {
+            setIsSubmittingManual(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 p-6 rounded-2xl border border-white/5">
@@ -343,6 +415,12 @@ const KPIManager: React.FC<KPIManagerProps> = ({ leadership, depts }) => {
                     )}
                     <button onClick={fetchData} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-slate-400 ${isLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    </button>
+                    <button 
+                        onClick={() => setShowManualInput(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-xl border border-amber-500/20 text-[10px] font-bold uppercase transition-all"
+                    >
+                        ➕ Input Manual
                     </button>
                     <button 
                         onClick={handleExportPDF} 
@@ -561,6 +639,99 @@ const KPIManager: React.FC<KPIManagerProps> = ({ leadership, depts }) => {
                 </p>
             </div>
             </div>
+
+            {/* MANUAL INPUT MODAL */}
+            <AnimatePresence>
+                {showManualInput && (
+                    <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setShowManualInput(false)}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-6 flex flex-col"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest">Input Absen Manual</h3>
+                                <button onClick={() => setShowManualInput(false)} className="text-slate-500 hover:text-white">✕</button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pilih Pegawai</label>
+                                    <select 
+                                        value={manualForm.staffName} 
+                                        onChange={(e) => setManualForm({...manualForm, staffName: e.target.value})}
+                                        className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50"
+                                    >
+                                        <option value="">-- Pilih Pegawai --</option>
+                                        {allUsers.map(u => <option key={u.id} value={u.ic_name}>{u.ic_name} ({u.role})</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tanggal</label>
+                                    <input 
+                                        type="date" 
+                                        value={manualForm.date} 
+                                        onChange={(e) => setManualForm({...manualForm, date: e.target.value})}
+                                        className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" 
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Waktu Masuk</label>
+                                        <input 
+                                            type="time" 
+                                            step="1"
+                                            value={manualForm.inTime} 
+                                            onChange={(e) => setManualForm({...manualForm, inTime: e.target.value})}
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" 
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Waktu Pulang</label>
+                                        <input 
+                                            type="time" 
+                                            step="1"
+                                            value={manualForm.outTime} 
+                                            onChange={(e) => setManualForm({...manualForm, outTime: e.target.value})}
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" 
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Catatan</label>
+                                    <textarea 
+                                        rows={2} 
+                                        value={manualForm.notes} 
+                                        onChange={(e) => setManualForm({...manualForm, notes: e.target.value})}
+                                        className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50" 
+                                        placeholder="Alasan input manual..." 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-white/10">
+                                <button onClick={() => setShowManualInput(false)} className="px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                                    Batal
+                                </button>
+                                <button 
+                                    onClick={handleSubmitManual} 
+                                    disabled={isSubmittingManual || !manualForm.staffName || !manualForm.date || !manualForm.inTime || !manualForm.outTime}
+                                    className="px-6 py-2 rounded-xl bg-amber-500 text-slate-950 text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                                >
+                                    {isSubmittingManual ? 'Menyimpan...' : '💾 Simpan Data'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

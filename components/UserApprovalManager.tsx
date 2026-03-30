@@ -283,9 +283,9 @@ const UserApprovalManager: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="space-y-8">
         {/* PENDING USERS LIST */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="space-y-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest">Persetujuan Akun Baru</h3>
             <button onClick={fetchData} className="text-[10px] text-slate-500 hover:text-white transition-colors">🔄 REFRESH</button>
@@ -300,9 +300,9 @@ const UserApprovalManager: React.FC = () => {
               <p className="text-slate-500 text-xs">Tidak ada pendaftaran akun yang tertunda.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {pendingUsers.map(user => (
-                <div key={user.id} className="bg-slate-900 border border-white/5 rounded-2xl p-5 flex flex-col gap-4 hover:border-amber-500/20 transition-all">
+                <div key={user.id} className="bg-slate-950 rounded-2xl p-5 flex flex-col gap-6 shadow-sm hover:shadow-md transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center text-amber-500 font-bold text-lg">
                       {user.ic_name.charAt(0)}
@@ -310,7 +310,7 @@ const UserApprovalManager: React.FC = () => {
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-white">{user.ic_name}</h4>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        <div className="flex items-center gap-1.5 bg-slate-950/50 px-2 py-1 rounded-lg border border-white/5">
+                        <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg">
                           <span className="text-[8px] font-bold text-slate-500 uppercase">Role:</span>
                           <select 
                             value={roleInputs[user.id] || ''}
@@ -325,7 +325,7 @@ const UserApprovalManager: React.FC = () => {
                             )}
                           </select>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-slate-950/50 px-2 py-1 rounded-lg border border-white/5">
+                        <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg">
                           <span className="text-[8px] font-bold text-slate-500 uppercase">Dept:</span>
                           <select 
                             value={deptInputs[user.id] || ''}
@@ -344,26 +344,26 @@ const UserApprovalManager: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center bg-slate-950/50 p-3 rounded-xl border border-white/5">
-                    <div className="flex-1 w-full space-y-3">
-                      <div>
-                        <label className="text-[8px] font-bold text-slate-500 uppercase px-1 mb-1 block">Tentukan NIP Pegawai</label>
+                  <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center bg-slate-900 p-3 rounded-xl">
+                    <div className="flex-1 w-full space-y-3 flex flex-col items-center">
+                      <div className="w-full max-w-[200px]">
+                        <label className="text-[8px] font-bold text-slate-500 uppercase px-1 mb-1 block text-center">Tentukan NIP Pegawai</label>
                         <input 
                           type="text" 
                           placeholder="Contoh: NIP-001"
                           value={nipInputs[user.id] || ''}
                           onChange={e => setNipInputs(prev => ({ ...prev, [user.id]: e.target.value.toUpperCase() }))}
-                          className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
+                          className="w-full bg-slate-950 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-amber-500/50 text-center"
                         />
                       </div>
-                      <div>
-                        <label className="text-[8px] font-bold text-slate-500 uppercase px-1 mb-1 block">Username Login (Wajib)</label>
+                      <div className="w-full max-w-[200px]">
+                        <label className="text-[8px] font-bold text-slate-500 uppercase px-1 mb-1 block text-center">Username Login (Wajib)</label>
                         <input 
                           type="text" 
                           placeholder="Contoh: budi_keren"
                           value={usernameInputs[user.id] || ''}
                           onChange={e => setUsernameInputs(prev => ({ ...prev, [user.id]: e.target.value.toLowerCase() }))}
-                          className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
+                          className="w-full bg-slate-950 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-amber-500/50 text-center"
                         />
                       </div>
                     </div>
@@ -391,9 +391,9 @@ const UserApprovalManager: React.FC = () => {
         </div>
 
         {/* JABATAN & DEPT MANAGEMENT */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* JABATAN */}
-          <div className="bg-slate-900 border border-white/5 rounded-2xl p-6">
+          <div className="bg-slate-950/50 rounded-2xl p-6 shadow-inner">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xs font-black text-white uppercase tracking-widest">Jabatan</h3>
               <button 
@@ -404,18 +404,18 @@ const UserApprovalManager: React.FC = () => {
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex gap-2">
                 <input 
                   type="text" 
                   placeholder="Baru..." 
                   value={newJabatan}
                   onChange={e => setNewJabatan(e.target.value.toUpperCase())}
-                  className="flex-1 bg-slate-950 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-amber-500/50"
+                  className="flex-1 bg-slate-900 rounded-xl px-4 py-2 text-xs text-white outline-none focus:ring-1 focus:ring-amber-500/50"
                 />
                 <button 
                   onClick={handleAddJabatan}
-                  className="bg-amber-500 text-slate-950 px-4 rounded-xl text-xs font-bold hover:bg-amber-400 transition-all active:scale-95"
+                  className="bg-amber-500 text-slate-950 px-4 rounded-xl text-xs font-bold hover:bg-amber-400 transition-all active:scale-95 shrink-0"
                 >
                   +
                 </button>
@@ -423,16 +423,16 @@ const UserApprovalManager: React.FC = () => {
 
               <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                 {availableJabatan.length === 0 ? (
-                  <div className="py-8 text-center border border-dashed border-white/5 rounded-xl">
+                  <div className="py-8 text-center bg-slate-900 rounded-xl">
                     <p className="text-[10px] text-slate-600">Kosong.</p>
                   </div>
                 ) : (
                   availableJabatan.map(jabatan => (
-                    <div key={jabatan} className="flex justify-between items-center p-3 bg-white/5 rounded-xl group hover:bg-white/10 transition-all">
+                    <div key={jabatan} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl group hover:bg-slate-800 transition-all">
                       <span className="text-[10px] font-bold text-slate-300 tracking-wider">{jabatan}</span>
                       <button 
                         onClick={() => handleRemoveJabatan(jabatan)}
-                        className="text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all active:scale-95"
+                        className="text-slate-600 hover:text-red-500 transition-all active:scale-95 ml-4"
                       >
                         ✕
                       </button>
@@ -444,7 +444,7 @@ const UserApprovalManager: React.FC = () => {
           </div>
 
           {/* DEPARTEMEN */}
-          <div className="bg-slate-900 border border-white/5 rounded-2xl p-6">
+          <div className="bg-slate-950/50 rounded-2xl p-6 shadow-inner">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xs font-black text-white uppercase tracking-widest">Departemen</h3>
               <button 
@@ -455,18 +455,18 @@ const UserApprovalManager: React.FC = () => {
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex gap-2">
                 <input 
                   type="text" 
                   placeholder="Baru..." 
                   value={newDepartment}
                   onChange={e => setNewDepartment(e.target.value.toUpperCase())}
-                  className="flex-1 bg-slate-950 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-amber-500/50"
+                  className="flex-1 bg-slate-900 rounded-xl px-4 py-2 text-xs text-white outline-none focus:ring-1 focus:ring-amber-500/50"
                 />
                 <button 
                   onClick={handleAddDepartment}
-                  className="bg-amber-500 text-slate-950 px-4 rounded-xl text-xs font-bold hover:bg-amber-400 transition-all active:scale-95"
+                  className="bg-amber-500 text-slate-950 px-4 rounded-xl text-xs font-bold hover:bg-amber-400 transition-all active:scale-95 shrink-0"
                 >
                   +
                 </button>
@@ -474,16 +474,16 @@ const UserApprovalManager: React.FC = () => {
 
               <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                 {availableDepartments.length === 0 ? (
-                  <div className="py-8 text-center border border-dashed border-white/5 rounded-xl">
+                  <div className="py-8 text-center bg-slate-900 rounded-xl">
                     <p className="text-[10px] text-slate-600">Kosong.</p>
                   </div>
                 ) : (
                   availableDepartments.map(dept => (
-                    <div key={dept} className="flex justify-between items-center p-3 bg-white/5 rounded-xl group hover:bg-white/10 transition-all">
+                    <div key={dept} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl group hover:bg-slate-800 transition-all">
                       <span className="text-[10px] font-bold text-slate-300 tracking-wider">{dept}</span>
                       <button 
                         onClick={() => handleRemoveDepartment(dept)}
-                        className="text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all active:scale-95"
+                        className="text-slate-600 hover:text-red-500 transition-all active:scale-95 ml-4"
                       >
                         ✕
                       </button>

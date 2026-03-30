@@ -20,6 +20,7 @@ interface NewsAdminProps {
   setNews: (news: NewsItem[]) => void;
   userRole: AdminRole;
   staffName?: string | null;
+  department?: string;
   depts: DeptInfo[];
   setDepts: (depts: DeptInfo[]) => void;
   leadership: LeadershipMember[];
@@ -45,7 +46,7 @@ interface NewsAdminProps {
 type AdminTab = 'news' | 'inventory' | 'structural' | 'salary' | 'legislative' | 'terms' | 'form_mgmt' | 'recruitment' | 'permission_mgmt' | 'permission_portal' | 'secretary_portal' | 'carousel_mgmt' | 'webhooks' | 'kpi_mgmt' | 'user_approval';
 
 const NewsAdmin: React.FC<NewsAdminProps> = ({ 
-  news, setNews, userRole, staffName, depts, setDepts, leadership, setLeadership, docs, setDocs, termsContent, setTermsContent,
+  news, setNews, userRole, staffName, department, depts, setDepts, leadership, setLeadership, docs, setDocs, termsContent, setTermsContent,
   forms, setForms, recruitmentConfig, permissionConfig, carouselSlides, setCarouselSlides, pawnItems, setPawnItems,
   webhooks, setWebhooks
 }) => {
@@ -542,7 +543,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                     {(activeTab === 'permission_portal' || activeTab === 'secretary_portal') && (
                         <>
                             {activeTab === 'permission_portal' && <StaffPermissionPortal permissions={localPermissions} staffName={currentDisplayName} webhooks={webhooks} />}
-                            {(activeTab === 'secretary_portal' || userRole.includes('SECRETARY') || userRole.includes('SEKRETARIS')) && <SecretaryPortal staffName={currentDisplayName} role={isSuperAdmin ? 'SECRETARY_OF_STATE' : userRole} webhooks={webhooks} />}
+                            {(activeTab === 'secretary_portal' || userRole.includes('SECRETARY') || userRole.includes('SEKRETARIS')) && <SecretaryPortal staffName={currentDisplayName} role={isSuperAdmin ? 'SECRETARY_OF_STATE' : userRole} department={department} webhooks={webhooks} />}
                         </>
                     )}
                     
@@ -557,141 +558,160 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                     )}
 
                     {activeTab === 'structural' && (
-                        <div className="space-y-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-sm font-bold text-white uppercase">Struktural & Detail Departemen</h3>
-                                <div className="flex gap-2">
-                                    <button onClick={addNewDept} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-xs font-bold uppercase transition-colors">+ Tambah Dept</button>
+                        <div className="space-y-12">
+                            {/* LEADERSHIP MANAGEMENT */}
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-sm font-bold text-white uppercase">Manajemen Kepemimpinan</h3>
                                     <button onClick={handleSaveStructural} disabled={isSaving} className="bg-amber-500 text-slate-950 px-4 py-2 rounded text-xs font-bold uppercase">{isSaving ? 'Saving...' : 'Save Database'}</button>
                                 </div>
+                                <div className="grid gap-4">
+                                    {leadership.map((member, i) => (
+                                        <div key={member.id} className="bg-slate-900 p-4 rounded-xl border border-white/5 flex gap-2 items-center">
+                                            <input type="text" value={member.role} onChange={e => { const l = [...leadership]; l[i].role = e.target.value; setLeadership(l); }} className="flex-1 bg-slate-950 border border-white/10 rounded px-2 py-1 text-xs text-white" placeholder="Jabatan" />
+                                            <input type="text" value={member.name} onChange={e => { const l = [...leadership]; l[i].name = e.target.value; setLeadership(l); }} className="flex-1 bg-slate-950 border border-white/10 rounded px-2 py-1 text-xs text-white" placeholder="Nama" />
+                                            <input type="text" value={member.icon} onChange={e => { const l = [...leadership]; l[i].icon = e.target.value; setLeadership(l); }} className="w-16 bg-slate-950 border border-white/10 rounded px-2 py-1 text-xs text-white" placeholder="Icon" />
+                                            <button onClick={() => { const l = leadership.filter((_, idx) => idx !== i); setLeadership(l); }} className="text-red-500 hover:text-white px-1">✕</button>
+                                        </div>
+                                    ))}
+                                    <button onClick={() => setLeadership([...leadership, { id: 'new_' + Date.now(), role: 'Jabatan Baru', name: 'Nama Baru', icon: '👤' }])} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-xs font-bold uppercase transition-colors">+ Tambah Pemimpin</button>
+                                </div>
                             </div>
-                            <div className="grid gap-6">
-                                {depts.map((dept, i) => (
-                                    <div key={dept.id} className="bg-slate-900 p-4 rounded-xl border border-white/5">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h4 className="text-xs font-bold text-amber-500 uppercase">{dept.name}</h4>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-[9px] text-slate-500">ID: {dept.id}</span>
-                                                
-                                                {deptIdToDelete === dept.id ? (
-                                                    <div className="flex gap-1">
-                                                        <button onClick={() => setDeptIdToDelete(null)} className="text-[8px] text-slate-500 uppercase">Batal</button>
-                                                        <button onClick={() => deleteDept(dept.id)} className="text-[8px] text-red-500 font-bold uppercase animate-pulse">Hapus?</button>
-                                                    </div>
-                                                ) : (
-                                                    <button onClick={() => setDeptIdToDelete(dept.id)} className="text-slate-600 hover:text-red-500 transition-colors">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                        
-                                        {/* DEPARTMENT CARD SETTINGS */}
-                                        <div className="space-y-3 mb-6 p-3 bg-slate-950/50 rounded-lg border border-white/5">
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 uppercase">Judul Departemen</label>
-                                                    <input 
-                                                        type="text" 
-                                                        value={dept.name} 
-                                                        onChange={e => { const d = [...depts]; d[i].name = e.target.value; setDepts(d); }} 
-                                                        className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 uppercase">Icon (Emoji/URL)</label>
-                                                    <input 
-                                                        type="text" 
-                                                        value={dept.icon} 
-                                                        onChange={e => { const d = [...depts]; d[i].icon = e.target.value; setDepts(d); }} 
-                                                        className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[9px] font-bold text-slate-500 uppercase">Visi</label>
-                                                <textarea 
-                                                    value={dept.vision} 
-                                                    onChange={e => { const d = [...depts]; d[i].vision = e.target.value; setDepts(d); }} 
-                                                    className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
-                                                    rows={2}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[9px] font-bold text-slate-500 uppercase">Deskripsi Singkat (Card)</label>
-                                                <textarea 
-                                                    value={dept.shortDescription} 
-                                                    onChange={e => { const d = [...depts]; d[i].shortDescription = e.target.value; setDepts(d); }} 
-                                                    className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
-                                                    rows={2}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[9px] font-bold text-slate-500 uppercase">Deskripsi Lengkap (Detail)</label>
-                                                <textarea 
-                                                    value={dept.longDescription} 
-                                                    onChange={e => { const d = [...depts]; d[i].longDescription = e.target.value; setDepts(d); }} 
-                                                    className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
-                                                    rows={3}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[9px] font-bold text-slate-500 uppercase">Image URL (Background)</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={dept.imageUrl} 
-                                                    onChange={e => { const d = [...depts]; d[i].imageUrl = e.target.value; setDepts(d); }} 
-                                                    className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-blue-400"
-                                                />
-                                            </div>
-                                        </div>
 
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h5 className="text-[10px] font-bold text-slate-400 uppercase">Staff Struktural</h5>
-                                            <button 
-                                                onClick={() => {
-                                                    const d = [...depts];
-                                                    d[i].structuralStaff.push({ role: 'Jabatan Baru', name: 'Nama Staff', level: 3 });
-                                                    setDepts(d);
-                                                }}
-                                                className="text-[9px] font-bold text-amber-500 hover:text-white transition-colors"
-                                            >
-                                                + Tambah Staff
-                                            </button>
-                                        </div>
-                                        {dept.structuralStaff.map((staff, j) => (
-                                            <div key={j} className="flex gap-2 mb-2 items-center">
-                                                <input type="text" value={staff.role} onChange={e => { const d = [...depts]; d[i].structuralStaff[j].role = e.target.value; setDepts(d); }} className="flex-1 bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white" placeholder="Jabatan" />
-                                                <input type="text" value={staff.name} onChange={e => { const d = [...depts]; d[i].structuralStaff[j].name = e.target.value; setDepts(d); }} className="flex-1 bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white" placeholder="Nama IC" />
-                                                
-                                                {staffToDelete?.deptIdx === i && staffToDelete?.staffIdx === j ? (
-                                                    <div className="flex gap-1">
-                                                        <button onClick={() => setStaffToDelete(null)} className="text-[8px] text-slate-500 uppercase">Batal</button>
-                                                        <button 
-                                                            onClick={() => {
-                                                                const d = [...depts];
-                                                                d[i].structuralStaff.splice(j, 1);
-                                                                setDepts(d);
-                                                                setStaffToDelete(null);
-                                                            }} 
-                                                            className="text-[8px] text-red-500 font-bold uppercase animate-pulse"
-                                                        >
-                                                            Hapus?
+                            {/* DEPARTMENT MANAGEMENT */}
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-sm font-bold text-white uppercase">Struktural & Detail Departemen</h3>
+                                    <button onClick={addNewDept} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-xs font-bold uppercase transition-colors">+ Tambah Dept</button>
+                                </div>
+                                <div className="grid gap-6">
+                                    {depts.map((dept, i) => (
+                                        <div key={dept.id} className="bg-slate-900 p-4 rounded-xl border border-white/5">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="text-xs font-bold text-amber-500 uppercase">{dept.name}</h4>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-[9px] text-slate-500">ID: {dept.id}</span>
+                                                    
+                                                    {deptIdToDelete === dept.id ? (
+                                                        <div className="flex gap-1">
+                                                            <button onClick={() => setDeptIdToDelete(null)} className="text-[8px] text-slate-500 uppercase">Batal</button>
+                                                            <button onClick={() => deleteDept(dept.id)} className="text-[8px] text-red-500 font-bold uppercase animate-pulse">Hapus?</button>
+                                                        </div>
+                                                    ) : (
+                                                        <button onClick={() => setDeptIdToDelete(dept.id)} className="text-slate-600 hover:text-red-500 transition-colors">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                         </button>
-                                                    </div>
-                                                ) : (
-                                                    <button 
-                                                        onClick={() => setStaffToDelete({ deptIdx: i, staffIdx: j })}
-                                                        className="text-red-500 hover:text-white px-1"
-                                                        title="Hapus Staff"
-                                                    >
-                                                        ✕
-                                                    </button>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                ))}
+                                            
+                                            {/* DEPARTMENT CARD SETTINGS */}
+                                            <div className="space-y-3 mb-6 p-3 bg-slate-950/50 rounded-lg border border-white/5">
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-bold text-slate-500 uppercase">Judul Departemen</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={dept.name} 
+                                                            onChange={e => { const d = [...depts]; d[i] = { ...d[i], name: e.target.value }; setDepts(d); }} 
+                                                            className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-bold text-slate-500 uppercase">Icon (Emoji/URL)</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={dept.icon} 
+                                                            onChange={e => { const d = [...depts]; d[i] = { ...d[i], icon: e.target.value }; setDepts(d); }} 
+                                                            className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-bold text-slate-500 uppercase">Visi</label>
+                                                    <textarea 
+                                                        value={dept.vision} 
+                                                        onChange={e => { const d = [...depts]; d[i] = { ...d[i], vision: e.target.value }; setDepts(d); }} 
+                                                        className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                                                        rows={2}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-bold text-slate-500 uppercase">Deskripsi Singkat (Card)</label>
+                                                    <textarea 
+                                                        value={dept.shortDescription} 
+                                                        onChange={e => { const d = [...depts]; d[i] = { ...d[i], shortDescription: e.target.value }; setDepts(d); }} 
+                                                        className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                                                        rows={2}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-bold text-slate-500 uppercase">Deskripsi Lengkap (Detail)</label>
+                                                    <textarea 
+                                                        value={dept.longDescription} 
+                                                        onChange={e => { const d = [...depts]; d[i] = { ...d[i], longDescription: e.target.value }; setDepts(d); }} 
+                                                        className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                                                        rows={3}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-bold text-slate-500 uppercase">Image URL (Background)</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={dept.imageUrl} 
+                                                        onChange={e => { const d = [...depts]; d[i] = { ...d[i], imageUrl: e.target.value }; setDepts(d); }} 
+                                                        className="w-full bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-blue-400"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-between items-center mb-2">
+                                                <h5 className="text-[10px] font-bold text-slate-400 uppercase">Staff Struktural</h5>
+                                                <button 
+                                                    onClick={() => {
+                                                        const d = [...depts];
+                                                        d[i] = { ...d[i], structuralStaff: [...d[i].structuralStaff, { role: 'Jabatan Baru', name: 'Nama Staff', level: 3 }] };
+                                                        setDepts(d);
+                                                    }}
+                                                    className="text-[9px] font-bold text-amber-500 hover:text-white transition-colors"
+                                                >
+                                                    + Tambah Staff
+                                                </button>
+                                            </div>
+                                            {dept.structuralStaff.map((staff, j) => (
+                                                <div key={j} className="flex gap-2 mb-2 items-center">
+                                                    <input type="text" value={staff.role} onChange={e => { const d = [...depts]; d[i].structuralStaff[j].role = e.target.value; setDepts(d); }} className="flex-1 bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white" placeholder="Jabatan" />
+                                                    <input type="text" value={staff.name} onChange={e => { const d = [...depts]; d[i].structuralStaff[j].name = e.target.value; setDepts(d); }} className="flex-1 bg-slate-900 border border-white/10 rounded px-2 py-1 text-xs text-white" placeholder="Nama IC" />
+                                                    
+                                                    {staffToDelete?.deptIdx === i && staffToDelete?.staffIdx === j ? (
+                                                        <div className="flex gap-1">
+                                                            <button onClick={() => setStaffToDelete(null)} className="text-[8px] text-slate-500 uppercase">Batal</button>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const d = [...depts];
+                                                                    d[i].structuralStaff.splice(j, 1);
+                                                                    setDepts(d);
+                                                                    setStaffToDelete(null);
+                                                                }} 
+                                                                className="text-[8px] text-red-500 font-bold uppercase animate-pulse"
+                                                            >
+                                                                Hapus?
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => setStaffToDelete({ deptIdx: i, staffIdx: j })}
+                                                            className="text-red-500 hover:text-white px-1"
+                                                            title="Hapus Staff"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}

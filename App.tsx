@@ -6,6 +6,7 @@ import CityCarousel from './components/CityCarousel';
 import DepartmentCard from './components/DepartmentCard';
 import DepartmentDetail from './components/DepartmentDetail';
 import RegistrationForm from './components/RegistrationForm';
+import RecruitmentScene from './components/RecruitmentScene';
 import PublicInfo from './components/PublicInfo';
 import PawnshopMarket from './components/PawnshopMarket';
 import StructuralChart from './components/StructuralChart';
@@ -32,7 +33,8 @@ const INITIAL_LEADERSHIP: LeadershipMember[] = [
   { id: 'pres', role: 'Presiden San Andreas', name: 'His Excellency, Marcus Vane', icon: '👑', color: 'border-amber-500' },
   { id: 'vpres', role: 'Wakil Presiden', name: 'The Honorable, Sarah Jenkins', icon: '⚖️', color: 'border-amber-500/50' },
   { id: 'sec', role: 'Secretary of State', name: 'Dominic Sterling', icon: '🏢', color: 'border-blue-500' },
-  { id: 'dsec', role: 'Deputy Secretary of State', name: 'Elara Vance', icon: '📝', color: 'border-blue-400' }
+  { id: 'dsec', role: 'Deputy Secretary of State', name: 'Elara Vance', icon: '📝', color: 'border-blue-400' },
+  { id: 'hr', role: 'Human Resources Director', name: 'Katherine Pierce', icon: '👥', color: 'border-emerald-500' }
 ];
 
 // Initialize default legislative documents
@@ -60,7 +62,7 @@ const INITIAL_SLIDES: CarouselItem[] = [
   }
 ];
 
-type ViewState = 'home' | 'structural' | 'pawnshop' | 'loker' | 'news_archive' | 'attendance' | 'donation';
+type ViewState = 'home' | 'structural' | 'pawnshop' | 'loker' | 'news_archive' | 'attendance' | 'donation' | 'recruitment';
 
 /**
  * Main App Component
@@ -217,6 +219,12 @@ const App: React.FC = () => {
       return;
     }
 
+    if (sectionId === 'recruitment') {
+      setCurrentView('recruitment');
+      window.scrollTo(0, 0);
+      return;
+    }
+
     // Default to Home View for other sections
     if (currentView !== 'home') {
       setCurrentView('home');
@@ -299,10 +307,15 @@ const App: React.FC = () => {
                   onNewsClick={setSelectedNews} 
                   onArchiveClick={() => handleNavClick('news_archive')}
                 />
-
-                {/* Registration Form sekarang menerima CONFIG LANGSUNG DARI APP.TSX (DATABASE) */}
-                <RegistrationForm config={recruitmentConfig} />
               </>
+            )}
+
+            {/* VIEW: RECRUITMENT PAGE */}
+            {currentView === 'recruitment' && (
+              <RecruitmentScene 
+                config={recruitmentConfig} 
+                onBack={() => handleNavClick('home')} 
+              />
             )}
 
             {/* VIEW: STRUCTURAL PAGE */}
@@ -375,6 +388,7 @@ const App: React.FC = () => {
                 setNews={setNews}
                 userRole={auth.role}
                 staffName={auth.staffName}
+                department={auth.department}
                 depts={depts}
                 setDepts={setDepts}
                 leadership={leadership}

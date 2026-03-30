@@ -6,17 +6,24 @@ import { AdminRole } from '../types';
 interface SecretaryPortalProps {
   staffName: string;
   role: AdminRole;
+  department?: string;
   webhooks: Record<string, string>;
 }
 
-const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role, webhooks }) => {
+const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role, department, webhooks }) => {
   const [activeTab, setActiveTab] = useState<'AGENDA' | 'EVALUASI' | 'CATATAN'>('AGENDA');
   const [isSending, setIsSending] = useState(false);
 
   // Form States
   const [agenda, setAgenda] = useState({ title: '', date: '', location: '', details: '', participants: '' });
-  const [evalData, setEvalData] = useState({ dept: '', topic: '', result: '', improvement: '' });
+  const [evalData, setEvalData] = useState({ dept: department || '', topic: '', result: '', improvement: '' });
   const [note, setNote] = useState({ subject: '', content: '' });
+
+  useEffect(() => {
+    if (role === 'SECRETARY_DEPARTMENT' && department) {
+      setEvalData(prev => ({ ...prev, dept: department }));
+    }
+  }, [role, department]);
 
   const handleAgendaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,7 +177,13 @@ const SecretaryPortal: React.FC<SecretaryPortalProps> = ({ staffName, role, webh
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Departemen Target</label>
-                        <select required value={evalData.dept} onChange={e => setEvalData({...evalData, dept: e.target.value})} className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50">
+                        <select 
+                            required 
+                            disabled={role === 'SECRETARY_DEPARTMENT'}
+                            value={evalData.dept} 
+                            onChange={e => setEvalData({...evalData, dept: e.target.value})} 
+                            className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50 disabled:opacity-50"
+                        >
                             <option value="">-- Pilih --</option>
                             <option value="Home Affairs">Home Affairs</option>
                             <option value="Homeland Defense">Homeland Defense</option>

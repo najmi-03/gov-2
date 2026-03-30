@@ -18,6 +18,8 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
   const [selectedBatch, setSelectedBatch] = useState<string>('ALL');
   const [resetType, setResetType] = useState<'soft' | 'hard' | null>(null);
   const [questionIdToDelete, setQuestionIdToDelete] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   const handleFetchResponses = async (batch?: string) => {
     setIsFetchingResponses(true);
@@ -74,6 +76,55 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
     setLocalConfig(prev => ({ ...prev, questions: newQuestions }));
   };
 
+  const handleSetThisWeek = () => {
+    const today = new Date();
+    const day = today.getDay(); // 0 is Sunday, 1 is Monday
+    const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1);
+    
+    const monday = new Date(today);
+    monday.setDate(diffToMonday);
+    
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    
+    const formatDate = (date: Date) => {
+        const d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+        return [year, month, day].join('-');
+    };
+
+    setStartDate(formatDate(monday));
+    setEndDate(formatDate(sunday));
+  };
+
+  const filteredResponses = responses.filter(res => {
+    if (!startDate && !endDate) return true;
+    
+    const resDate = new Date(res.submitted_at);
+    resDate.setHours(0, 0, 0, 0);
+    
+    let isAfterStart = true;
+    let isBeforeEnd = true;
+    
+    if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        isAfterStart = resDate >= start;
+    }
+    
+    if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(0, 0, 0, 0);
+        isBeforeEnd = resDate <= end;
+    }
+    
+    return isAfterStart && isBeforeEnd;
+  });
+
   // AMAN: Hanya mereset layout pertanyaan, tapi mempertahankan Link Database
   const handleSoftReset = () => {
     setLocalConfig(prev => ({
@@ -86,11 +137,11 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
   };
 
   const exportToCSV = () => {
-    if (responses.length === 0) return;
+    if (filteredResponses.length === 0) return;
     
     // Get all unique keys from all response data to build headers
     const allKeys = new Set<string>();
-    responses.forEach(res => {
+    filteredResponses.forEach(res => {
         Object.keys(res.data).forEach(key => allKeys.add(key));
     });
     const headers = ['ID', 'Submitted At', 'Batch', ...Array.from(allKeys)];
@@ -99,7 +150,7 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
     // Use semicolon as delimiter and wrap headers in quotes
     csvRows.push(headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(';'));
     
-    responses.forEach(res => {
+    filteredResponses.forEach(res => {
         const row = [
             res.id,
             new Date(res.submitted_at).toLocaleString('id-ID'),
@@ -354,7 +405,7 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
                 <div className="p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-950">
                     <div>
                         <h3 className="text-lg font-bold text-white">Data Pendaftaran (Turso)</h3>
-                        <p className="text-xs text-slate-500">Total: {responses.length} lamaran masuk</p>
+                        <p className="text-xs text-slate-500">Total: {filteredResponses.length} lamaran masuk</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
@@ -375,13 +426,51 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
                         <button onClick={() => setShowResponses(false)} className="text-slate-400 hover:text-white text-2xl ml-4">✕</button>
                     </div>
                 </div>
+
+                {/* DATE FILTER UI */}
+                <div className="px-6 py-4 bg-slate-900/50 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-end">
+                    <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Dari Tanggal</label>
+                        <input 
+                            type="date" 
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Sampai Tanggal</label>
+                        <input 
+                            type="date" 
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50"
+                        />
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <button 
+                            onClick={handleSetThisWeek}
+                            className="flex-1 sm:flex-none bg-blue-600/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all"
+                        >
+                            📅 Minggu Ini
+                        </button>
+                        {(startDate || endDate) && (
+                            <button 
+                                onClick={() => { setStartDate(''); setEndDate(''); }}
+                                className="flex-1 sm:flex-none bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                            >
+                                ✕ Reset
+                            </button>
+                        )}
+                    </div>
+                </div>
                 
                 <div className="flex-1 overflow-auto p-6 custom-scrollbar">
-                    {responses.length === 0 ? (
+                    {filteredResponses.length === 0 ? (
                         <div className="text-center py-20 text-slate-500 italic">Belum ada data masuk.</div>
                     ) : (
                         <div className="space-y-4">
-                            {responses.map((res, i) => (
+                            {filteredResponses.map((res, i) => (
                                 <div key={i} className="bg-slate-950 border border-white/5 p-5 rounded-2xl hover:border-amber-500/30 transition-all">
                                     <div className="flex justify-between items-start mb-4 border-b border-white/5 pb-3">
                                         <div className="flex flex-col gap-1">
@@ -407,7 +496,7 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
                 <div className="p-4 bg-slate-950 border-t border-white/5 flex justify-between items-center">
                     <button 
                         onClick={exportToCSV}
-                        disabled={responses.length === 0}
+                        disabled={filteredResponses.length === 0}
                         className="px-6 py-2 bg-green-600 text-white rounded-xl text-xs font-bold uppercase hover:bg-green-500 transition-all disabled:opacity-50 flex items-center gap-2"
                     >
                         📥 Export CSV ({selectedBatch})

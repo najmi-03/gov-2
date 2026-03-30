@@ -108,6 +108,22 @@ const StructuralChart: React.FC<StructuralChartProps> = ({ depts, leadershipData
             </motion.div>
           )}
 
+          <div className="w-0.5 h-6 bg-white/10 hidden lg:block"></div>
+
+          {/* Tier 3.5: HR Director */}
+          {leadershipData[4] && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="p-4 md:p-5 bg-slate-900/60 border border-emerald-500/20 rounded-2xl shadow-lg w-full max-w-[280px] sm:max-w-xs text-center mt-4 md:mt-2"
+            >
+              <h3 className="text-[9px] md:text-[10px] font-bold text-emerald-300 uppercase tracking-[0.2em] mb-1">{leadershipData[4].role}</h3>
+              <p className="text-xs md:text-base font-bold text-slate-200 uppercase">{leadershipData[4].name}</p>
+            </motion.div>
+          )}
+
           {/* Line down to Cabinet - Only for Desktop */}
           <div className="w-0.5 h-12 bg-white/10 mt-6 hidden lg:block"></div>
           <div className="w-[80%] h-0.5 bg-white/10 hidden lg:block"></div>

@@ -126,7 +126,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
         title: 'Layanan Baru', 
         description: 'Deskripsi layanan...', 
         icon: '📄', 
-        webhookKey: 'ls_gov_webhook_baru_' + Date.now(), 
+        webhookKey: '', 
         fields: [{ id: 'f1', label: 'Nama Lengkap (IC)', placeholder: '...', type: 'text', required: true }] 
     };
     const updatedForms = [...forms, newForm];
@@ -447,8 +447,24 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                                                     <input type="text" value={form.icon} onChange={e => updateFormMeta(form.id, 'icon', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white" />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <label className="text-[8px] font-bold text-slate-500 uppercase">Webhook Discord Key (Database)</label>
-                                                    <input type="text" value={form.webhookKey} onChange={e => updateFormMeta(form.id, 'webhookKey', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-blue-400" />
+                                                    <label className="text-[8px] font-bold text-slate-500 uppercase">Saluran Webhook Discord (Notifikasi Pendaftar)</label>
+                                                    <select 
+                                                        value={form.webhookKey || ''} 
+                                                        onChange={e => updateFormMeta(form.id, 'webhookKey', e.target.value)} 
+                                                        className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-amber-500 outline-none cursor-pointer"
+                                                    >
+                                                        <option value="">-- Tidak Terhubung (Pilih Saluran) --</option>
+                                                        {Object.keys(webhooks).filter(k => !k.startsWith('map_')).map(k => {
+                                                            const friendlyName = k.replace('wh_custom_', '').replace('ls_gov_webhook_', '').replace('ls_gov_', '').replace('ls_', '').replace(/_[0-9]+$/, '').replace(/_/g, ' ').toUpperCase();
+                                                            return <option key={k} value={k}>{friendlyName}</option>;
+                                                        })}
+                                                    </select>
+                                                    <p className="text-[8px] text-slate-500 italic mt-1">Buat saluran baru di tab Webhooks jika belum ada.</p>
+                                                </div>
+                                                <div className="space-y-1 md:col-span-2">
+                                                    <label className="text-[8px] font-bold text-slate-500 uppercase">Instruksi / Persyaratan Foto (Opsional)</label>
+                                                    <input type="text" value={form.photoRequirement || ''} onChange={e => updateFormMeta(form.id, 'photoRequirement', e.target.value)} placeholder="Contoh: Lampirkan foto KTP dan KK." className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs text-white" />
+                                                    <p className="text-[8px] text-slate-500 italic mt-1">Jika dikosongkan, fitur upload foto akan tetap ada namun tanpa instruksi spesifik.</p>
                                                 </div>
                                             </div>
                                             

@@ -26,6 +26,7 @@ export interface FormConfig {
   icon: string;
   fields: FormField[];
   webhookKey: string;
+  photoRequirement?: string;
 }
 
 // === NEW PERMISSION TYPES ===

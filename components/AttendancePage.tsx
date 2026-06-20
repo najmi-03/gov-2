@@ -5,6 +5,17 @@ import { ATTENDANCE_SCRIPT_URL } from '../constants';
 import { AuthState, AttendanceLog } from '../types'; 
 import { fetchFromDatabase, saveToDatabase } from '../services/databaseService'; 
 
+import DutyLogParser from './DutyLogParser';
+
+interface ParsedLog {
+  id: string;
+  username: string;
+  clockIn: string;
+  clockOut: string;
+  duration: string;
+  durationHours: number;
+}
+
 interface AttendancePageProps {
   onBack: () => void;
   auth: AuthState;
@@ -154,29 +165,51 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
         }
       });
 
-      // 3. Calculate Total Hours
+      // 3. Calculate Total Hours safely with Interval Overlap Merge
       let totalMs = 0;
-      let tempIn: number | null = null;
+      let startStack: number[] = [];
+      const intervals: {start: number, end: number}[] = [];
 
       recentLogs.forEach(l => {
         const t = new Date(l.timestamp).getTime();
         if (isNaN(t)) return;
+
+        // Bersihkan stack dari log "MASUK" yang menggantung > 14 jam (lupa clock out)
+        startStack = startStack.filter(st => t - st < 14 * 60 * 60 * 1000);
 
         const act = l.action.toUpperCase();
         const isEnter = act.includes('MASUK') || act.includes('IN') || act.includes('LOGIN');
         const isExit = act.includes('PULANG') || act.includes('OUT') || act.includes('KELUAR');
 
         if (isEnter) {
-          if (tempIn === null) tempIn = t; 
-        } else if (isExit && tempIn !== null) {
-          let diff = t - tempIn;
-          // Validasi anomali (misal lupa logout > 24 jam)
-          if (diff < 24 * 60 * 60 * 1000 && diff > 0) {
-            totalMs += diff;
+          startStack.push(t);
+        } else if (isExit) {
+          if (startStack.length > 0) {
+            const st = startStack.shift()!; // Ambil IN paling awal (FIFO)
+            intervals.push({ start: st, end: t });
           }
-          tempIn = null;
         }
       });
+
+      // Union overlapping intervals
+      if (intervals.length > 0) {
+          intervals.sort((a, b) => a.start - b.start);
+          let currentInterval = intervals[0];
+          
+          for (let i = 1; i < intervals.length; i++) {
+              const next = intervals[i];
+              if (next.start <= currentInterval.end) {
+                  // Merge overlapping
+                  currentInterval.end = Math.max(currentInterval.end, next.end);
+              } else {
+                  // No overlap, commit and reset
+                  totalMs += (currentInterval.end - currentInterval.start);
+                  currentInterval = next;
+              }
+          }
+          // Commit the last interval
+          totalMs += (currentInterval.end - currentInterval.start);
+      }
 
       const lastLog = userLogs[userLogs.length - 1]; 
       
@@ -248,6 +281,40 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
       showAlert("Gagal menarik data log.", "error");
     }
     setIsFetchingLogs(false);
+  };
+
+  const handleImportParsedLogs = async (parsedLogs: ParsedLog[]) => {
+    setIsLoading(true);
+    let successCount = 0;
+    
+    // Process in batches of 10 to avoid overwhelming the server
+    const batchSize = 10;
+    for (let i = 0; i < parsedLogs.length; i += batchSize) {
+        const batch = parsedLogs.slice(i, i + batchSize);
+        const promises = batch.flatMap(log => [
+            saveToDatabase('ATTENDANCE', { 
+                staff_name: log.username, 
+                role: 'Log Discord',
+                action: 'MASUK (Log)', 
+                timestamp: log.clockIn,
+                notes: `Auto-parsed IN`
+            }),
+            saveToDatabase('ATTENDANCE', { 
+                staff_name: log.username, 
+                role: 'Log Discord',
+                action: 'PULANG (Log)', 
+                timestamp: log.clockOut,
+                notes: `Auto-parsed OUT. Durasi: ${log.duration}`
+            })
+        ]);
+        
+        await Promise.all(promises);
+        successCount += batch.length;
+    }
+    
+    setIsLoading(false);
+    showAlert(`Berhasil mengimpor ${successCount} rekap duty dari log Discord.`, 'success');
+    handleFetchLogs();
   };
 
   const handleAbsen = async (status: 'MASUK' | 'PULANG') => {
@@ -506,6 +573,7 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ onBack, auth }) => {
                                         </div>
                                         
                                         <div className="flex gap-2">
+                                            <DutyLogParser onImportToDatabase={handleImportParsedLogs} />
                                             <button 
                                                 onClick={handleFetchLogs}
                                                 disabled={isFetchingLogs}

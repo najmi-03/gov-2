@@ -360,6 +360,8 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
       alert(`✅ Berhasil mengimpor ${newSalaries.length} data gaji.`);
   };
 
+
+
   const selectEmployee = (emp: FlatEmployee) => {
     setNewRecord({
       ...newRecord,
@@ -429,7 +431,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
                     Hitung statistik jam kerja & gaji otomatis dari Database Absensi.
                 </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
                 <button 
                     onClick={() => setShowRateModal(true)}
                     className="bg-slate-800 text-amber-500 hover:text-white px-4 py-2 rounded-xl text-[9px] font-bold uppercase border border-amber-500/20 hover:bg-slate-700 transition-all flex items-center gap-2"

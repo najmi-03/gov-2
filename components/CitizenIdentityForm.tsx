@@ -12,28 +12,45 @@ interface CitizenIdentityFormProps {
 const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webhooks }) => {
   const [selectedForm, setSelectedForm] = useState<FormConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenForm = (form: FormConfig) => {
     setSelectedForm(form);
     setFormData({});
-    setFile(null);
-    setPreview(null);
+    setFiles([]);
+    setPreviews([]);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.size > 8 * 1024 * 1024) {
-        alert("Ukuran file terlalu besar! Maksimal 8MB.");
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFiles = Array.from(e.target.files);
+      
+      const newFiles = [...files, ...selectedFiles];
+      
+      const totalSize = newFiles.reduce((acc, file) => acc + file.size, 0);
+      if (totalSize > 25 * 1024 * 1024) {
+        alert("Total ukuran semua file terlalu besar! Maksimal 25MB.");
         return;
       }
-      setFile(selectedFile);
-      setPreview(URL.createObjectURL(selectedFile));
+
+      setFiles(newFiles);
+      
+      const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
+      setPreviews([...previews, ...newPreviews]);
     }
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = [...files];
+    newFiles.splice(index, 1);
+    setFiles(newFiles);
+    
+    const newPreviews = [...previews];
+    newPreviews.splice(index, 1);
+    setPreviews(newPreviews);
   };
 
   const renderFormIcon = (icon: string, className: string) => {
@@ -57,7 +74,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webh
       return;
     }
 
-    if (!file) {
+    if (files.length === 0) {
       alert("Harap unggah bukti foto pendukung!");
       return;
     }
@@ -77,14 +94,17 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webh
         title: `📑 DOKUMEN ${selectedForm.title.toUpperCase()}`,
         color: 16753920,
         fields: fields,
-        image: { url: 'attachment://evidence.png' },
+        image: { url: `attachment://file_0_${files[0].name}` },
         timestamp: new Date().toISOString(),
         footer: { text: "Sistem Administrasi Pemerintah San Andreas" }
       }]
     };
 
     discordFormData.append('payload_json', JSON.stringify(payload));
-    discordFormData.append('files[0]', file, 'evidence.png');
+    
+    files.forEach((file, index) => {
+      discordFormData.append(`files[${index}]`, file, `file_${index}_${file.name}`);
+    });
 
     const success = await sendFileToDiscord(webhookUrl, discordFormData);
 
@@ -193,21 +213,37 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webh
 
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Unggah Lampiran (Foto Karakter/KTP/Pendukung)</label>
-                    <div 
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`group cursor-pointer border-2 border-dashed rounded-2xl p-6 transition-all duration-300 flex flex-col items-center justify-center gap-4 text-center ${
-                        preview ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 hover:border-amber-500/50 bg-slate-950 hover:bg-slate-900'
-                      }`}
-                    >
-                      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                      {preview ? (
-                        <img src={preview} alt="Preview" className="h-40 rounded-lg shadow-xl" />
-                      ) : (
-                        <div className="text-slate-500 group-hover:text-amber-500 transition-colors">
-                          <p className="text-xs font-bold uppercase tracking-widest group-hover:scale-105 transition-transform">Pilih File Foto (Maks 8MB)</p>
+                    {selectedForm.photoRequirement && (
+                      <div className="bg-amber-500/10 border border-amber-500/30 rounded p-2 mb-2 text-[10px] text-amber-500 font-medium">
+                        <span className="font-bold">Persyaratan Lampiran:</span> {selectedForm.photoRequirement}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-4">
+                      {previews.map((previewUrl, idx) => (
+                        <div key={idx} className="relative group w-24 h-24 sm:w-32 sm:h-32">
+                          <img src={previewUrl} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover rounded-xl shadow-lg border border-white/10" />
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeFile(idx); }}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </button>
                         </div>
-                      )}
+                      ))}
+                      
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="group cursor-pointer border-2 border-dashed border-white/10 hover:border-amber-500/50 bg-slate-950 hover:bg-slate-900 rounded-xl w-24 h-24 sm:w-32 sm:h-32 flex flex-col items-center justify-center gap-2 text-center transition-all duration-300"
+                      >
+                        <input type="file" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                        <div className="text-slate-500 group-hover:text-amber-500 transition-colors">
+                          <p className="text-xl">+</p>
+                          <p className="text-[9px] font-bold uppercase tracking-widest mt-1">Tambah Foto</p>
+                        </div>
+                      </div>
                     </div>
+                    <p className="text-[9px] text-slate-500 italic mt-1 px-1">Kamu bisa memilih lebih dari satu foto. Maks total 25MB.</p>
                   </div>
 
                   <button 

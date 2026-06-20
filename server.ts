@@ -4,6 +4,7 @@ import { createClient } from "@libsql/client";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
+import { startDiscordBot, getBotLogs, forceProcessHistory } from "./discordBot";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +18,13 @@ async function startServer() {
     url: process.env.TURSO_DATABASE_URL || "libsql://gov-ime-minjadev-alt.aws-ap-northeast-1.turso.io",
     authToken: process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzMwOTY0OTUsImlkIjoiMDE5Y2Q0YzktMmQwMS03Mjk1LTk2OTEtODY1YTBmOTUwZmI4IiwicmlkIjoiZTJhNmViNDUtNDUxYy00YjhmLTg2MDYtOGJjMGM5N2Q1YWMyIn0.vyQDCZ3AL6oLorMstNOh0c5ID6aHKCFVZVAVZ8gbqtJp4hJUtf5SdBxL_vmIqI8ApSQKXuKrhu7hzyQFgoWDBg",
   });
+
+  // START BOT SEGERA SETELAH DB CONNECTED
+  try {
+     // startDiscordBot(client); // NONAKTIF SEMENTARA SESUAI PERMINTAAN
+  } catch(e) {
+     console.error("Bot throw error sync:", e);
+  }
 
   // Inisialisasi Tabel
   try {
@@ -430,6 +438,19 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
+  app.get("/api/bot-debug", (req, res) => {
+    res.json(getBotLogs());
+  });
+
+  app.get("/api/bot-process-history", async (req, res) => {
+    try {
+      const msgs = await forceProcessHistory();
+      res.json({ success: true, count: msgs, logs: getBotLogs() });
+    } catch (err: any) {
+      res.json({ success: false, error: err.message, logs: getBotLogs() });
+    }
+  });
+
   app.post("/api/login", async (req, res) => {
     const { username, password } = req.body;
     try {

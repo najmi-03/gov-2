@@ -22,6 +22,7 @@ import AttendancePage from './components/AttendancePage';
 import DonationPage from './components/DonationPage';
 import ParticlesBackground from './components/ParticlesBackground';
 import PublicInventory from './components/PublicInventory';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { DEPARTMENTS as INITIAL_DEPARTMENTS, NEWS as INITIAL_NEWS, DEFAULT_FORMS, DEFAULT_RECRUITMENT_CONFIG, DEFAULT_PERMISSIONS } from './constants';
 import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument, FormConfig, RecruitmentConfig, PermissionConfig, CarouselItem, PawnItem } from './types';
 import { loginWithSpreadsheet, signupUser } from './services/authService';
@@ -69,7 +70,9 @@ type ViewState = 'home' | 'structural' | 'pawnshop' | 'loker' | 'news_archive' |
  * Manages global state and coordinates navigation across the San Andreas Government portal.
  */
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<ViewState>('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [depts, setDepts] = useState<DeptInfo[]>(INITIAL_DEPARTMENTS);
   const [news, setNews] = useState<NewsItem[]>(INITIAL_NEWS);
   const [leadership, setLeadership] = useState<LeadershipMember[]>(INITIAL_LEADERSHIP);
@@ -185,49 +188,49 @@ const App: React.FC = () => {
   const handleNavClick = (sectionId: string) => {
     // Handle Page Switching
     if (sectionId === 'structural') {
-      setCurrentView('structural');
+      navigate('/structural');
       window.scrollTo(0, 0);
       return;
     }
     
     if (sectionId === 'pawnshop') {
-      setCurrentView('pawnshop');
+      navigate('/pawnshop');
       window.scrollTo(0, 0);
       return;
     }
 
     if (sectionId === 'loker') {
-      setCurrentView('loker');
+      navigate('/loker');
       window.scrollTo(0, 0);
       return;
     }
 
     if (sectionId === 'news_archive') {
-      setCurrentView('news_archive');
+      navigate('/news_archive');
       window.scrollTo(0, 0);
       return;
     }
 
     if (sectionId === 'attendance') {
-      setCurrentView('attendance');
+      navigate('/attendance');
       return;
     }
 
     if (sectionId === 'donation') {
-      setCurrentView('donation');
+      navigate('/donation');
       window.scrollTo(0, 0);
       return;
     }
 
     if (sectionId === 'recruitment') {
-      setCurrentView('recruitment');
+      navigate('/RECUITMENT');
       window.scrollTo(0, 0);
       return;
     }
 
     // Default to Home View for other sections
-    if (currentView !== 'home') {
-      setCurrentView('home');
+    if (location.pathname !== '/') {
+      navigate('/');
       // Delay scroll to allow render
       setTimeout(() => {
         const element = document.getElementById(sectionId);
@@ -264,178 +267,171 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen text-slate-200 relative">
       <ParticlesBackground />
-      {/* Jika di halaman Absensi, tampilkan overlay full screen, sembunyikan navigasi utama */}
-      {currentView === 'attendance' ? (
-        <AttendancePage onBack={() => handleNavClick('home')} auth={auth} />
-      ) : (
-        <>
-          <Navbar onNavClick={handleNavClick} auth={auth} />
-          
-          <main>
-            {/* VIEW: HOME LANDING PAGE */}
-            {currentView === 'home' && (
-              <>
-                <Hero 
-                  onApplyClick={() => handleNavClick('recruitment')} 
-                  onFormClick={() => handleNavClick('citizen-form')} 
-                />
+      <Routes>
+        <Route path="/attendance" element={<AttendancePage onBack={() => handleNavClick('home')} auth={auth} />} />
+        <Route path="*" element={
+          <>
+            <Navbar onNavClick={handleNavClick} auth={auth} />
+            
+            <main>
+              <Routes>
+                <Route path="/" element={
+                  <>
+                    <Hero 
+                      onApplyClick={() => handleNavClick('recruitment')} 
+                      onFormClick={() => handleNavClick('citizen-form')} 
+                    />
 
-                <CityCarousel slides={carouselSlides} />
+                    <CityCarousel slides={carouselSlides} />
 
-                <section id="departments" className="py-24 px-4 max-w-7xl mx-auto">
-                  <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-4">Departemen Pemerintahan</h2>
-                    <p className="text-slate-400 max-w-xl mx-auto">Pilar utama pelayanan publik yang berdedikasi membangun San Andreas.</p>
+                    <section id="departments" className="py-24 px-4 max-w-7xl mx-auto">
+                      <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-4">Departemen Pemerintahan</h2>
+                        <p className="text-slate-400 max-w-xl mx-auto">Pilar utama pelayanan publik yang berdedikasi membangun San Andreas.</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {depts.map((dept, idx) => (
+                          <DepartmentCard 
+                            key={dept.id} 
+                            dept={dept} 
+                            index={idx} 
+                            onClick={setSelectedDept} 
+                          />
+                        ))}
+                      </div>
+                    </section>
+
+                    <CitizenIdentityForm forms={forms} webhooks={webhooks} />
+
+                    <PublicInfo 
+                      newsData={news} 
+                      docs={docs} 
+                      onNewsClick={setSelectedNews} 
+                      onArchiveClick={() => handleNavClick('news_archive')}
+                    />
+                  </>
+                } />
+
+                <Route path="/RECUITMENT" element={
+                  <RecruitmentScene 
+                    config={recruitmentConfig} 
+                    onBack={() => handleNavClick('home')} 
+                  />
+                } />
+
+                <Route path="/structural" element={
+                  <div className="min-h-screen pt-24 bg-transparent">
+                    <StructuralChart 
+                        depts={depts} 
+                        leadershipData={leadership} 
+                    />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {depts.map((dept, idx) => (
-                      <DepartmentCard 
-                        key={dept.id} 
-                        dept={dept} 
-                        index={idx} 
-                        onClick={setSelectedDept} 
-                      />
-                    ))}
+                } />
+
+                <Route path="/pawnshop" element={
+                  <div className="min-h-screen pt-24 bg-transparent">
+                      <PawnshopMarket items={pawnItems} />
                   </div>
-                </section>
+                } />
 
-                <CitizenIdentityForm forms={forms} webhooks={webhooks} />
-
-                <PublicInfo 
-                  newsData={news} 
-                  docs={docs} 
-                  onNewsClick={setSelectedNews} 
-                  onArchiveClick={() => handleNavClick('news_archive')}
-                />
-              </>
-            )}
-
-            {/* VIEW: RECRUITMENT PAGE */}
-            {currentView === 'recruitment' && (
-              <RecruitmentScene 
-                config={recruitmentConfig} 
-                onBack={() => handleNavClick('home')} 
-              />
-            )}
-
-            {/* VIEW: STRUCTURAL PAGE */}
-            {currentView === 'structural' && (
-              <div className="min-h-screen pt-24 bg-transparent">
-                <StructuralChart 
-                    depts={depts} 
-                    leadershipData={leadership} 
-                />
-              </div>
-            )}
-
-            {/* VIEW: PAWNSHOP PAGE */}
-            {currentView === 'pawnshop' && (
-              <div className="min-h-screen pt-24 bg-transparent">
-                  <PawnshopMarket items={pawnItems} />
-              </div>
-            )}
-
-            {/* VIEW: PUBLIC INVENTORY PAGE */}
-            {currentView === 'loker' && (
-              <div className="min-h-screen pt-24 bg-transparent">
-                {auth.isLoggedIn ? (
-                  <PublicInventory />
-                ) : (
-                  <div className="flex items-center justify-center h-[60vh]">
-                    <div className="bg-slate-900/80 backdrop-blur-md p-8 rounded-2xl border border-rose-500/30 text-center max-w-md mx-4">
-                      <div className="text-4xl mb-4">🔒</div>
-                      <h2 className="text-2xl font-bold text-rose-500 mb-2">Akses Ditolak</h2>
-                      <p className="text-slate-300 text-sm">Anda harus login terlebih dahulu untuk melihat informasi Loker Umum & Hitam.</p>
-                    </div>
+                <Route path="/loker" element={
+                  <div className="min-h-screen pt-24 bg-transparent">
+                    {auth.isLoggedIn ? (
+                      <PublicInventory />
+                    ) : (
+                      <div className="flex items-center justify-center h-[60vh]">
+                        <div className="bg-slate-900/80 backdrop-blur-md p-8 rounded-2xl border border-rose-500/30 text-center max-w-md mx-4">
+                          <div className="text-4xl mb-4">🔒</div>
+                          <h2 className="text-2xl font-bold text-rose-500 mb-2">Akses Ditolak</h2>
+                          <p className="text-slate-300 text-sm">Anda harus login terlebih dahulu untuk melihat informasi Loker Umum & Hitam.</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                } />
+
+                <Route path="/news_archive" element={
+                  <NewsArchive 
+                    news={news}
+                    onNewsClick={setSelectedNews}
+                  />
+                } />
+
+                <Route path="/donation" element={
+                  <DonationPage />
+                } />
+              </Routes>
+            </main>
+
+            <Footer 
+              onLogin={handleLogin} 
+              onLogout={handleLogout} 
+              onSignup={handleSignup}
+              auth={auth} 
+              onPrivacyClick={() => setIsPrivacyOpen(true)}
+              onTermsClick={() => setIsTermsOpen(true)}
+              onDonationClick={() => handleNavClick('donation')}
+              lastSyncTime={lastSyncTime}
+              onManualRefresh={handleManualRefresh}
+              isSyncing={isSyncing}
+            />
+
+            {/* Administration Dashboard for authenticated staff */}
+            {auth.isAdmin && (
+                <NewsAdmin 
+                  news={news}
+                  setNews={setNews}
+                  userRole={auth.role}
+                  staffName={auth.staffName}
+                  department={auth.department}
+                  depts={depts}
+                  setDepts={setDepts}
+                  leadership={leadership}
+                  setLeadership={setLeadership}
+                  docs={docs}
+                  setDocs={setDocs}
+                  termsContent={termsContent}
+                  setTermsContent={setTermsContent}
+                  forms={forms}
+                  setForms={setForms}
+                  recruitmentConfig={recruitmentConfig} 
+                  permissionConfig={permissionConfig}   
+                  carouselSlides={carouselSlides}
+                  setCarouselSlides={setCarouselSlides}
+                  pawnItems={pawnItems}
+                  setPawnItems={setPawnItems}
+                  webhooks={webhooks}
+                  setWebhooks={setWebhooks}
+                />
             )}
 
-            {/* VIEW: NEWS ARCHIVE PAGE */}
-            {currentView === 'news_archive' && (
-              <NewsArchive 
-                news={news}
-                onNewsClick={setSelectedNews}
-              />
-            )}
+            {/* Modals and Overlays */}
+            <DepartmentDetail 
+              dept={selectedDept} 
+              onClose={() => setSelectedDept(null)} 
+              onApply={() => handleNavClick('recruitment')}
+            />
 
-            {/* VIEW: DONATION PAGE */}
-            {currentView === 'donation' && (
-              <DonationPage />
-            )}
+            <NewsDetail 
+              news={selectedNews} 
+              onClose={() => setSelectedNews(null)} 
+            />
 
-          </main>
+            <PrivacyModal 
+              isOpen={isPrivacyOpen} 
+              onClose={() => setIsPrivacyOpen(false)} 
+            />
 
-          <Footer 
-            onLogin={handleLogin} 
-            onLogout={handleLogout} 
-            onSignup={handleSignup}
-            auth={auth} 
-            onPrivacyClick={() => setIsPrivacyOpen(true)}
-            onTermsClick={() => setIsTermsOpen(true)}
-            onDonationClick={() => handleNavClick('donation')}
-            lastSyncTime={lastSyncTime}
-            onManualRefresh={handleManualRefresh}
-            isSyncing={isSyncing}
-          />
+            <TermsModal 
+              isOpen={isTermsOpen} 
+              onClose={() => setIsTermsOpen(false)} 
+              content={termsContent}
+            />
 
-          {/* Administration Dashboard for authenticated staff */}
-          {/* SEMUA CONFIG DI-PASS KE SINI AGAR SAAT ADMIN UPDATE, DATABASE TERUPDATE */}
-          {auth.isAdmin && (
-              <NewsAdmin 
-                news={news}
-                setNews={setNews}
-                userRole={auth.role}
-                staffName={auth.staffName}
-                department={auth.department}
-                depts={depts}
-                setDepts={setDepts}
-                leadership={leadership}
-                setLeadership={setLeadership}
-                docs={docs}
-                setDocs={setDocs}
-                termsContent={termsContent}
-                setTermsContent={setTermsContent}
-                forms={forms}
-                setForms={setForms}
-                recruitmentConfig={recruitmentConfig} 
-                permissionConfig={permissionConfig}   
-                carouselSlides={carouselSlides} // PASS TO ADMIN
-                setCarouselSlides={setCarouselSlides} // PASS TO ADMIN
-                pawnItems={pawnItems}
-                setPawnItems={setPawnItems}
-                webhooks={webhooks}
-                setWebhooks={setWebhooks}
-              />
-          )}
-
-          {/* Modals and Overlays */}
-          <DepartmentDetail 
-            dept={selectedDept} 
-            onClose={() => setSelectedDept(null)} 
-            onApply={() => handleNavClick('recruitment')}
-          />
-
-          <NewsDetail 
-            news={selectedNews} 
-            onClose={() => setSelectedNews(null)} 
-          />
-
-          <PrivacyModal 
-            isOpen={isPrivacyOpen} 
-            onClose={() => setIsPrivacyOpen(false)} 
-          />
-
-          <TermsModal 
-            isOpen={isTermsOpen} 
-            onClose={() => setIsTermsOpen(false)} 
-            content={termsContent}
-          />
-
-          <FeedbackFloating auth={auth} webhooks={webhooks} />
-        </>
-      )}
+            <FeedbackFloating auth={auth} webhooks={webhooks} />
+          </>
+        } />
+      </Routes>
     </div>
   );
 };

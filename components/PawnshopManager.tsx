@@ -381,9 +381,20 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole, 
       targetWebhook = webhookUrl;
       data = pawnItems;
     } else {
-      const webhookKey = webhooks['map_locker'] || 'ls_gov_locker_webhook';
-      const webhookUrl = webhooks[webhookKey];
-      if (!webhookUrl) return alert("Webhook Loker belum diatur di Database!");
+      // Use distinct webhook keys based on activeTab
+      let primaryKey = '';
+      let legacyKey = '';
+
+      if (activeTab === 'UMUM') {
+        primaryKey = 'map_loker_umum';
+        legacyKey = 'wh_custom_loker_umum';
+      } else {
+        primaryKey = 'map_loker_hitam';
+        legacyKey = 'wh_custom_loker_hitam';
+      }
+
+      const webhookUrl = webhooks[primaryKey] || webhooks[legacyKey] || webhooks['ls_gov_locker_webhook'];
+      if (!webhookUrl) return alert(`Webhook Loker ${activeTab} belum diatur di Database!`);
       targetWebhook = webhookUrl;
       data = activeTab === 'UMUM' ? commonItems : blackItems;
     }

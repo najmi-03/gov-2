@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { RecruitmentConfig } from '../types';
 import { saveToDatabase } from '../services/databaseService';
 
@@ -10,6 +10,75 @@ interface RegistrationFormProps {
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // ImgBB Upload States
+  const [fileUrls, setFileUrls] = useState<string[]>([]);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (!config.allowMultipleImages && fileUrls.length >= 1) {
+       setUploadError('Anda hanya diizinkan mengunggah 1 foto.');
+       return;
+    }
+
+    const file = files[0]; // Currently process one by one unless multiple selected not supported easily by native file input without 'multiple'
+
+    if (!file.type.startsWith('image/')) {
+        setUploadError('Mohon unggah file berupa gambar (JPG, PNG, dll).');
+        return;
+    }
+
+    // Limit to 5MB
+    if (file.size > 5 * 1024 * 1024) {
+        setUploadError('Ukuran gambar maksimal 5MB.');
+        return;
+    }
+
+    setIsUploadingFile(true);
+    setUploadError('');
+    
+    try {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        // Membutuhkan VITE_IMGBB_API_KEY di .env
+        const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+        if (!apiKey) {
+            throw new Error("ImgBB API Key belum diatur di .env (VITE_IMGBB_API_KEY)");
+        }
+
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            setFileUrls(prev => [...prev, data.data.url]);
+            setUploadError('');
+            if (fileInputRef.current) {
+               fileInputRef.current.value = ''; // reset so we can upload another
+            }
+        } else {
+            throw new Error(data.error?.message || 'Gagal mengunggah gambar');
+        }
+    } catch (error: any) {
+        console.error("Upload Error:", error);
+        setUploadError(error.message || 'Terjadi kesalahan saat mengunggah gambar.');
+    } finally {
+        setIsUploadingFile(false);
+    }
+  };
+
+  const handleRemoveFile = (indexToRemove: number) => {
+      setFileUrls(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,23 +99,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
             dynamicData[q.label] = answer;
         });
         
-        console.log("Data to save:", dynamicData);
-
-        /* 
-        // 1. Kirim ke Google Apps Script (DINONAKTIFKAN)
-        if (config.scriptUrl) {
-            const formData = new URLSearchParams();
-            Object.entries(dynamicData).forEach(([key, value]) => {
-                formData.append(key, value);
-            });
-
-            await fetch(config.scriptUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-            });
+        if (fileUrls.length > 0) {
+            dynamicData["Lampiran Foto (URL)"] = fileUrls.join(', ');
         }
-        */
+        
+        console.log("Data to save:", dynamicData);
 
         // 2. Simpan ke Turso
         console.log("Calling saveToDatabase...");
@@ -55,6 +112,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
 
         alert(`✅ Pendaftaran Berhasil!\n\nData Anda telah dikirim ke database pusat.\nTerima kasih telah mendaftar.`);
         setAnswers({});
+        setFileUrls([]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (error) {
@@ -153,12 +211,71 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
                         )}
                     </div>
                 ))}
+                
+                {/* Upload Foto Lampiran */}
+                {config.allowImageUpload && (
+                  <div className="space-y-2 mt-4 pt-4 border-t border-white/10">
+                      <label className="text-xs uppercase tracking-wide block font-medium text-slate-400">
+                          Lampiran Foto / Dokumen <span className="text-slate-600 text-[10px] normal-case tracking-normal">(Opsional)</span>
+                      </label>
+                      {config.imageUploadDescription && (
+                          <p className="text-[10px] text-slate-500 mb-2">{config.imageUploadDescription}</p>
+                      )}
+                      <div className="flex flex-col gap-3">
+                          <div className="relative flex items-center h-12 w-full bg-slate-900 border border-white/10 rounded-lg overflow-hidden focus-within:border-amber-500/50 transition-all duration-300">
+                              <input 
+                                  type="file" 
+                                  accept="image/*"
+                                  multiple={config.allowMultipleImages}
+                                  onChange={handleFileUpload}
+                                  ref={fileInputRef}
+                                  disabled={isUploadingFile || (!config.allowMultipleImages && fileUrls.length >= 1)}
+                                  className="w-full h-full opacity-0 absolute inset-0 cursor-pointer z-10"
+                              />
+                              <div className="flex items-center justify-between w-full px-4 py-3 z-0">
+                                  <span className="text-sm text-slate-400 truncate">
+                                      {isUploadingFile ? 'Mengunggah gambar...' : (!config.allowMultipleImages && fileUrls.length >= 1 ? 'Maksimal gambar tercapai' : 'Klik untuk memilih gambar...')}
+                                  </span>
+                                  <div className="bg-slate-800 text-slate-300 px-3 py-1 text-xs rounded border border-white/5 whitespace-nowrap">
+                                      Pilih File
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          {uploadError && (
+                              <p className="text-red-500 text-xs mt-1">{uploadError}</p>
+                          )}
+                          
+                          {fileUrls.length > 0 && (
+                             <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                               {fileUrls.map((url, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-emerald-950/30 border border-emerald-500/20 p-2 rounded-lg gap-2">
+                                    <div className="flex items-center gap-2 overflow-hidden flex-1">
+                                        <img src={url} alt={`Preview ${idx}`} className="w-8 h-8 object-cover rounded bg-slate-800 flex-shrink-0" />
+                                        <span className="text-emerald-500 text-[10px] md:text-xs truncate" title={url}>
+                                            Gambar {idx + 1} berhasil diunggah
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveFile(idx)}
+                                        className="text-red-400 hover:text-red-300 text-[10px] md:text-xs bg-red-950/50 px-2 py-1 rounded whitespace-nowrap"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
+                               ))}
+                              </div>
+                          )}
+                      </div>
+                  </div>
+                )}
 
                 <button 
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isUploadingFile}
                     className="w-full py-4 bg-amber-500 text-slate-950 font-black rounded-xl shadow-xl shadow-amber-500/20 hover:bg-amber-400 transition-all duration-300 uppercase tracking-widest text-xs disabled:opacity-50 mt-8 active:scale-95 hover:shadow-amber-500/40 hover:-translate-y-1"
                 >
-                    {isSubmitting ? 'MENGIRIM DATA...' : 'KIRIM LAMARAN'}
+                    {isSubmitting ? 'MENGIRIM DATA...' : isUploadingFile ? 'TUNGGU...' : 'KIRIM LAMARAN'}
                 </button>
             </form>
           </div>

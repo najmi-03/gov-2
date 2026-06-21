@@ -24,6 +24,7 @@ export interface FormConfig {
   title: string;
   description: string;
   icon: string;
+  category?: string;
   fields: FormField[];
   webhookKey: string;
   photoRequirement?: string;
@@ -61,6 +62,9 @@ export interface RecruitmentConfig {
   targetSheetName: string; // Nama Tab di Spreadsheet, misal: 'Batch 1'
   scriptUrl: string; // URL Google Apps Script Web App
   spreadsheetUrl?: string; // URL Link View Spreadsheet
+  allowImageUpload?: boolean;
+  allowMultipleImages?: boolean;
+  imageUploadDescription?: string;
   questions: RecruitmentQuestion[];
 }
 // =============================

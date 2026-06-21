@@ -216,6 +216,12 @@ const App: React.FC = () => {
       return;
     }
 
+    if (sectionId === 'citizen-form') {
+      navigate('/layanan-form');
+      window.scrollTo(0, 0);
+      return;
+    }
+
     if (sectionId === 'donation') {
       navigate('/donation');
       window.scrollTo(0, 0);
@@ -224,6 +230,18 @@ const App: React.FC = () => {
 
     if (sectionId === 'recruitment') {
       navigate('/RECUITMENT');
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    if (sectionId === 'departments') {
+      navigate('/departments');
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    if (sectionId === 'information') {
+      navigate('/information');
       window.scrollTo(0, 0);
       return;
     }
@@ -276,15 +294,15 @@ const App: React.FC = () => {
             <main>
               <Routes>
                 <Route path="/" element={
-                  <>
-                    <Hero 
-                      onApplyClick={() => handleNavClick('recruitment')} 
-                      onFormClick={() => handleNavClick('citizen-form')} 
-                    />
+                  <Hero 
+                    onApplyClick={() => handleNavClick('recruitment')} 
+                    onFormClick={() => handleNavClick('citizen-form')} 
+                  />
+                } />
 
-                    <CityCarousel slides={carouselSlides} />
-
-                    <section id="departments" className="py-24 px-4 max-w-7xl mx-auto">
+                <Route path="/departments" element={
+                  <div className="pt-24 bg-transparent min-h-screen">
+                    <section id="departments" className="pb-24 pt-12 px-4 max-w-7xl mx-auto">
                       <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-4">Departemen Pemerintahan</h2>
                         <p className="text-slate-400 max-w-xl mx-auto">Pilar utama pelayanan publik yang berdedikasi membangun San Andreas.</p>
@@ -300,16 +318,25 @@ const App: React.FC = () => {
                         ))}
                       </div>
                     </section>
+                  </div>
+                } />
 
-                    <CitizenIdentityForm forms={forms} webhooks={webhooks} />
-
+                <Route path="/information" element={
+                  <div className="pt-24 bg-transparent min-h-screen">
+                    <CityCarousel slides={carouselSlides} />
                     <PublicInfo 
                       newsData={news} 
                       docs={docs} 
                       onNewsClick={setSelectedNews} 
                       onArchiveClick={() => handleNavClick('news_archive')}
                     />
-                  </>
+                  </div>
+                } />
+
+                <Route path="/layanan-form" element={
+                  <div className="min-h-screen pt-24 bg-transparent pb-12">
+                    <CitizenIdentityForm forms={forms} webhooks={webhooks} />
+                  </div>
                 } />
 
                 <Route path="/RECUITMENT" element={
@@ -395,6 +422,7 @@ const App: React.FC = () => {
                   forms={forms}
                   setForms={setForms}
                   recruitmentConfig={recruitmentConfig} 
+                  setRecruitmentConfig={setRecruitmentConfig}
                   permissionConfig={permissionConfig}   
                   carouselSlides={carouselSlides}
                   setCarouselSlides={setCarouselSlides}

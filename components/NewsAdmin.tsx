@@ -34,6 +34,7 @@ interface NewsAdminProps {
   forms: FormConfig[];
   setForms: (forms: FormConfig[]) => void;
   recruitmentConfig: RecruitmentConfig; 
+  setRecruitmentConfig: (config: RecruitmentConfig) => void;
   permissionConfig: PermissionConfig[]; 
   carouselSlides: CarouselItem[]; 
   setCarouselSlides: (slides: CarouselItem[]) => void; 
@@ -47,7 +48,7 @@ type AdminTab = 'news' | 'inventory' | 'structural' | 'salary' | 'legislative' |
 
 const NewsAdmin: React.FC<NewsAdminProps> = ({ 
   news, setNews, userRole, staffName, department, depts, setDepts, leadership, setLeadership, docs, setDocs, termsContent, setTermsContent,
-  forms, setForms, recruitmentConfig, permissionConfig, carouselSlides, setCarouselSlides, pawnItems, setPawnItems,
+  forms, setForms, recruitmentConfig, setRecruitmentConfig, permissionConfig, carouselSlides, setCarouselSlides, pawnItems, setPawnItems,
   webhooks, setWebhooks
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -103,6 +104,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
   // --- SAVE HANDLERS ---
   const saveRecruitmentConfig = async (config: RecruitmentConfig) => {
     await saveToDatabase('RECRUITMENT', config);
+    setRecruitmentConfig(config);
     showToast("Konfigurasi Rekrutmen Tersimpan!");
   };
 

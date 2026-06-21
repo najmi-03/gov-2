@@ -35,6 +35,9 @@ export const DEFAULT_RECRUITMENT_CONFIG: RecruitmentConfig = {
   targetSheetName: "Rekrutmen_Batch_1",
   scriptUrl: RESPONSES_SCRIPT_URL, 
   spreadsheetUrl: "", 
+  allowImageUpload: true,
+  allowMultipleImages: true,
+  imageUploadDescription: "(Opsional) Unggah foto identitas diri atau dokumen lainnya.",
   questions: [
     { id: 'q1', label: "Nama Lengkap (IC)", type: 'SHORT', required: true, isBold: true, placeholder: "Nama sesuai KTP..." },
     { id: 'q2', label: "Nomor Telepon", type: 'SHORT', required: true, isBold: false, placeholder: "555-xxxx" },
@@ -111,7 +114,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'identitas',
     title: 'Kartu Identitas (KTP)',
     description: 'Pendaftaran biodata resmi warga negara San Andreas.',
-    icon: '🪪',
+    icon: 'IdCard',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_ktp',
     fields: [
       { id: 'f1', label: 'Nama Lengkap (IC)', placeholder: 'Contoh: Marcus Vane', type: 'text', required: true },
@@ -124,7 +128,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'identitas_hilang',
     title: 'Cetak Ulang ID Card (Hilang)',
     description: 'Permohonan cetak ulang kartu identitas yang hilang.',
-    icon: '🆔',
+    icon: 'FileWarning',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_ktp_ulang',
     fields: [
       { id: 'f1', label: 'Nama Lengkap', placeholder: 'Sesuai database', type: 'text', required: true },
@@ -136,7 +141,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'doj_pengantar',
     title: 'Surat Pengantar ke DOJ',
     description: 'Surat rujukan ke Department of Justice karena kehilangan ID.',
-    icon: '⚖️',
+    icon: 'Scale',
+    category: 'Hukum & Lisensi',
     webhookKey: 'ls_gov_webhook_doj',
     fields: [
       { id: 'f1', label: 'Nama Lengkap', placeholder: 'Nama pelapor', type: 'text', required: true },
@@ -148,7 +154,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'id_update_foto',
     title: 'Pembaruan Foto ID Card',
     description: 'Pembaruan foto identitas pasca operasi plastik / ganti penampilan.',
-    icon: '📸',
+    icon: 'Camera',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_ktp_foto',
     fields: [
       { id: 'f1', label: 'Nama Lengkap', placeholder: 'Nama sesuai KTP', type: 'text', required: true },
@@ -160,7 +167,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'id_ganti_data',
     title: 'Penggantian Data ID Card',
     description: 'Perubahan data nama atau informasi biodata lainnya.',
-    icon: '📝',
+    icon: 'FileEdit',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_ktp_data',
     fields: [
       { id: 'f1', label: 'Nama Lama', placeholder: 'Sesuai KTP sebelumnya', type: 'text', required: true },
@@ -172,7 +180,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'sim_ulang',
     title: 'Cetak Ulang SIM',
     description: 'Cetak ulang Driving License karena ganti data / hilang / oplas.',
-    icon: '🚗',
+    icon: 'Car',
+    category: 'Hukum & Lisensi',
     webhookKey: 'ls_gov_webhook_sim',
     fields: [
       { id: 'f1', label: 'Nama Lengkap', placeholder: 'Sesuai KTP', type: 'text', required: true },
@@ -184,7 +193,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'lisensi_ulang',
     title: 'Cetak Ulang Lisensi Umum',
     description: 'Cetak ulang lisensi lain (Berburu/Senjata) karena ganti data/hilang.',
-    icon: '📜',
+    icon: 'FileBadge',
+    category: 'Hukum & Lisensi',
     webhookKey: 'ls_gov_webhook_lisensi_gen',
     fields: [
       { id: 'f1', label: 'Nama Lengkap', placeholder: 'Sesuai KTP', type: 'text', required: true },
@@ -196,7 +206,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'marriage_license',
     title: 'Marriage License',
     description: 'Permohonan izin untuk melaksanakan pernikahan resmi.',
-    icon: '💍',
+    icon: 'HeartHandshake',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_marriage',
     fields: [
       { id: 'f1', label: 'Nama Calon Suami', placeholder: 'Nama Lengkap & CID', type: 'text', required: true },
@@ -208,7 +219,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'marriage_cert',
     title: 'Marriage Certificate',
     description: 'Penerbitan akta nikah resmi setelah prosesi pernikahan.',
-    icon: '💒',
+    icon: 'ScrollText',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_marriage',
     fields: [
       { id: 'f1', label: 'Nama Suami', placeholder: 'Sesuai KTP', type: 'text', required: true },
@@ -220,7 +232,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'izin_usaha',
     title: 'Surat Izin Usaha',
     description: 'Pendaftaran izin operasional bisnis/toko baru.',
-    icon: '🏢',
+    icon: 'Store',
+    category: 'Bisnis & Perizinan',
     webhookKey: 'ls_gov_webhook_bisnis',
     fields: [
       { id: 'f1', label: 'Nama Pemilik Usaha', placeholder: 'Nama Lengkap', type: 'text', required: true },
@@ -233,7 +246,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'izin_usaha_update',
     title: 'Pembaruan Izin Usaha',
     description: 'Pembaruan masa berlaku atau perubahan data bisnis.',
-    icon: '🔄',
+    icon: 'RefreshCw',
+    category: 'Bisnis & Perizinan',
     webhookKey: 'ls_gov_webhook_bisnis',
     fields: [
       { id: 'f1', label: 'Nama Bisnis', placeholder: 'Sesuai Izin Lama', type: 'text', required: true },
@@ -245,7 +259,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'izin_pers',
     title: 'Surat Izin Pers',
     description: 'Izin resmi untuk peliputan berita dan aktivitas jurnalistik.',
-    icon: '📽️',
+    icon: 'Video',
+    category: 'Bisnis & Perizinan',
     webhookKey: 'ls_gov_webhook_pers',
     fields: [
       { id: 'f1', label: 'Nama Lengkap', placeholder: 'Nama Jurnalis', type: 'text', required: true },
@@ -257,7 +272,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'izin_pers_update',
     title: 'Pembaruan Izin Pers',
     description: 'Pembaruan masa berlaku kartu pers atau ganti perusahaan media.',
-    icon: '📰',
+    icon: 'Newspaper',
+    category: 'Bisnis & Perizinan',
     webhookKey: 'ls_gov_webhook_pers',
     fields: [
       { id: 'f1', label: 'Nama Lengkap', placeholder: 'Nama Jurnalis', type: 'text', required: true },
@@ -269,7 +285,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'kk_baru',
     title: 'Kartu Keluarga',
     description: 'Pendaftaran Kartu Keluarga baru (Maksimal 5 Anggota).',
-    icon: '👨‍👩-👧‍👦',
+    icon: 'Users',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_kk',
     fields: [
       { id: 'f1', label: 'Nama Kepala Keluarga', placeholder: 'Nama & CID', type: 'text', required: true },
@@ -283,7 +300,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'kk_tambah',
     title: 'Penambahan Anggota KK',
     description: 'Menambahkan anggota baru ke dalam Kartu Keluarga yang ada.',
-    icon: '➕',
+    icon: 'UserPlus',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_kk',
     fields: [
       { id: 'f1', label: 'Nomor KK / Nama KK', placeholder: 'ID Kartu Keluarga', type: 'text', required: true },
@@ -295,7 +313,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'kk_kurang',
     title: 'Pengurangan Anggota KK',
     description: 'Menghapus anggota dari Kartu Keluarga (Pindah/Meninggal).',
-    icon: '➖',
+    icon: 'UserMinus',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_kk',
     fields: [
       { id: 'f1', label: 'Nomor KK / Nama KK', placeholder: 'ID Kartu Keluarga', type: 'text', required: true },
@@ -307,7 +326,8 @@ export const DEFAULT_FORMS: FormConfig[] = [
     id: 'kk_ubah',
     title: 'Perubahan Data Anggota KK',
     description: 'Update informasi biodata salah satu anggota dalam KK.',
-    icon: '🔄',
+    icon: 'UserCog',
+    category: 'Kependudukan',
     webhookKey: 'ls_gov_webhook_kk',
     fields: [
       { id: 'f1', label: 'Nomor KK / Nama KK', placeholder: 'ID Kartu Keluarga', type: 'text', required: true },

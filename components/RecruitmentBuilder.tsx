@@ -305,6 +305,54 @@ const RecruitmentBuilder: React.FC<RecruitmentBuilderProps> = ({ config, onSave 
           </div>
         </div>
 
+        {/* IMAGE UPLOAD CONFIG */}
+        <div className="bg-slate-900 p-5 rounded-xl border border-white/10 space-y-4 md:col-span-2">
+          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Pengaturan Unggah Foto / Lampiran</label>
+          <div className="flex flex-col sm:flex-row gap-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className="relative">
+                <input 
+                  type="checkbox" 
+                  className="sr-only" 
+                  checked={localConfig.allowImageUpload || false}
+                  onChange={(e) => setLocalConfig({...localConfig, allowImageUpload: e.target.checked})}
+                />
+                <div className={`block w-10 h-6 rounded-full transition-colors ${localConfig.allowImageUpload ? 'bg-amber-500' : 'bg-slate-700'}`}></div>
+                <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${localConfig.allowImageUpload ? 'translate-x-4' : 'translate-x-0'}`}></div>
+              </div>
+              <span className="text-xs text-white">Aktifkan Unggah Foto</span>
+            </label>
+            
+            {localConfig.allowImageUpload && (
+               <label className="flex items-center gap-3 cursor-pointer">
+                <div className="relative">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={localConfig.allowMultipleImages || false}
+                    onChange={(e) => setLocalConfig({...localConfig, allowMultipleImages: e.target.checked})}
+                  />
+                  <div className={`block w-10 h-6 rounded-full transition-colors ${localConfig.allowMultipleImages ? 'bg-amber-500' : 'bg-slate-700'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${localConfig.allowMultipleImages ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                </div>
+                <span className="text-xs text-white">Bolehkan Lebih Dari 1 Foto</span>
+              </label>
+            )}
+          </div>
+          {localConfig.allowImageUpload && (
+            <div className="pt-2 border-t border-white/5 space-y-2 mt-2">
+              <label className="text-xs text-slate-400">Deskripsi / Label Foto</label>
+              <input 
+                type="text" 
+                value={localConfig.imageUploadDescription || ''}
+                onChange={e => setLocalConfig({...localConfig, imageUploadDescription: e.target.value})}
+                className="w-full bg-slate-950 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-amber-500/50 outline-none"
+                placeholder="(Opsional) Tulis instruksi seperti: 'Unggah Foto Pas dan KTP...'"
+              />
+            </div>
+          )}
+        </div>
+
         <div className="md:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
                 <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Daftar Pertanyaan ({localConfig.questions.length})</h4>

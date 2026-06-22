@@ -339,7 +339,7 @@ export const DEFAULT_FORMS: FormConfig[] = [
 
 export const DEPARTMENTS: DeptInfo[] = [
   {
-    id: 'ha',
+    id: 'home_affairs',
     name: Department.HOME_AFFAIRS,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEgqXo8LtommikmxINNui4ohO9aEFE3T2yQXFIsu4xf1PfdPj_pZn0fmpo3jxfIZH8BJ_NQe8RhZR5itW7t2DlZyd7Gz7JIX5ZBGK1f5zw_cSjszCzQ315irJctxxYrnhRBqA_EkZwhECpUiHgzXbdy0ochLzsOwTFTvzx_520qPrhUfJWbn09Q89oC60Xy0',
     shortDescription: 'Mengelola catatan kota, perizinan, and perencanaan tata ruang San Andreas.',
@@ -356,7 +356,7 @@ export const DEPARTMENTS: DeptInfo[] = [
     ]
   },
   {
-    id: 'hd',
+    id: 'homeland_defense',
     name: Department.HOMELAND_DEFENSE,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEjitrq1I2eFRXT-N9Lomt94YLx081ed5G0kqpaS2gqQ9nJWlGMNWunEwDu3GCWDFZ5RJMPVlh39XTyCgmBJ176ErW9U2_ucU3K_475xWG2VLvj1pmdftXvl3KMPXwyvrP5InIThF3MPFP2XxeAESwRVMYSUeerLzNZ2zDPlnzrI4n3UOBPcC3m5UIa1sPzq',
     shortDescription: 'Menjamin keamanan and koordinasi penegakan hukum di seluruh wilayah metropolis San Andreas.',
@@ -390,7 +390,7 @@ export const DEPARTMENTS: DeptInfo[] = [
     ]
   },
   {
-    id: 'sa',
+    id: 'social_affairs',
     name: Department.SOCIAL_AFFAIRS,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEgIGurQI1uxBkygOBWtTDHRQBFssOiQhafX9Kp1S2Vodf-MnncDmLIf3f6uEOw1LA1-hwbUAEr-fHLISRQap5gYB91W2ROcJM0fms1v_gGRMsQ4Aor-yUOGH8YhYmDjkRIIGO9hSue_mnlatJD0Q5HVtUcUeUxwMjF0Uu2dLhG1zswAnfvXH8k9VO40OyCE',
     shortDescription: 'Berfokus pada kesejahteraan, pemberdayaan komunitas, and inklusivitas sosial di San Andreas.',
@@ -407,7 +407,7 @@ export const DEPARTMENTS: DeptInfo[] = [
     ]
   },
   {
-    id: 'te',
+    id: 'treasury_economic',
     name: Department.TREASURY_ECONOMIC,
     icon: 'https://blogger.googleusercontent.com/img/a/AVvXsEhBc8I7KEY9lABvx_6pAp7j-uc8_tmUy9GfRHtlqYKFWmYwnq857BVOFH5Yspv2pjQImVpNEx-VCyUxkKNXLFXN2I4dJhj4f5SskOPp21feNNnC-hJjEYsTyZ9Eqn-X8vrO0i7hV8QlkBwZ0QArBIX2H-NYyeitOHPjD6F8PelAob6k8yk-esfmXm6m04Hm',
     shortDescription: 'Mengelola anggaran, perpajakan, and pertumbuhan ekonomi San Andreas.',
@@ -424,7 +424,7 @@ export const DEPARTMENTS: DeptInfo[] = [
     ]
   },
   {
-    id: 'hr',
+    id: 'human_resource',
     name: Department.HUMAN_RESOURCE,
     icon: '👥',
     shortDescription: 'Manajemen talenta, rekrutmen, and pengembangan karir aparatur sipil San Andreas.',

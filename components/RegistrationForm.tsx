@@ -47,7 +47,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ config }) => {
         formData.append('image', file);
         
         // Membutuhkan VITE_IMGBB_API_KEY di .env
-        const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+        const apiKey = (import.meta as any).env.VITE_IMGBB_API_KEY;
         if (!apiKey) {
             throw new Error("ImgBB API Key belum diatur di .env (VITE_IMGBB_API_KEY)");
         }

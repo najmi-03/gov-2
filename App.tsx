@@ -4,7 +4,9 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import CityCarousel from './components/CityCarousel';
 import DepartmentCard from './components/DepartmentCard';
-import DepartmentDetail from './components/DepartmentDetail';
+import DepartmentPage from './components/DepartmentPage';
+import BpomStatusPage from './components/BpomStatusPage';
+import DoctorCertPage from './components/DoctorCertPage';
 import RegistrationForm from './components/RegistrationForm';
 import RecruitmentScene from './components/RecruitmentScene';
 import PublicInfo from './components/PublicInfo';
@@ -85,7 +87,6 @@ const App: React.FC = () => {
   const [pawnItems, setPawnItems] = useState<PawnItem[]>(INITIAL_PAWN_DATA);
   const [webhooks, setWebhooks] = useState<Record<string, string>>({});
 
-  const [selectedDept, setSelectedDept] = useState<DeptInfo | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
@@ -313,13 +314,21 @@ const App: React.FC = () => {
                             key={dept.id} 
                             dept={dept} 
                             index={idx} 
-                            onClick={setSelectedDept} 
+                            onClick={(d) => {
+                              const slug = (d.name as string).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                              navigate(`/departments/${slug}`);
+                              window.scrollTo(0, 0);
+                            }} 
                           />
                         ))}
                       </div>
                     </section>
                   </div>
                 } />
+
+                <Route path="/departments/health/bpom" element={<BpomStatusPage />} />
+                <Route path="/departments/health/doctor-certs" element={<DoctorCertPage />} />
+                <Route path="/departments/:deptId" element={<DepartmentPage depts={depts} />} />
 
                 <Route path="/information" element={
                   <div className="pt-24 bg-transparent min-h-screen">
@@ -434,12 +443,6 @@ const App: React.FC = () => {
             )}
 
             {/* Modals and Overlays */}
-            <DepartmentDetail 
-              dept={selectedDept} 
-              onClose={() => setSelectedDept(null)} 
-              onApply={() => handleNavClick('recruitment')}
-            />
-
             <NewsDetail 
               news={selectedNews} 
               onClose={() => setSelectedNews(null)} 

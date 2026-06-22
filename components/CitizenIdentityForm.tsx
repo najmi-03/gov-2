@@ -22,6 +22,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webh
   // --- NEW STATES FOR FILTER & SEARCH ---
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
 
   const categories = useMemo(() => {
     const cats = new Set(forms.map(f => f.category).filter(Boolean) as string[]);
@@ -58,7 +59,7 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webh
 
       setFiles(newFiles);
       
-      const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
+      const newPreviews = selectedFiles.map(file => URL.createObjectURL(file as any));
       setPreviews([...previews, ...newPreviews]);
     }
   };
@@ -168,10 +169,48 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webh
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               className="block w-full pl-12 pr-4 py-4 md:py-5 border-2 border-white/5 bg-slate-900/80 backdrop-blur-md rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all shadow-xl text-base md:text-lg"
               placeholder="Cari Layanan atau Formulir Digital..."
             />
+            
+            {/* SUGGESTION DROPDOWN */}
+            {showSuggestions && searchQuery.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-xl overflow-hidden z-50 shadow-2xl max-h-64 overflow-y-auto text-left">
+                {filteredForms.length > 0 ? (
+                   filteredForms.slice(0, 5).map(f => (
+                     <div 
+                        key={f.id}
+                        className="px-4 py-3 hover:bg-slate-800 cursor-pointer border-b border-white/5 last:border-0"
+                        onClick={() => {
+                           setSearchQuery(""); // clear search query on select if desired, or keep title
+                           setShowSuggestions(false);
+                           handleOpenForm(f);
+                        }}
+                     >
+                       <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center flex-shrink-0">
+                            {renderFormIcon(f.icon, "w-5 h-5 object-contain")}
+                          </div>
+                          <div>
+                            <h4 className="text-white font-bold text-sm tracking-wide">{f.title}</h4>
+                            <p className="text-xs text-slate-400 mt-0.5 truncate max-w-sm">{f.description || "Formulir administrasi resmi"}</p>
+                          </div>
+                       </div>
+                     </div>
+                   ))
+                ) : (
+                   <div className="px-4 py-3 text-sm text-slate-500 italic text-center">
+                      Lembarkan tidak ditemukan.
+                   </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

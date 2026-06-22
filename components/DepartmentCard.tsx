@@ -17,9 +17,9 @@ const DepartmentCard: React.FC<DepartmentCardProps> = ({ dept, onClick, index })
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onClick(dept)}
-      className="group relative bg-slate-900/50 border border-white/5 rounded-xl overflow-hidden hover:border-amber-500/30 transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/10 cursor-pointer"
+      className="group relative bg-slate-900/50 border border-white/5 rounded-xl overflow-hidden hover:border-amber-500/30 transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/10 cursor-pointer flex flex-col h-full"
     >
-      <div className="h-48 overflow-hidden relative">
+      <div className="h-48 overflow-hidden relative flex-shrink-0">
         <img 
           src={dept.imageUrl} 
           alt={dept.name} 
@@ -40,12 +40,12 @@ const DepartmentCard: React.FC<DepartmentCardProps> = ({ dept, onClick, index })
         </div>
       </div>
       
-      <div className="p-6">
-        <p className="text-slate-400 text-sm leading-relaxed mb-6 line-clamp-2">
+      <div className="p-6 flex flex-col flex-grow">
+        <p className="text-slate-400 text-sm leading-relaxed mb-6 flex-grow">
           {dept.shortDescription}
         </p>
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-auto">
           <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Detail & Struktural</span>
           <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

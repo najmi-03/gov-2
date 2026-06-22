@@ -30,7 +30,10 @@ const LOCAL_STAFF_DATABASE = [
   { pin: "PRES1", name: "Marcus Vane", role: "SUPER_ADMIN" },
 
   // 7. Secretary of State (Super Admin Sekretariat)
-  { pin: "SECSTATE1", name: "Dominic Sterling", role: "SECRETARY_OF_STATE" }
+  { pin: "SECSTATE1", name: "Dominic Sterling", role: "SECRETARY_OF_STATE" },
+
+  // 8. Health Admin
+  { pin: "1", name: "Admin Health", role: "HEALTH_ADMIN" }
 ];
 
 const GENERIC_STAFF_TITLES = [

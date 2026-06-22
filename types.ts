@@ -8,6 +8,25 @@ export enum Department {
   HEALTH = 'Health Services'
 }
 
+export interface BpomRecord {
+  id: string;
+  productName: string;
+  manufacturer: string;
+  status: 'Aman' | 'Berbahaya' | 'Belum Terdaftar';
+  registrationNumber?: string;
+  imageUrl?: string;
+}
+
+export interface DoctorCertRecord {
+  id: string;
+  doctorName: string;
+  specialization: string;
+  status: 'Aktif' | 'Non-Aktif' | 'Dicabut';
+  licenseNumber: string;
+  expiryDate?: string;
+  imageUrl?: string;
+}
+
 export type PawnCategory = 'PERTANIAN' | 'PERTAMBANGAN' | 'PERHIASAN' | 'ALKOHOL' | 'HUNTING' | 'RONGSOK';
 export type PawnStatus = 'BLUE' | 'GREEN' | 'YELLOW' | 'RED' | 'BLACK';
 
@@ -143,7 +162,7 @@ export interface CarouselItem {
 // =========================
 
 // Update Role untuk mendukung Super Admin (Presiden) dan Staff Biasa
-export type AdminRole = 'SUPER_ADMIN' | 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'PAWN_STAFF' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'DHA_ADMIN' | 'SECRETARY_ADMIN' | 'SECRETARY_OF_STATE' | 'SECRETARY_DEPARTMENT' | 'STAFF' | 'NONE';
+export type AdminRole = 'SUPER_ADMIN' | 'HEALTH_ADMIN' | 'NEWS_ADMIN' | 'PAWN_ADMIN' | 'PAWN_STAFF' | 'HR_ADMIN' | 'TREASURY_ADMIN' | 'DHA_ADMIN' | 'SECRETARY_ADMIN' | 'SECRETARY_OF_STATE' | 'SECRETARY_DEPARTMENT' | 'STAFF' | 'NONE';
 
 export interface AuthState {
   isAdmin: boolean;

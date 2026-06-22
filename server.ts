@@ -170,6 +170,16 @@ async function startServer() {
       console.log("Seeding complete.");
     }
 
+    // Ensure HEALTH_ADMIN exists with pin 1
+    const healthUserCount = await client.execute("SELECT COUNT(*) as count FROM users WHERE username = '1'");
+    if (Number(healthUserCount.rows[0].count) === 0) {
+      console.log("Seeding HEALTH_ADMIN user...");
+      await client.execute({
+        sql: "INSERT INTO users (username, password, ic_name, role) VALUES (?, ?, ?, ?)",
+        args: ["1", "password123", "Admin Health", "HEALTH_ADMIN"]
+      });
+    }
+
     // Seed recruitment config if empty
     const recruitCount = await client.execute("SELECT COUNT(*) as count FROM recruitment_config");
     if (Number(recruitCount.rows[0].count) === 0) {
@@ -369,6 +379,36 @@ async function startServer() {
         args: [JSON.stringify(initialPawn)]
       });
       console.log("Pawn seeding complete.");
+    }
+
+    // Seed bpom data if empty
+    const bpomCount = await client.execute("SELECT COUNT(*) as count FROM app_configs WHERE key = 'BPOM'");
+    if (Number(bpomCount.rows[0].count) === 0) {
+      console.log("Seeding initial BPOM data...");
+      const initialBpom = [
+        { id: '1', productName: 'Paracetamol 500mg', manufacturer: 'PharmaCorp', status: 'Aman', registrationNumber: 'BPOM-SA-2023-001' },
+        { id: '2', productName: 'Minuman Energi Banteng', manufacturer: 'Beverage Inc', status: 'Berbahaya' },
+        { id: '3', productName: 'Vitamin C 1000mg', manufacturer: 'HealthPlus', status: 'Aman', registrationNumber: 'BPOM-SA-2023-045' },
+      ];
+      await client.execute({
+        sql: "INSERT INTO app_configs (key, value) VALUES ('BPOM', ?)",
+        args: [JSON.stringify(initialBpom)]
+      });
+      console.log("BPOM seeding complete.");
+    }
+
+    // Seed doctor cert data if empty
+    const docCertCount = await client.execute("SELECT COUNT(*) as count FROM app_configs WHERE key = 'DOCTOR_CERT'");
+    if (Number(docCertCount.rows[0].count) === 0) {
+      console.log("Seeding initial Doctor Cert data...");
+      const initialCerts = [
+        { id: '1', doctorName: 'Dr. John Doe', specialization: 'Dokter Umum', status: 'Aktif', licenseNumber: 'SIP-112233', expiryDate: '2027-12-31' },
+      ];
+      await client.execute({
+        sql: "INSERT INTO app_configs (key, value) VALUES ('DOCTOR_CERT', ?)",
+        args: [JSON.stringify(initialCerts)]
+      });
+      console.log("Doctor Cert seeding complete.");
     }
 
     // Seed departments if empty

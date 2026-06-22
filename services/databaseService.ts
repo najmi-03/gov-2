@@ -3,7 +3,7 @@ import { DATABASE_SCRIPT_URL, ATTENDANCE_SCRIPT_URL, ATTENDANCE_CSV_URL } from '
 
 // Tipe data yang bisa dikirim
 // Ditambahkan: CAROUSEL agar slide bisa diatur admin
-type ConfigType = 'NEWS' | 'DEPTS' | 'LEADERSHIP' | 'DOCS' | 'RECRUITMENT' | 'PAWN' | 'TERMS' | 'FORMS' | 'ATTENDANCE' | 'INVENTORY_COMMON' | 'INVENTORY_BLACK' | 'PERMISSIONS' | 'CAROUSEL' | 'RESPONSES' | 'WEBHOOKS';
+type ConfigType = 'NEWS' | 'DEPTS' | 'LEADERSHIP' | 'DOCS' | 'RECRUITMENT' | 'PAWN' | 'TERMS' | 'FORMS' | 'ATTENDANCE' | 'INVENTORY_COMMON' | 'INVENTORY_BLACK' | 'PERMISSIONS' | 'CAROUSEL' | 'RESPONSES' | 'WEBHOOKS' | 'BPOM' | 'DOCTOR_CERT';
 
 // MAPPING PENTING: Menentukan nama Tab/Sheet di Google Spreadsheet tujuan.
 // Admin WAJIB membuat Tab dengan nama-nama ini di Spreadsheet Database.
@@ -22,7 +22,9 @@ const SHEET_MAPPING: Record<ConfigType, string> = {
   PERMISSIONS: 'Database_Config_Izin',
   CAROUSEL: 'Database_Carousel',
   RESPONSES: 'Database_Responses',
-  WEBHOOKS: 'Database_Webhooks'
+  WEBHOOKS: 'Database_Webhooks',
+  BPOM: 'Database_Bpom',
+  DOCTOR_CERT: 'Database_Doctor_Cert'
 };
 
 // Helper untuk parsing CSV text menjadi Array of Object (JSON)
@@ -79,7 +81,7 @@ export const fetchFromDatabase = async (type: ConfigType, params?: any) => {
     let url = `/api/${type.toLowerCase()}`;
     
     // Special mapping for generic configs
-    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS'];
+    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS', 'BPOM', 'DOCTOR_CERT'];
     if (genericConfigs.includes(type)) {
       url = `/api/config/${type}`;
     } else if (type === 'RESPONSES') {
@@ -108,7 +110,7 @@ export const saveToDatabase = async (type: ConfigType, data: any) => {
     let payload = data;
 
     // Special mapping for generic configs
-    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS'];
+    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS', 'BPOM', 'DOCTOR_CERT'];
     if (genericConfigs.includes(type)) {
       url = `/api/config/${type}`;
       payload = { value: data };

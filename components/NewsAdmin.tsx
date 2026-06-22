@@ -13,6 +13,8 @@ import CarouselManager from './CarouselManager';
 import WebhookManager from './WebhookManager';
 import KPIManager from './KPIManager';
 import UserApprovalManager from './UserApprovalManager';
+import BpomManager from './BpomManager';
+import DoctorCertManager from './DoctorCertManager';
 import { saveToDatabase, fetchFromDatabase } from '../services/databaseService';
 
 interface NewsAdminProps {
@@ -44,7 +46,7 @@ interface NewsAdminProps {
   setWebhooks: (webhooks: Record<string, string>) => void;
 }
 
-type AdminTab = 'news' | 'inventory' | 'structural' | 'salary' | 'legislative' | 'terms' | 'form_mgmt' | 'recruitment' | 'permission_mgmt' | 'permission_portal' | 'secretary_portal' | 'carousel_mgmt' | 'webhooks' | 'kpi_mgmt' | 'user_approval';
+type AdminTab = 'news' | 'inventory' | 'structural' | 'salary' | 'legislative' | 'terms' | 'form_mgmt' | 'recruitment' | 'permission_mgmt' | 'permission_portal' | 'secretary_portal' | 'carousel_mgmt' | 'webhooks' | 'kpi_mgmt' | 'user_approval' | 'bpom_mgmt' | 'doctor_cert_mgmt';
 
 const NewsAdmin: React.FC<NewsAdminProps> = ({ 
   news, setNews, userRole, staffName, department, depts, setDepts, leadership, setLeadership, docs, setDocs, termsContent, setTermsContent,
@@ -346,6 +348,14 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                         </>
                     )}
 
+                    {/* HEALTH TABS */}
+                    {(isSuperAdmin || userRole === 'HEALTH_ADMIN') && (
+                        <>
+                            <button onClick={() => setActiveTab('bpom_mgmt')} className={`flex-shrink-0 px-4 py-3 text-[9px] font-bold tracking-widest uppercase transition-colors active:scale-95 ${activeTab === 'bpom_mgmt' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500 hover:text-white'}`}>Manajemen BPOM</button>
+                            <button onClick={() => setActiveTab('doctor_cert_mgmt')} className={`flex-shrink-0 px-4 py-3 text-[9px] font-bold tracking-widest uppercase transition-colors active:scale-95 ${activeTab === 'doctor_cert_mgmt' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500 hover:text-white'}`}>Sertifikasi Dokter</button>
+                        </>
+                    )}
+
                     {/* SECRETARY TABS */}
                     {(isSuperAdmin || userRole === 'SECRETARY_ADMIN' || userRole === 'SECRETARY_OF_STATE') && (
                         <button onClick={() => setActiveTab('secretary_portal')} className={`flex-shrink-0 px-4 py-3 text-[9px] font-bold tracking-widest uppercase transition-colors active:scale-95 ${activeTab === 'secretary_portal' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500 hover:text-white'}`}>Sekretariat</button>
@@ -565,6 +575,16 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                         </>
                     )}
                     
+                    {/* BPOM MANAGEMENT */}
+                    {activeTab === 'bpom_mgmt' && (
+                        <BpomManager />
+                    )}
+
+                    {/* DOCTOR CERT MANAGEMENT */}
+                    {activeTab === 'doctor_cert_mgmt' && (
+                        <DoctorCertManager />
+                    )}
+
                     {/* INVENTORY & PAWNSHOP */}
                     {activeTab === 'inventory' && (
                         <PawnshopManager 

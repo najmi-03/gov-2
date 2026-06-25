@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, ArrowLeft, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Search, ArrowLeft, ShieldCheck, AlertTriangle, Share2 } from 'lucide-react';
 import { DoctorCertRecord } from '../types';
 import { fetchFromDatabase } from '../services/databaseService';
 
 const DoctorCertPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { urlSearchQuery } = useParams<{ urlSearchQuery?: string }>();
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery ? decodeURIComponent(urlSearchQuery) : '');
   const [searchResult, setSearchResult] = useState<DoctorCertRecord[] | null>(null);
   const [allRecords, setAllRecords] = useState<DoctorCertRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<DoctorCertRecord[]>([]);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   useEffect(() => {
     const loadRecords = async () => {
@@ -19,11 +21,28 @@ const DoctorCertPage: React.FC = () => {
       const data = await fetchFromDatabase('DOCTOR_CERT');
       if (data) {
         setAllRecords(data);
+        if (urlSearchQuery) {
+          const q = decodeURIComponent(urlSearchQuery).toLowerCase();
+          const results = data.filter(item => 
+            item.doctorName?.toLowerCase().includes(q) || 
+            item.specialization?.toLowerCase().includes(q) ||
+            item.licenseNumber?.toLowerCase().includes(q)
+          );
+          setSearchResult(results);
+        }
       }
       setIsLoading(false);
     };
     loadRecords();
-  }, []);
+  }, [urlSearchQuery]);
+
+  const handleShare = (doctorName: string) => {
+    const link = `${window.location.origin}/departments/health/doctor-certs/${encodeURIComponent(doctorName)}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedLink(doctorName);
+      setTimeout(() => setCopiedLink(null), 2000);
+    });
+  };
 
   useEffect(() => {
     if (searchQuery.trim().length > 0) {
@@ -207,6 +226,13 @@ const DoctorCertPage: React.FC = () => {
                           </a>
                         </div>
                       )}
+                      
+                      <button
+                        onClick={() => handleShare(record.doctorName)}
+                        className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-slate-300 hover:text-white border border-white/10 hover:border-blue-500/50 rounded-lg text-xs font-bold uppercase tracking-wide transition-all"
+                      >
+                        <Share2 size={14} /> {copiedLink === record.doctorName ? 'Tersalin!' : 'Bagi Link'}
+                      </button>
                     </div>
                   </div>
                 ))}

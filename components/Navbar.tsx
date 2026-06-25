@@ -107,6 +107,22 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick, auth }) => {
                 </button>
               </div>
             </div>
+
+            {/* User Profile */}
+            {auth.staffName && (
+              <button 
+                onClick={() => onNavClick('profile')}
+                className="w-10 h-10 rounded-full border-2 border-amber-500/50 hover:border-amber-500 overflow-hidden transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900 flex items-center justify-center bg-slate-800"
+              >
+                {auth.avatar_url ? (
+                  <img src={auth.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )}
+              </button>
+            )}
           </div>
           
           <div className="md:hidden flex items-center">
@@ -182,6 +198,25 @@ const Navbar: React.FC<NavbarProps> = ({ onNavClick, auth }) => {
               </button>
             </div>
           </div>
+          
+          {/* User Profile Mobile */}
+          {auth.staffName && (
+            <div className="pt-4 border-t border-white/5">
+              <button
+                onClick={() => handleMobileNav('profile')}
+                className="w-full flex items-center justify-center gap-2 bg-slate-800 text-amber-500 text-xs font-bold uppercase tracking-widest rounded-xl transition-all duration-300 hover:bg-slate-700 active:scale-95 py-3 border border-amber-500/20"
+              >
+                {auth.avatar_url ? (
+                  <img src={auth.avatar_url} alt="Profile" className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )}
+                PROFIL SAYA
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </nav>

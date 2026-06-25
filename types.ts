@@ -15,6 +15,8 @@ export interface BpomRecord {
   status: 'Aman' | 'Berbahaya' | 'Belum Terdaftar';
   registrationNumber?: string;
   imageUrl?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export interface DoctorCertRecord {
@@ -25,6 +27,8 @@ export interface DoctorCertRecord {
   licenseNumber: string;
   expiryDate?: string;
   imageUrl?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export type PawnCategory = 'PERTANIAN' | 'PERTAMBANGAN' | 'PERHIASAN' | 'ALKOHOL' | 'HUNTING' | 'RONGSOK';
@@ -95,6 +99,8 @@ export interface PawnItem {
   basePrice: number;
   status: PawnStatus;
   stock: number;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export interface StaffMember {
@@ -141,6 +147,8 @@ export interface SalaryRecord {
   bonus: number;
   penaltyLevel: 'NONE' | 'SP1' | 'SP2' | 'SP3';
   notes: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export interface NewsItem {
@@ -150,6 +158,8 @@ export interface NewsItem {
   summary: string;
   tag: string;
   imageUrl?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 // === NEW CAROUSEL TYPE ===
@@ -158,6 +168,8 @@ export interface CarouselItem {
   imageUrl: string;
   title: string;
   subtitle: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 // =========================
 
@@ -168,8 +180,11 @@ export interface AuthState {
   isAdmin: boolean;
   staffName: string | null;
   role: AdminRole;
-  nip?: string; // Menyimpan ID/PIN Login sebagai NIP
-  department?: string; // Departemen tempat staff bertugas
+  nip?: string;
+  department?: string;
+  username?: string;
+  avatar_url?: string;
+  salary_per_hour?: number;
 }
 
 export interface AttendanceLog {

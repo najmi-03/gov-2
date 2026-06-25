@@ -11,8 +11,10 @@ async function startServer() {
   const PORT = 3000;
 
   // Koneksi ke Turso
+  let dbUrl = process.env.TURSO_DATABASE_URL || "libsql://gov-ime-minjadev-alt.aws-ap-northeast-1.turso.io";
+  
   const client = createClient({
-    url: process.env.TURSO_DATABASE_URL || "libsql://gov-ime-minjadev-alt.aws-ap-northeast-1.turso.io",
+    url: dbUrl,
     authToken: process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzMwOTY0OTUsImlkIjoiMDE5Y2Q0YzktMmQwMS03Mjk1LTk2OTEtODY1YTBmOTUwZmI4IiwicmlkIjoiZTJhNmViNDUtNDUxYy00YjhmLTg2MDYtOGJjMGM5N2Q1YWMyIn0.vyQDCZ3AL6oLorMstNOh0c5ID6aHKCFVZVAVZ8gbqtJp4hJUtf5SdBxL_vmIqI8ApSQKXuKrhu7hzyQFgoWDBg",
   });
 
@@ -512,7 +514,9 @@ async function startServer() {
           staffName: user.ic_name,
           role: user.role,
           nip: user.nip || user.username,
-          username: user.username
+          username: user.username,
+          avatar_url: user.avatar_url,
+          salary_per_hour: user.salary_per_hour
         });
       } else {
         res.status(401).json({ error: "Invalid PIN" });
@@ -528,6 +532,26 @@ async function startServer() {
       res.json(result.rows);
     } catch (err) {
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.put("/api/profile", async (req, res) => {
+    const { username, ic_name, password, avatar_url } = req.body;
+    try {
+      if (password) {
+        await client.execute({
+          sql: "UPDATE users SET ic_name = ?, password = ?, avatar_url = ? WHERE username = ?",
+          args: [ic_name, password, avatar_url, username]
+        });
+      } else {
+        await client.execute({
+          sql: "UPDATE users SET ic_name = ?, avatar_url = ? WHERE username = ?",
+          args: [ic_name, avatar_url, username]
+        });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to update profile" });
     }
   });
 

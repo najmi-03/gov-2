@@ -1,26 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, ArrowLeft, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Search, ArrowLeft, ShieldCheck, AlertTriangle, Share2 } from 'lucide-react';
 import { BpomRecord } from '../types';
 import { fetchFromDatabase } from '../services/databaseService';
 
 const BpomStatusPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { urlSearchQuery } = useParams<{ urlSearchQuery?: string }>();
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery ? decodeURIComponent(urlSearchQuery) : '');
   const [searchResult, setSearchResult] = useState<BpomRecord[] | null>(null);
   const [allRecords, setAllRecords] = useState<BpomRecord[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<BpomRecord[]>([]);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   useEffect(() => {
     const loadRecords = async () => {
       const data = await fetchFromDatabase('BPOM');
       if (data) {
         setAllRecords(data);
+        if (urlSearchQuery) {
+          const q = decodeURIComponent(urlSearchQuery).toLowerCase();
+          const results = data.filter(item => 
+            item.productName?.toLowerCase().includes(q) || 
+            item.manufacturer?.toLowerCase().includes(q) ||
+            (item.registrationNumber && item.registrationNumber.toLowerCase().includes(q))
+          );
+          setSearchResult(results);
+        }
       }
     };
     loadRecords();
-  }, []);
+  }, [urlSearchQuery]);
+
+  const handleShare = (productName: string) => {
+    const link = `${window.location.origin}/departments/health/bpom/${encodeURIComponent(productName)}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedLink(productName);
+      setTimeout(() => setCopiedLink(null), 2000);
+    });
+  };
 
   useEffect(() => {
     if (searchQuery.trim().length > 0) {
@@ -189,6 +208,13 @@ const BpomStatusPage: React.FC = () => {
                           </a>
                         </div>
                       )}
+                      
+                      <button
+                        onClick={() => handleShare(item.productName)}
+                        className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-slate-300 hover:text-white border border-white/10 hover:border-amber-500/50 rounded-lg text-xs font-bold uppercase tracking-wide transition-all"
+                      >
+                        <Share2 size={14} /> {copiedLink === item.productName ? 'Tersalin!' : 'Bagi Link'}
+                      </button>
                     </div>
                   </div>
                 ))

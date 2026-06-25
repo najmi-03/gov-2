@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { DoctorCertRecord } from '../types';
 import { fetchFromDatabase, saveToDatabase } from '../services/databaseService';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Search, Info } from 'lucide-react';
 
-const DoctorCertManager: React.FC = () => {
+interface DoctorCertManagerProps {
+  staffName?: string | null;
+}
+
+const DoctorCertManager: React.FC<DoctorCertManagerProps> = ({ staffName }) => {
   const [records, setRecords] = useState<DoctorCertRecord[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState<Omit<DoctorCertRecord, 'id'>>({
@@ -45,11 +50,19 @@ const DoctorCertManager: React.FC = () => {
 
     let updatedRecords;
     if (editingId) {
-      updatedRecords = records.map(r => r.id === editingId ? { ...form, id: editingId } : r);
+      const updatedRecord = { 
+        ...form, 
+        id: editingId,
+        updatedBy: staffName || 'System',
+        updatedAt: new Date().toISOString()
+      };
+      updatedRecords = records.map(r => r.id === editingId ? updatedRecord : r);
     } else {
       const newRecord: DoctorCertRecord = {
         ...form,
-        id: Date.now().toString()
+        id: Date.now().toString(),
+        updatedBy: staffName || 'System',
+        updatedAt: new Date().toISOString()
       };
       updatedRecords = [...records, newRecord];
     }
@@ -173,6 +186,20 @@ const DoctorCertManager: React.FC = () => {
           </div>
         </form>
 
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+          <h4 className="text-lg font-bold text-white">Daftar Sertifikasi Dokter</h4>
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+            <input
+              type="text"
+              placeholder="Cari Dokter, Spesialisasi, atau SIP..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-950 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:border-amber-500/50 outline-none"
+            />
+          </div>
+        </div>
+
         <div className="bg-slate-950/50 border border-white/5 rounded-2xl overflow-hidden">
           {isLoading ? (
             <div className="text-center p-8 text-slate-500">Memuat data Sertifikasi Dokter...</div>
@@ -188,11 +215,18 @@ const DoctorCertManager: React.FC = () => {
                     <th className="px-6 py-4">No. SIP</th>
                     <th className="px-6 py-4">Masa Berlaku</th>
                     <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Log Terakhir</th>
                     <th className="px-6 py-4 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                    {records.map(record => (
+                    {records
+                      .filter(r => 
+                        r.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        r.specialization.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        r.licenseNumber.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map(record => (
                     <tr key={record.id} className="hover:bg-white/[0.02]">
                         <td className="px-6 py-4 font-medium text-white">{record.doctorName}</td>
                         <td className="px-6 py-4">{record.specialization}</td>
@@ -212,6 +246,16 @@ const DoctorCertManager: React.FC = () => {
                             Dicabut
                             </span>
                         )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {record.updatedBy ? (
+                            <div className="flex flex-col text-[10px]">
+                              <span className="text-amber-400 flex items-center gap-1"><Info size={12}/> {record.updatedBy}</span>
+                              <span className="text-slate-500">{new Date(record.updatedAt || '').toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short'})}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-600">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                         <button onClick={() => handleEdit(record)} className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg">

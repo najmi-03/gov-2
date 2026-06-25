@@ -6,6 +6,7 @@ import { fetchFromDatabase } from '../services/databaseService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SalaryManagerProps {
+  staffName?: string | null;
   leadership: LeadershipMember[];
   depts: DeptInfo[];
   webhooks: Record<string, string>;
@@ -26,7 +27,7 @@ interface CalculatedStat {
     salary: number;
 }
 
-const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhooks }) => {
+const SalaryManager: React.FC<SalaryManagerProps> = ({ staffName, leadership, depts, webhooks }) => {
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -206,7 +207,9 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
       baseSalary: Number(newRecord.baseSalary) || 0,
       bonus: Number(newRecord.bonus) || 0,
       penaltyLevel: newRecord.penaltyLevel as any || 'NONE',
-      notes: newRecord.notes || ''
+      notes: newRecord.notes || '',
+      updatedBy: staffName || 'System',
+      updatedAt: new Date().toISOString()
     };
     saveSalaries([...salaries, record]);
     setIsAdding(false);
@@ -216,7 +219,12 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
 
   const handleSaveEdit = () => {
       if (!editingRecord) return;
-      const updatedList = salaries.map(s => s.id === editingRecord.id ? editingRecord : s);
+      const updatedRecord = {
+        ...editingRecord,
+        updatedBy: staffName || 'System',
+        updatedAt: new Date().toISOString()
+      };
+      const updatedList = salaries.map(s => s.id === editingRecord.id ? updatedRecord : s);
       saveSalaries(updatedList);
       setEditingRecord(null);
   };
@@ -352,7 +360,9 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
           baseSalary: stat.salary,
           bonus: 0,
           penaltyLevel: 'NONE',
-          notes: `Hadir: ${stat.daysPresent} Hari | Total: ${stat.totalHours.toFixed(2)} Jam`
+          notes: `Hadir: ${stat.daysPresent} Hari | Total: ${stat.totalHours.toFixed(2)} Jam`,
+          updatedBy: staffName || 'System',
+          updatedAt: new Date().toISOString()
       }));
 
       saveSalaries([...salaries, ...newSalaries]);
@@ -380,8 +390,8 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
   };
 
   const updateRecord = (id: string, field: keyof SalaryRecord, value: any) => {
-    setSalaries(salaries.map(s => s.id === id ? { ...s, [field]: value } : s));
-    localStorage.setItem('ls_gov_salaries', JSON.stringify(salaries.map(s => s.id === id ? { ...s, [field]: value } : s)));
+    setSalaries(salaries.map(s => s.id === id ? { ...s, [field]: value, updatedBy: staffName || 'System', updatedAt: new Date().toISOString() } : s));
+    localStorage.setItem('ls_gov_salaries', JSON.stringify(salaries.map(s => s.id === id ? { ...s, [field]: value, updatedBy: staffName || 'System', updatedAt: new Date().toISOString() } : s)));
   };
 
   const handleSendToDiscord = async (salary: SalaryRecord) => {
@@ -884,6 +894,7 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
                 <th className="px-5 py-4">Gaji</th>
                 <th className="px-5 py-4">Bonus</th>
                 <th className="px-5 py-4">Total</th>
+                <th className="px-5 py-4">Log Terakhir</th>
                 <th className="px-5 py-4 text-right">Aksi</th>
               </tr>
             </thead>
@@ -922,6 +933,16 @@ const SalaryManager: React.FC<SalaryManagerProps> = ({ leadership, depts, webhoo
                     </td>
                     <td className="px-5 py-4">
                       <span className="text-xs md:text-sm font-black text-amber-500 font-mono">${net.toLocaleString()}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      {s.updatedBy ? (
+                        <div className="flex flex-col text-[10px]">
+                          <span className="text-amber-400">Edited by: {s.updatedBy}</span>
+                          <span className="text-slate-500">{new Date(s.updatedAt || '').toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short'})}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-600">-</span>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-right space-x-2">
                       <button 

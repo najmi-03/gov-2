@@ -328,7 +328,9 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole, 
         category: newItemCategory,
         basePrice: parseInt(newItemPrice) || 10,
         stock: 0,
-        status: 'BLUE'
+        status: 'BLUE',
+        updatedBy: staffName || 'System',
+        updatedAt: new Date().toISOString()
       };
       savePawn([...pawnItems, newPawn]);
     }
@@ -353,7 +355,7 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole, 
   };
 
   const updatePawnStock = (id: string, stock: number) => {
-    savePawn(pawnItems.map(item => item.id === id ? { ...item, stock: Math.max(0, stock) } : item));
+    savePawn(pawnItems.map(item => item.id === id ? { ...item, stock: Math.max(0, stock), updatedBy: staffName || 'System', updatedAt: new Date().toISOString() } : item));
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -499,7 +501,14 @@ const PawnshopManager: React.FC<PawnshopManagerProps> = ({ staffName, userRole, 
                   <tbody className="divide-y divide-white/5">
                     {pawnItems.filter(i => i.category === cat).map(item => (
                       <tr key={item.id} className="hover:bg-white/[0.01]">
-                        <td className="px-5 py-4 text-slate-200 font-medium">{item.name}</td>
+                        <td className="px-5 py-4 text-slate-200 font-medium">
+                          <div className="flex flex-col">
+                            <span>{item.name}</span>
+                            {item.updatedBy && (
+                              <span className="text-[9px] text-slate-500 font-mono mt-1">Edited by: {item.updatedBy}</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5">
                              <span className="text-base">{statusConfig[item.status].icon}</span>

@@ -76,12 +76,11 @@ const csvToJson = (csv: string) => {
 /**
  * Mengambil data terbaru dari Database (Turso via Express API)
  */
-export const fetchFromDatabase = async (type: ConfigType, params?: any) => {
+export const fetchFromDatabase = async (type: ConfigType, params?: any, retries = 3): Promise<any> => {
   try {
     let url = `/api/${type.toLowerCase()}`;
     
-    // Special mapping for generic configs
-    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS', 'BPOM', 'DOCTOR_CERT'];
+    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS', 'BPOM', 'DOCTOR_CERT', 'INVENTORY_COMMON', 'INVENTORY_BLACK'];
     if (genericConfigs.includes(type)) {
       url = `/api/config/${type}`;
     } else if (type === 'RESPONSES') {
@@ -96,7 +95,12 @@ export const fetchFromDatabase = async (type: ConfigType, params?: any) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.warn(`[Database Error] Gagal load ${type} dari Turso.`, error);
+    if (retries > 0) {
+      console.warn(`[Database Retry] Mengulang fetch ${type}... sisa retry: ${retries - 1}`);
+      await new Promise(res => setTimeout(res, 1000));
+      return fetchFromDatabase(type, params, retries - 1);
+    }
+    console.warn(`[Database Error] Gagal load ${type} dari Turso setelah retries.`, error);
     return null;
   }
 };
@@ -110,7 +114,7 @@ export const saveToDatabase = async (type: ConfigType, data: any) => {
     let payload = data;
 
     // Special mapping for generic configs
-    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS', 'BPOM', 'DOCTOR_CERT'];
+    const genericConfigs = ['DEPTS', 'LEADERSHIP', 'DOCS', 'FORMS', 'TERMS', 'PERMISSIONS', 'CAROUSEL', 'PAWN', 'WEBHOOKS', 'BPOM', 'DOCTOR_CERT', 'INVENTORY_COMMON', 'INVENTORY_BLACK'];
     if (genericConfigs.includes(type)) {
       url = `/api/config/${type}`;
       payload = { value: data };

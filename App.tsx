@@ -24,6 +24,7 @@ import AttendancePage from './components/AttendancePage';
 import DonationPage from './components/DonationPage';
 import ParticlesBackground from './components/ParticlesBackground';
 import PublicInventory from './components/PublicInventory';
+import ProfilePage from './components/ProfilePage';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { DEPARTMENTS as INITIAL_DEPARTMENTS, NEWS as INITIAL_NEWS, DEFAULT_FORMS, DEFAULT_RECRUITMENT_CONFIG, DEFAULT_PERMISSIONS } from './constants';
 import { DeptInfo, NewsItem, AuthState, LeadershipMember, LegislativeDocument, FormConfig, RecruitmentConfig, PermissionConfig, CarouselItem, PawnItem } from './types';
@@ -187,6 +188,12 @@ const App: React.FC = () => {
   };
 
   const handleNavClick = (sectionId: string) => {
+    if (sectionId === 'profile') {
+      navigate('/profile');
+      window.scrollTo(0, 0);
+      return;
+    }
+
     // Handle Page Switching
     if (sectionId === 'structural') {
       navigate('/structural');
@@ -275,8 +282,13 @@ const App: React.FC = () => {
     return false;
   };
 
+  const handleUpdateAuth = (updates: Partial<AuthState>) => {
+    setAuth(prev => ({ ...prev, ...updates }));
+  };
+
   const handleLogout = () => {
     setAuth({ isAdmin: false, staffName: null, role: 'NONE' });
+    navigate('/');
   };
 
   const handleSignup = async (pin: string, icName: string, requestedRole: string, requestedDepartment: string) => {
@@ -299,6 +311,10 @@ const App: React.FC = () => {
                     onApplyClick={() => handleNavClick('recruitment')} 
                     onFormClick={() => handleNavClick('citizen-form')} 
                   />
+                } />
+
+                <Route path="/profile" element={
+                  <ProfilePage auth={auth} onUpdateAuth={handleUpdateAuth} onLogout={handleLogout} />
                 } />
 
                 <Route path="/departments" element={
@@ -327,7 +343,9 @@ const App: React.FC = () => {
                 } />
 
                 <Route path="/departments/health/bpom" element={<BpomStatusPage />} />
+                <Route path="/departments/health/bpom/:urlSearchQuery" element={<BpomStatusPage />} />
                 <Route path="/departments/health/doctor-certs" element={<DoctorCertPage />} />
+                <Route path="/departments/health/doctor-certs/:urlSearchQuery" element={<DoctorCertPage />} />
                 <Route path="/departments/:deptId" element={<DepartmentPage depts={depts} />} />
 
                 <Route path="/information" element={

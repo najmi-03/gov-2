@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { CarouselItem } from '../types';
 
 interface CarouselManagerProps {
+  staffName?: string | null;
   slides: CarouselItem[];
   onSave: (slides: CarouselItem[]) => void;
 }
 
-const CarouselManager: React.FC<CarouselManagerProps> = ({ slides, onSave }) => {
+const CarouselManager: React.FC<CarouselManagerProps> = ({ staffName, slides, onSave }) => {
   const [localSlides, setLocalSlides] = useState<CarouselItem[]>(slides);
   const [slideIdToDelete, setSlideIdToDelete] = useState<string | null>(null);
 
@@ -16,7 +17,9 @@ const CarouselManager: React.FC<CarouselManagerProps> = ({ slides, onSave }) => 
       id: 'slide_' + Date.now(),
       imageUrl: 'https://picsum.photos/seed/' + Date.now() + '/1920/1080',
       title: 'Judul Slide Baru',
-      subtitle: 'Deskripsi singkat slide ini...'
+      subtitle: 'Deskripsi singkat slide ini...',
+      updatedBy: staffName || 'System',
+      updatedAt: new Date().toISOString()
     };
     setLocalSlides([...localSlides, newSlide]);
   };
@@ -27,7 +30,7 @@ const CarouselManager: React.FC<CarouselManagerProps> = ({ slides, onSave }) => 
   };
 
   const updateSlide = (id: string, field: keyof CarouselItem, value: string) => {
-    setLocalSlides(localSlides.map(s => s.id === id ? { ...s, [field]: value } : s));
+    setLocalSlides(localSlides.map(s => s.id === id ? { ...s, [field]: value, updatedBy: staffName || 'System', updatedAt: new Date().toISOString() } : s));
   };
 
   const moveSlide = (index: number, direction: 'up' | 'down') => {
@@ -80,6 +83,11 @@ const CarouselManager: React.FC<CarouselManagerProps> = ({ slides, onSave }) => 
                 <div className="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded text-[8px] font-bold text-white uppercase">
                     Slide #{idx + 1}
                 </div>
+                {slide.updatedBy && (
+                  <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-[8px] font-mono text-amber-500 uppercase">
+                      ✏️ {slide.updatedBy}
+                  </div>
+                )}
             </div>
 
             <div className="flex-1 space-y-4">

@@ -206,7 +206,11 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
     setIsSaving(true);
 
     if (editingNewsId) {
-        const updated = news.map(n => n.id === editingNewsId ? { ...n, title: newNewsTitle, summary: newNewsSummary, tag: newNewsTag } : n);
+        const updated = news.map(n => 
+            n.id === editingNewsId 
+            ? { ...n, title: newNewsTitle, summary: newNewsSummary, tag: newNewsTag, updatedBy: staffName || 'System', updatedAt: new Date().toISOString() } 
+            : n
+        );
         setNews(updated);
         await saveToDatabase('NEWS', updated);
         setEditingNewsId(null);
@@ -218,7 +222,9 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
             date: new Date().toLocaleDateString('id-ID'),
             summary: newNewsSummary,
             tag: newNewsTag,
-            imageUrl: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800"
+            imageUrl: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800",
+            updatedBy: staffName || 'System',
+            updatedAt: new Date().toISOString()
         };
         const updated = [newItem, ...news];
         setNews(updated);
@@ -543,7 +549,17 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                             <div className="space-y-4">
                                 {news.map(item => (
                                     <div key={item.id} className="bg-slate-900 p-4 rounded-xl flex justify-between items-center border border-white/5">
-                                        <div><h4 className="text-sm font-bold text-white">{item.title}</h4><p className="text-[10px] text-slate-500">{item.date}</p></div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-white">{item.title}</h4>
+                                            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 text-[10px] text-slate-500">
+                                                <span>{item.date}</span>
+                                                {item.updatedBy && (
+                                                    <span className="text-amber-500 font-mono">
+                                                        (Edited by {item.updatedBy} at {new Date(item.updatedAt || '').toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })})
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                         <div className="flex gap-2">
                                             <button onClick={() => { setEditingNewsId(item.id); setNewNewsTitle(item.title); setNewNewsSummary(item.summary); }} className="text-blue-500 text-xs bg-blue-500/10 px-3 py-1 rounded">Edit</button>
                                             
@@ -564,7 +580,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
 
                     {/* CAROUSEL */}
                     {activeTab === 'carousel_mgmt' && (
-                        <CarouselManager slides={carouselSlides} onSave={saveCarousel} />
+                        <CarouselManager staffName={currentDisplayName} slides={carouselSlides} onSave={saveCarousel} />
                     )}
 
                     {/* OTHER MODULES */}
@@ -577,12 +593,12 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                     
                     {/* BPOM MANAGEMENT */}
                     {activeTab === 'bpom_mgmt' && (
-                        <BpomManager />
+                        <BpomManager staffName={currentDisplayName} />
                     )}
 
                     {/* DOCTOR CERT MANAGEMENT */}
                     {activeTab === 'doctor_cert_mgmt' && (
-                        <DoctorCertManager />
+                        <DoctorCertManager staffName={currentDisplayName} />
                     )}
 
                     {/* INVENTORY & PAWNSHOP */}
@@ -753,7 +769,7 @@ const NewsAdmin: React.FC<NewsAdminProps> = ({
                             </div>
                         </div>
                     )}
-                    {activeTab === 'salary' && <SalaryManager leadership={leadership} depts={depts} webhooks={webhooks} />}
+                    {activeTab === 'salary' && <SalaryManager staffName={currentDisplayName} leadership={leadership} depts={depts} webhooks={webhooks} />}
                     
                     {/* PERMISSION CONFIG MANAGER */}
                     {activeTab === 'permission_mgmt' && <PermissionManager permissions={localPermissions} setPermissions={savePermissions} webhooks={webhooks} />}

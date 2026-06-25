@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.38.0",
-    "@libsql/client": "^0.17.0",
+    "@libsql/client": "^0.17.4",
     "clsx": "^2.1.1",
     "discord.js": "^14.26.4",
     "express": "^5.2.1",

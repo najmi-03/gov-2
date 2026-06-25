@@ -91,3 +91,22 @@ export const signupUser = async (pin: string, ic_name: string, requested_role: s
     return { success: false, error: "Gagal terhubung ke server." };
   }
 };
+
+export const updateProfile = async (username: string, ic_name: string, password?: string, avatar_url?: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, ic_name, password, avatar_url })
+    });
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      const data = await response.json();
+      return { success: false, error: data.error };
+    }
+  } catch (error) {
+    return { success: false, error: "Gagal terhubung ke server." };
+  }
+};

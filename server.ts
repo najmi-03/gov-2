@@ -1,5 +1,6 @@
 import fs from 'fs';
 import express from "express";
+import helmet from "helmet";
 import { createClient } from "@libsql/client";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -474,6 +475,7 @@ async function startServer() {
     console.error("Database initialization failed:", err);
   }
 
+  app.use(helmet());
   app.use(express.json());
 
   // API Routes

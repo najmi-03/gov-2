@@ -115,13 +115,15 @@ const GovernmentFormSection: React.FC<CitizenIdentityFormProps> = ({ forms, webh
       inline: field.type !== 'textarea'
     }));
 
+    // Format text code block agar mudah dicopy
+    const codeBlockText = "```\n" + fields.map(f => `${f.name}: ${f.value}`).join('\n') + "\n```";
+
     const payload = {
-      content: `🔔 **PENGAJUAN BARU: ${selectedForm.title.toUpperCase()}**`,
+      content: `🔔 **PENGAJUAN BARU: ${selectedForm.title.toUpperCase()}**\n\n**Data Pengajuan:**\n${codeBlockText}`,
       embeds: [{
-        title: `📑 DOKUMEN ${selectedForm.title.toUpperCase()}`,
+        title: `📑 LAMPIRAN ${selectedForm.title.toUpperCase()}`,
         color: 16753920,
-        fields: fields,
-        image: { url: `attachment://file_0_${files[0].name}` },
+        image: files.length > 0 ? { url: `attachment://file_0_${files[0].name}` } : undefined,
         timestamp: new Date().toISOString(),
         footer: { text: "Sistem Administrasi Pemerintah San Andreas" }
       }]

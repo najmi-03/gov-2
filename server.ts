@@ -474,6 +474,20 @@ async function startServer() {
     console.error("Database initialization failed:", err);
   }
 
+  // Set Security Headers (CSP)
+  app.use((req, res, next) => {
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://esm.sh; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: blob: https://picsum.photos https://images.unsplash.com https://blogger.googleusercontent.com https://placehold.co https://via.placeholder.com https://tako.id https://www.transparenttextures.com https://cdn.discordapp.com https://media.discordapp.net; " +
+      "connect-src 'self' https://discord.com https://api.imgbb.com https://api.appkita.com https://api.kota-anda.com https://script.google.com https://docs.google.com wss: ws:;"
+    );
+    next();
+  });
+
   app.use(express.json());
 
   // API Routes
